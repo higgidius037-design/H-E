@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="manifest" href="../manifest.json">
+<link rel="icon" href="../icon-192.png">
+  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#310b14">
+<title>H&E | Our Little World</title>
+
+<style>
+/* H&E WHATSAPP-STYLE CHAT */
+#page-messages.active {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 100px);
+}
+.chat-app {
+  display: flex;
+  flex-direction: column;
+  height: min(76vh, 820px);
+  min-height: 480px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f4ebe4;
+  box-shadow: 0 8px 28px #310b1410;
+}
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  color: white;
+  background: linear-gradient(110deg, var(--wine), var(--burgundy));
+}
+.chat-avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--rose));
+  color: var(--wine);
+  font-family: Georgia, serif;
+  font-weight: bold;
+}
+.chat-contact { flex: 1; min-width: 0; }
+.chat-contact h2 { font-size: 17px; font-weight: normal; margin: 0 0 5px; }
+.chat-contact p { font-size: 12px; margin: 0; color: #f0d8dc; }
+.chat-header-btn {
+  color: var(--gold);
+  background: transparent;
+  border: 0;
+  font-size: 23px;
+}
+.chat-notice {
+  align-self: center;
+  margin: 12px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: #fff8ee;
+  color: var(--burgundy);
+  font-size: 12px;
+  text-align: center;
+}
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #f4ebe4;
+  background-image: radial-gradient(#70263b0a 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.chat-date-divider {
+  align-self: center;
+  padding: 6px 12px;
+  background: #fff8ee;
+  color: var(--muted);
+  border-radius: 9px;
+  font-size: 11px;
+}
+.chat-bubble {
+  position: relative;
+  max-width: min(82%, 430px);
+  padding: 10px 12px 7px;
+  border: 1px solid #eadbd4;
+  border-radius: 13px;
+  background: #fffdf9;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  box-shadow: 0 2px 3px #310b1408;
+}
+.chat-bubble.mine {
+  align-self: flex-end;
+  background: #f3dfe2;
+  border-color: #e9cbd1;
+  border-top-right-radius: 4px;
+}
+.chat-bubble.theirs {
+  align-self: flex-start;
+  border-top-left-radius: 4px;
+}
+.chat-sender {
+  color: var(--burgundy);
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+.chat-text {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  margin: 0;
+}
+.chat-time {
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 6px;
+  color: var(--muted);
+  font: 10px Arial, sans-serif;
+}
+.chat-tick { color: #806d70; }
+.chat-media {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 9px;
+  margin-top: 5px;
+  background: var(--blush);
+}
+.chat-audio { width: 100%; max-width: 290px; margin-top: 7px; }
+.chat-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.chat-delete {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 3px;
+}
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  padding: 10px;
+  background: #fffaf5;
+  border-top: 1px solid var(--line);
+}
+.chat-composer textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  max-height: 120px;
+  resize: none;
+  border-radius: 20px;
+  padding: 12px 14px;
+  background: white;
+}
+.chat-attach-btn, .chat-mic-btn, .chat-send-btn {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  margin: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.chat-attach-btn {
+  background: #f4e5e2;
+  color: var(--burgundy);
+  font-size: 27px;
+}
+.chat-mic-btn, .chat-send-btn {
+  background: var(--burgundy);
+  color: white;
+  font-size: 20px;
+}
+.chat-recording {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  background: #fffaf5;
+  color: var(--burgundy);
+}
+.chat-recording button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--burgundy);
+  background: #f8e9e6;
+}
+.recording-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #b32e45;
+  animation: recordingPulse 1s infinite alternate;
+}
+.chat-attachment-preview {
+  position: relative;
+  padding: 10px;
+  background: #fffaf5;
+  border-top: 1px solid var(--line);
+}
+.chat-attachment-preview img,
+.chat-attachment-preview video {
+  max-width: 150px;
+  max-height: 100px;
+  border-radius: 8px;
+}
+.chat-attachment-preview button {
+  margin-left: 8px;
+  border: 0;
+  background: #f4e5e2;
+  border-radius: 50%;
+  padding: 7px;
+}
+@keyframes recordingPulse {
+  to { opacity: .35; }
+}
+@media(max-width:650px) {
+  #page-messages.active {
+    margin: 0 -12px;
+    min-height: calc(100dvh - 145px);
+  }
+  #page-messages .card { padding: 0; border: 0; margin: 0; }
+  .chat-app {
+    height: calc(100dvh - 150px);
+    min-height: 400px;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .chat-bubble { max-width: 88%; }
+}
+
+:root {
+  --wine:#310b14;
+  --burgundy:#70263b;
+  --rose:#c97887;
+  --gold:#e8c58a;
+  --cream:#fff9f1;
+  --blush:#f8e9e6;
+  --ink:#342029;
+  --muted:#806d70;
+  --line:#eadbd4;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--cream);
+  color:var(--ink);
+  font-family:Georgia,"Times New Roman",serif;
+}
+button,input,textarea,select { font:inherit; }
+button { cursor:pointer; }
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible {
+  outline:2px solid var(--rose);
+  outline-offset:2px;
+}
+
+/* WELCOME ANIMATION */
+#welcomeScreen.initial-hidden { display:none; }
+#welcomeScreen {
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse at 50% 45%,#70263b 0%,transparent 55%),
+    linear-gradient(145deg,#1e060d,#310b14 55%,#18050b);
+  color:var(--cream);
+  transition:opacity 1s ease,visibility 1s ease;
+}
+#welcomeScreen.leaving {
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.welcome-glow {
+  position:absolute;
+  width:70vw;
+  height:70vw;
+  max-width:550px;
+  max-height:550px;
+  border:1px solid #e8c58a35;
+  border-radius:50%;
+  box-shadow:0 0 100px #e8c58a10;
+  animation:welcomeGlow 4s ease-in-out infinite alternate;
+}
+.welcome-content {
+  position:relative;
+  z-index:2;
+  padding:24px;
+  text-align:center;
+  animation:welcomeRise 1.4s ease both;
+}
+.welcome-flourish {
+  color:var(--gold);
+  letter-spacing:.3em;
+  font-size:18px;
+}
+.welcome-title {
+  display:grid;
+  gap:12px;
+  margin:25px 0;
+  font-weight:normal;
+}
+.welcome-he {
+  font-size:clamp(64px,14vw,112px);
+  letter-spacing:.15em;
+  color:var(--gold);
+  text-shadow:0 0 35px #e8c58a30;
+}
+.welcome-subtitle {
+  font-size:clamp(27px,6vw,46px);
+  font-style:italic;
+  color:var(--cream);
+}
+.letter {
+  display:inline-block;
+  opacity:0;
+  transform:translateY(12px);
+  animation:letterReveal .55s ease forwards;
+}
+.petal {
+  position:absolute;
+  top:-35px;
+  left:var(--left);
+  font-size:var(--size);
+  opacity:0;
+  pointer-events:none;
+  animation:petalDrift var(--duration) linear forwards;
+  animation-delay:var(--delay);
+}
+@keyframes letterReveal {
+  to { opacity:1;transform:translateY(0); }
+}
+@keyframes welcomeRise {
+  from { opacity:0;transform:translateY(18px); }
+  to { opacity:1;transform:translateY(0); }
+}
+@keyframes welcomeGlow {
+  from { transform:scale(.92);opacity:.5; }
+  to { transform:scale(1.06);opacity:1; }
+}
+@keyframes petalDrift {
+  0% { opacity:0;transform:translate(0,-5vh) rotate(0); }
+  10% { opacity:.9; }
+  50% { transform:translate(60px,50vh) rotate(220deg); }
+  90% { opacity:.7; }
+  100% { opacity:0;transform:translate(-35px,110vh) rotate(420deg); }
+}
+
+/* MAIN LAYOUT */
+.app {
+  min-height:100vh;
+  display:grid;
+  grid-template-columns:220px minmax(0,1fr);
+}
+.sidebar {
+  background:linear-gradient(180deg,#300a13,#501523,#26070f);
+  color:white;
+  padding:24px 14px;
+  position:sticky;
+  top:0;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.brand {
+  text-align:center;
+  padding:12px 0 28px;
+  border-bottom:1px solid #ffffff25;
+}
+.brand-heart { color:var(--gold);font-size:38px; }
+.brand h1 { font-weight:normal;letter-spacing:3px;margin:5px 0;font-size:31px; }
+.brand p { font-style:italic;color:#eacdd1;margin:0; }
+.nav { display:grid;gap:8px;margin-top:24px; }
+.nav button {
+  background:transparent;
+  border:0;
+  color:#f9e9e8;
+  text-align:left;
+  padding:13px;
+  border-radius:10px;
+}
+.nav button.active,.nav button:hover { background:#ffffff19;color:var(--gold); }
+.sidebar-foot { margin-top:auto;text-align:center;color:var(--gold);font-style:italic;padding:20px 0; }
+
+main { min-width:0;padding:25px clamp(14px,3vw,38px); }
+.topbar { display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px; }
+.topbar h2 { font-size:clamp(23px,3vw,33px);font-weight:normal;color:#401521;margin:0 0 7px; }
+.topbar p { color:var(--muted);margin:0; }
+.avatar {
+  width:46px;height:46px;flex-shrink:0;border-radius:50%;
+  display:grid;place-items:center;color:var(--wine);
+  background:linear-gradient(135deg,var(--rose),var(--gold));
+  border:3px solid white;box-shadow:0 0 0 1px var(--line);font-size:25px;
+}
+.page { display:none; }
+.page.active { display:block; }
+
+.hero {
+  min-height:245px;
+  padding:30px;
+  border-radius:16px;
+  color:white;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  position:relative;
+  background:
+    linear-gradient(90deg,#260b12e8 0%,#32121a9c 48%,#32121a08 100%),
+    linear-gradient(145deg,#edb38b,#b96c68 42%,#51253a 75%,#211020);
+}
+.hero:after {
+  content:"♡";position:absolute;right:9%;bottom:-35px;
+  font-size:190px;color:#ffffff12;pointer-events:none;
+}
+.hero-copy { max-width:370px;position:relative;z-index:1; }
+.eyebrow { font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--gold); }
+.hero h1 { font-size:clamp(34px,4vw,48px);line-height:1.12;font-weight:normal;margin:15px 0; }
+.hero p { line-height:1.5;font-size:16px;color:#fff0e9; }
+.hero-heart { color:var(--gold);font-size:28px; }
+
+.quick-grid {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin:16px 0;
+}
+.quick {
+  background:linear-gradient(145deg,#fffdfa,#fbf0e9);
+  border:1px solid var(--line);
+  color:var(--burgundy);
+  border-radius:13px;
+  padding:17px 7px;
+  text-align:center;
+  box-shadow:0 3px 12px #42122108;
+  transition:.2s;
+}
+.quick:hover { transform:translateY(-3px); }
+.quick .icon { font-size:27px;margin-bottom:9px; }
+.quick strong { display:block;font-size:14px;font-weight:normal;line-height:1.35; }
+.quick .arrow { display:block;font-size:22px;margin-top:6px; }
+
+.card {
+  margin-top:16px;
+  padding:20px;
+  border:1px solid var(--line);
+  background:#fffdf9;
+  border-radius:15px;
+  box-shadow:0 7px 23px #4114220b;
+  min-width:0;
+}
+.card-heading { display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px; }
+.card-heading h2,.section-title { font-weight:normal;font-size:24px;color:#4b1825;margin:0; }
+.link-button { border:0;background:transparent;color:var(--burgundy);padding:5px; }
+.muted { color:var(--muted); }
+.lower-grid { display:grid;grid-template-columns:1fr 1fr;gap:15px; }
+.stat-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+.stat { background:linear-gradient(145deg,#fff4ef,#f7e1df);border:1px solid #f0dcd7;padding:15px;border-radius:12px;min-width:0; }
+.stat h3 { font-weight:normal;margin:10px 0; }
+.stat strong { color:var(--burgundy);font-size:28px;font-weight:normal;overflow-wrap:anywhere; }
+.stat p { font-size:13px;color:var(--muted); }
+.progress { height:8px;background:#eadfd7;border-radius:20px;overflow:hidden;margin:13px 0 8px; }
+.progress div { height:100%;width:0;background:linear-gradient(90deg,var(--burgundy),var(--rose));transition:width .3s; }
+.quote { margin-top:16px;padding:19px;text-align:center;font-style:italic;color:#69283a;background:linear-gradient(110deg,#f7e5e1,#fff3eb);border-radius:12px; }
+.quote small { display:block;margin-top:8px; }
+
+label { display:block;font-size:14px;color:var(--burgundy);margin:13px 0 6px; }
+input,textarea,select { width:100%;border:1px solid #e4d1d1;border-radius:9px;padding:12px;background:#fffdfb;color:var(--ink); }
+textarea { min-height:90px;resize:vertical; }
+.primary { margin-top:12px;padding:11px 17px;color:white;background:var(--burgundy);border:0;border-radius:9px; }
+.primary:hover { background:var(--wine); }
+.secondary { margin-top:8px;padding:9px 13px;color:var(--burgundy);background:#f8e9e6;border:1px solid var(--line);border-radius:9px; }
+.item { padding:13px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere; }
+.item:last-child { border-bottom:0; }
+.pill { display:inline-block;background:#f5e4e4;color:var(--burgundy);padding:5px 10px;border-radius:30px;font-size:12px; }
+.tabs,.toolbar { display:flex;flex-wrap:wrap;gap:8px;margin:15px 0;align-items:center; }
+.hidden { display:none!important; }
+
+/* PHOTOS AND VIDEOS */
+.media-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+.media-card { min-width:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff9f1; }
+.media-preview { width:100%;height:150px;object-fit:cover;display:block;background:var(--blush);cursor:pointer; }
+.media-info { padding:9px; }
+.media-info p { margin:4px 0;font-size:13px;overflow-wrap:anywhere; }
+.media-card.selected { outline:3px solid var(--rose); }
+.empty-gallery { grid-column:1/-1;padding:28px 12px;text-align:center;border:1px dashed var(--line);border-radius:10px;background:#fff9f1; }
+
+/* CALENDAR */
+.calendar-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:15px 0; }
+.calendar-head h3 { margin:0;font-weight:normal;text-align:center; }
+.calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px; }
+.calendar-day-name { text-align:center;color:var(--muted);padding:8px 0;font-size:12px; }
+.calendar-day { min-height:62px;border:1px solid var(--line);background:#fffdfa;color:var(--ink);border-radius:8px;padding:6px 3px;text-align:center;position:relative; }
+.calendar-day.outside { opacity:.4; }
+.calendar-day.today { border:2px solid var(--rose); }
+.calendar-day.selected { background:#f4dfe1;border-color:var(--burgundy); }
+.calendar-day.has-event:after { content:"";width:6px;height:6px;border-radius:50%;background:var(--burgundy);position:absolute;bottom:5px;left:calc(50% - 3px); }
+.calendar-day .day-number { font-size:13px; }
+.calendar-day .event-count { font-size:10px;color:var(--burgundy);display:block;margin-top:4px; }
+
+.bottom-nav { display:none; }
+#toast {
+  position:fixed;z-index:1100;bottom:18px;right:18px;max-width:calc(100vw - 36px);
+  padding:13px 17px;background:var(--wine);color:white;border-radius:10px;display:none;
+}
+#toast.show { display:block; }
+.modal { position:fixed;z-index:90;inset:0;background:#16060df2;display:none;align-items:center;justify-content:center;padding:20px; }
+.modal.open { display:flex; }
+.modal-content { max-width:95vw;max-height:90vh;text-align:center;color:white; }
+.modal-content img,.modal-content video { max-width:95vw;max-height:75vh;object-fit:contain; }
+.modal-close { position:absolute;top:15px;right:18px;background:transparent;color:white;border:1px solid #ffffff66;border-radius:50%;width:42px;height:42px;font-size:25px; }
+
+@media(max-width:950px) {
+  .app { grid-template-columns:180px minmax(0,1fr); }
+  .lower-grid { grid-template-columns:1fr; }
+  .media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:650px) {
+  .app { display:block;padding-bottom:78px; }
+  .sidebar { display:none; }
+  main { padding:0 12px 25px; }
+  .topbar { margin:0 -12px 12px;padding:17px 14px;background:linear-gradient(120deg,#300a13,#501523); }
+  .topbar h2 { color:#fff5eb;font-size:23px; }
+  .topbar p { color:#e7cdd0;font-size:13px; }
+  .hero { min-height:225px;padding:23px 19px;border-radius:13px; }
+  .hero h1 { font-size:34px; }
+  .quick-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0; }
+  .quick { padding:13px 3px;border-radius:11px; }
+  .quick .icon { font-size:22px; }
+  .quick strong { font-size:12px; }
+  .card { padding:14px;margin-top:12px; }
+  .card-heading h2,.section-title { font-size:21px; }
+  .media-preview { height:120px; }
+  .bottom-nav {
+    position:fixed;z-index:20;bottom:0;left:0;right:0;
+    display:grid;grid-template-columns:repeat(4,1fr);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+    background:linear-gradient(100deg,#2c0812,#4a1221);
+    border-top:1px solid var(--gold);
+  }
+  .bottom-nav button { display:grid;justify-items:center;gap:3px;background:transparent;border:0;color:#f5e1df;font-size:11px;padding:4px; }
+  .bottom-nav button span { font-size:22px; }
+  .bottom-nav button.active { color:var(--gold); }
+  .calendar-day { min-height:48px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation:none!important;transition:none!important;scroll-behavior:auto!important; }
+}
+
+
+.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#310b14,#70263b);overflow:auto}.login-card{width:min(100%,420px);padding:30px;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b55}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:32px;margin:8px 0}.login-card h2{margin-top:25px;color:var(--wine)}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-note{font-size:12px;margin-top:16px}
+
+/* FOLDER GALLERY, WALLET AND PROFILE */
+.folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin-top:18px}
+.folder-card{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:22px 18px;border:1px solid var(--line);border-radius:15px;background:#fffaf6;color:var(--wine);text-align:left;cursor:pointer;box-shadow:0 5px 16px #310b1408}
+.folder-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px #310b1412}.folder-icon{font-size:32px;color:var(--rose)}
+.folder-toolbar{display:flex;align-items:center;gap:12px}.folder-toolbar h2{flex:1;margin:0;font-size:20px}.menu-wrap{position:relative}.dots-button{font-size:25px;line-height:1;padding:8px 14px}.gallery-menu{position:absolute;z-index:30;right:0;top:calc(100% + 6px);min-width:155px;padding:6px;background:#fffaf6;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #310b1420}.gallery-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 12px;color:var(--wine);border-radius:8px;cursor:pointer}.gallery-menu button:hover{background:#f4e5e7}.wallet-balance{padding:24px;border-radius:16px;background:linear-gradient(135deg,#310b14,#70263b);color:#fff;margin:18px 0}.wallet-balance span{display:block;color:#f0d8dc;font-size:13px}.wallet-balance strong{display:block;font-size:clamp(28px,5vw,40px);margin-top:8px}.wallet-actions{display:flex;gap:10px;flex-wrap:wrap}.wallet-disclaimer{margin-top:18px;font-size:12px}.profile-photo-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:18px 0}.profile-photo{width:88px;height:88px;border-radius:50%;object-fit:cover;border:2px solid var(--rose)}.profile-photo.placeholder{display:grid;place-items:center;background:#f4e5e7;color:var(--wine);font-size:34px}.upload-profile{display:inline-flex;align-items:center;padding:10px 14px;border-radius:10px;cursor:pointer}.security-row{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:16px}.security-row p{margin:6px 0}.hidden{display:none!important}
+@media(max-width:520px){.folder-toolbar{gap:8px}.folder-toolbar h2{font-size:18px}.wallet-balance{padding:20px}.security-row{flex-direction:column}}
+
+</style>
+</head>
+<body>
+
+<!-- LOCAL SIGN-IN GATE: prototype only, not server authentication -->
+<section id="loginScreen" class="login-screen" aria-label="Sign in to H&E">
+  <form id="loginForm" class="login-card">
+    <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
+    <h2>Welcome back</h2><p class="muted">Sign in to open your little world on this device.</p>
+    <label for="loginName">Your name</label><input id="loginName" maxlength="60" required autocomplete="name" placeholder="Enter your name">
+    <label for="loginPhone">Phone number (M-PESA)</label><input id="loginPhone" type="tel" maxlength="16" required autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678">
+    <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" required autocomplete="email" placeholder="you@example.com">
+    <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="4" required autocomplete="current-password" placeholder="Enter a password">
+    <button class="primary" type="submit">Log in →</button>
+    <p class="muted login-note">Prototype sign-in only. Your phone number is saved in this browser; it is not verified by SMS and does not create a secure account. Wallet payments below are simulated only.</p>
+  </form>
+</section>
+
+<!-- FULL-SCREEN WELCOME -->
+<section id="welcomeScreen" class="initial-hidden" aria-label="Welcome to H&E">
+  <div class="welcome-glow"></div>
+  <div class="welcome-content">
+    <div class="welcome-flourish">✧ ── ♡ ── ✧</div>
+    <h1 class="welcome-title">
+      <span id="welcomeHE" class="welcome-he"></span>
+      <span id="welcomeSubtitle" class="welcome-subtitle"></span>
+    </h1>
+    <div class="welcome-flourish">✧ · 🌹 · ✧</div>
+  </div>
+  <div id="rosePetals" aria-hidden="true"></div>
+</section>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-heart">♡</div>
+      <h1>H&amp;E</h1>
+      <p>Our Little World</p>
+    </div>
+    <nav class="nav" aria-label="Main navigation">
+      <button class="active" data-page="home">⌂ &nbsp; Home</button>
+      <button data-page="gallery">▧ &nbsp; Photos &amp; Videos</button>
+      <button data-page="messages">♡ &nbsp; Messages</button>
+      <button data-page="calendar">▦ &nbsp; Calendar</button>
+      <button data-page="wallet">▣ &nbsp; Wallet</button>
+      <button data-page="settings">⚙ &nbsp; Settings</button>
+    </nav>
+    <div class="sidebar-foot">♡<br>Better Together</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h2>H&amp;E — Our Little World</h2>
+        <p>Two hearts. One journey. Our little world. ♡</p>
+      </div>
+      <div class="avatar" aria-label="H&E">♡</div>
+    </div>
+
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Our story, beautifully kept</div>
+          <h1>Welcome to<br><em>our little world.</em></h1>
+          <p>Our moments, our plans, our milestones. All in one place.</p>
+          <div class="hero-heart">♡</div>
+        </div>
+      </div>
+
+      <div class="quick-grid">
+        <button class="quick" data-go="gallery"><div class="icon">▧</div><strong>Photos &amp; Videos</strong><span class="arrow">→</span></button>
+        <button class="quick" data-go="messages"><div class="icon">♡</div><strong>Messages</strong><span class="arrow">→</span></button>
+        <button class="quick" data-go="calendar"><div class="icon">▦</div><strong>Our Calendar</strong><span class="arrow">→</span></button>
+        <button class="quick" data-go="wallet"><div class="icon">▣</div><strong>Wallet</strong><span class="arrow">→</span></button>
+      </div>
+
+      <div class="card">
+        <div class="card-heading">
+          <h2>Photos &amp; Videos</h2>
+          <button class="link-button" data-go="gallery">View All →</button>
+        </div>
+        <p class="muted">Every picture has a story. Every moment means something.</p>
+        <div class="media-grid" id="homeMedia"></div>
+      </div>
+
+      <div class="lower-grid">
+        <div class="card">
+          <div class="card-heading"><h2>Little Details</h2></div>
+          <div class="stat-grid">
+            <div class="stat"><div>▧</div><h3>Our Photos</h3><strong id="photoCount">0</strong><p>Beautiful moments</p></div>
+            <div class="stat"><div>▷</div><h3>Our Videos</h3><strong id="videoCount">0</strong><p>Moments in motion</p></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-heading"><h2>Wallet</h2><button class="link-button" data-go="wallet">View →</button></div>
+          <div class="stat">
+            <h3>Wallet balance</h3>
+            <strong id="homeWalletBalance">KSh 0.00</strong>
+            <p>Manage your wallet in Kenyan shillings.</p>
+            <button class="primary" data-go="wallet">Open Wallet →</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-heading"><h2>Coming Up</h2><button class="link-button" data-go="calendar">Open Calendar →</button></div>
+        <div id="homeEvents"></div>
+      </div>
+      <div class="quote">Better together, always.<small>— H&amp;E ♡</small></div>
+    </section>
+
+    <!-- PHOTOS AND VIDEOS -->
+    <section class="page" id="page-gallery">
+      <div class="card">
+        <div class="card-heading"><div><h2 class="section-title" style="margin:0">Gallery</h2><p class="muted">Your folders, kept in one place.</p></div></div>
+        <div id="galleryFolders" class="folder-grid">
+          <button class="folder-card" id="openPhotos" type="button"><span class="folder-icon">▰</span><strong>Photos</strong><span id="folderPhotoCount" class="muted">0 items</span></button>
+          <button class="folder-card" id="openVideos" type="button"><span class="folder-icon">▷</span><strong>Videos</strong><span id="folderVideoCount" class="muted">0 items</span></button>
+        </div>
+      </div>
+      <div class="card hidden" id="galleryContents">
+        <div class="folder-toolbar">
+          <button class="secondary" id="backFolders" type="button">← Folders</button>
+          <h2 id="collectionTitle">Photos</h2>
+          <div class="menu-wrap"><button class="secondary dots-button" id="galleryMenuButton" type="button" aria-label="Gallery options" aria-expanded="false">⋮</button>
+            <div class="gallery-menu hidden" id="galleryMenu">
+              <button type="button" id="menuAdd">＋ Add</button>
+              <button type="button" id="menuSort">↕ Sort</button>
+              <button type="button" id="menuSelect">☑ Select</button>
+            </div>
+          </div>
+        </div>
+        <input id="photoFiles" type="file" accept="image/*" multiple hidden>
+        <input id="videoFiles" type="file" accept="video/*" multiple hidden>
+        <div class="toolbar hidden" id="sortTools"><label style="margin:0;flex:1">Sort by <select id="mediaSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name (A–Z)</option></select></label></div>
+        <div class="toolbar hidden" id="selectTools"><button class="secondary" id="toggleSelect" type="button">Cancel selection</button><button class="secondary hidden" id="deleteSelected" type="button">Delete selected</button></div>
+        <div class="card-heading"><span id="mediaTotal" class="muted">0 files</span></div>
+        <div class="media-grid" id="mediaCollection"></div>
+      </div>
+    </section>
+
+    <!-- MESSAGES -->
+    
+<!-- WHATSAPP-STYLE H&E CHAT -->
+<section class="page" id="page-messages">
+  <div class="chat-app">
+    <header class="chat-header">
+      <div class="chat-avatar">H&amp;E</div>
+      <div class="chat-contact">
+        <h2>Our Little World ♡</h2>
+        <p>Two hearts. One journey.</p>
+      </div>
+      <button type="button" class="chat-header-btn"
+        id="chatInfoButton" aria-label="Chat information">ⓘ</button>
+    </header>
+
+    <div class="chat-notice">
+      ♡ Your little corner of the world
+    </div>
+
+    <div class="chat-messages" id="chatList" aria-live="polite"></div>
+
+    <div class="chat-attachment-preview hidden" id="chatAttachmentPreview">
+      <div id="chatPreviewContent"></div>
+      <button type="button" id="cancelChatAttachment"
+        aria-label="Remove attachment">✕</button>
+    </div>
+
+    <form class="chat-composer" id="chatForm">
+      <input id="chatName" type="hidden" value="You">
+      <label class="chat-attach-btn" for="chatAttachment"
+        title="Attach a photo or video">＋</label>
+      <input id="chatAttachment" type="file"
+        accept="image/*,video/*" hidden>
+
+      <textarea id="chatMessage" rows="1" maxlength="2000"
+        placeholder="Message..." aria-label="Write a message"></textarea>
+
+      <button type="button" class="chat-mic-btn" id="recordVoice"
+        aria-label="Record voice note">🎙</button>
+      <button type="submit" class="chat-send-btn"
+        aria-label="Send message">➤</button>
+    </form>
+
+    <div class="chat-recording hidden" id="recordingPanel">
+      <span class="recording-dot"></span>
+      <span id="recordingStatus">Recording voice note…</span>
+      <button type="button" id="stopVoice">Stop &amp; send</button>
+      <button type="button" id="cancelVoice">Cancel</button>
+    </div>
+  </div>
+</section>
+
+    <!-- CALENDAR -->
+    <section class="page" id="page-calendar">
+      <div class="card">
+        <h2 class="section-title">Our Calendar</h2>
+        <p class="muted">Dates to remember, moments to look forward to.</p>
+        <div class="calendar-head">
+          <button class="secondary" id="previousMonth" type="button">←</button>
+          <h3 id="calendarMonth">Month Year</h3>
+          <button class="secondary" id="nextMonth" type="button">→</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="card" style="box-shadow:none">
+          <div class="card-heading"><h2 id="selectedDateTitle">Selected date</h2><button class="link-button" id="todayButton" type="button">Today</button></div>
+          <div id="selectedDayEvents"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section-title">Add an Event</h2>
+        <form id="eventForm">
+          <label for="eventTitle">Event title</label>
+          <input id="eventTitle" maxlength="100" required placeholder="Our anniversary">
+          <label for="eventDate">Date</label>
+          <input id="eventDate" type="date" required>
+          <label for="eventTime">Time (optional)</label>
+          <input id="eventTime" type="time">
+          <label for="eventNote">Notes (optional)</label>
+          <textarea id="eventNote" maxlength="500" placeholder="Plans, reminders or details..."></textarea>
+          <label for="reminderMinutes">Reminder</label>
+          <select id="reminderMinutes">
+            <option value="0">No reminder</option>
+            <option value="5">5 minutes before</option>
+            <option value="15">15 minutes before</option>
+            <option value="30">30 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+          <button class="primary" type="submit">Save Event ♡</button>
+          <button class="secondary" id="enableNotifications" type="button">Enable browser notifications</button>
+          <p class="muted">Reminders are checked while the app is open. Background reminders need additional notification services.</p>
+        </form>
+      </div>
+      <div class="card"><h2 class="section-title">All Upcoming Events</h2><div id="allEvents"></div></div>
+    </section>
+
+    <!-- WALLET -->
+    <section class="page" id="page-wallet">
+      <div class="card wallet-card">
+        <p class="eyebrow">H&amp;E WALLET</p><h2 class="section-title">Your Wallet</h2>
+        <p class="muted">Kenyan shillings (KSh)</p>
+        <div class="wallet-balance"><span>Available balance</span><strong id="walletBalance">KSh 0.00</strong></div>
+        <div class="wallet-actions"><button class="primary" id="showDeposit" type="button">＋ Deposit</button><button class="secondary" id="showWithdraw" type="button">↗ Withdraw</button></div>
+        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals only change a local demo balance. No real money is moved, no M-PESA request is sent, and the phone number is not verified. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
+      </div>
+      <div class="card hidden" id="walletActionCard"><h3 id="walletActionTitle">Deposit</h3><form id="walletForm"><input type="hidden" id="walletAction" value="deposit"><label for="walletAmount">Amount (KSh)</label><input id="walletAmount" type="number" min="1" step="0.01" required placeholder="500"><label for="walletPin">Wallet PIN</label><input id="walletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Enter wallet PIN" required><button class="primary" type="submit" id="walletSubmit">Confirm deposit</button><button class="secondary" id="cancelWalletAction" type="button">Cancel</button></form></div>
+      <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">This device</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="page" id="page-settings">
+      <div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
+        <div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
+        <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number (M-PESA)</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
+      </div>
+      <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
+        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on supported device/browser integration and is not active in this HTML prototype.</p></div><span class="pill">Not available here</span></div>
+        <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
+        <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
+      </div>
+      <div class="card"><h2 class="section-title">Account</h2><p class="muted">This standalone file stores profile and demo wallet data in this browser only. The phone number is not verified by SMS, and data does not sync across phones. Do not use this prototype for real funds.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
+    </section>
+  </main>
+</div>
+
+<nav class="bottom-nav" aria-label="Mobile navigation">
+  <button class="active" data-page="home"><span>⌂</span>Home</button>
+  <button data-page="gallery"><span>▧</span>Gallery</button>
+  <button data-page="messages"><span>♡</span>Messages</button>
+  <button data-page="calendar"><span>▦</span>Calendar</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="modal" id="mediaModal" role="dialog" aria-modal="true" aria-label="View media">
+  <button class="modal-close" id="closeModal" aria-label="Close viewer">×</button>
+  <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const STORAGE_KEY = "he-little-world-v1";
+const MEDIA_KEY = "he-little-world-media-v1";
+const EVENT_KEY = "he-little-world-events-v1";
+
+let state = {
+  chats: [],
+  profile: {you:"",email:"",phone:"",photo:""},
+  wallet: {balance:0,pin:"",transactions:[]},
+  contributions: []
+};
+let mediaItems = [];
+let events = [];
+let selectMode = false;
+let selectedMedia = new Set();
+let mediaFilter = "image";
+let mediaDBPromise = null;
+const mediaURLCache = new Map();
+
+const now = new Date();
+let calendarYear = now.getFullYear();
+let calendarMonth = now.getMonth();
+let selectedDate = dateString(now);
+
+function dateString(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+function escapeHTML(value="") {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[c]);
+}
+function loadData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if(saved) state = {
+      ...state,...saved,
+      profile:{...state.profile,...(saved.profile||{})},
+      wallet:{...state.wallet,...(saved.wallet||{})},
+      chats:Array.isArray(saved.chats)?saved.chats:[],
+      contributions:Array.isArray(saved.contributions)?saved.contributions:[]
+    };
+  } catch(error) { console.warn(error); }
+
+  try {
+    mediaItems = JSON.parse(localStorage.getItem(MEDIA_KEY) || "[]");
+    if(!Array.isArray(mediaItems)) mediaItems = [];
+  } catch { mediaItems = []; }
+
+  try {
+    events = JSON.parse(localStorage.getItem(EVENT_KEY) || "[]");
+    if(!Array.isArray(events)) events = [];
+  } catch { events = []; }
+}
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    return true;
+  } catch {
+    toast("Device storage is full.",true);
+    return false;
+  }
+}
+function openMediaDB() {
+  if(mediaDBPromise) return mediaDBPromise;
+  mediaDBPromise = new Promise((resolve,reject)=>{
+    if(!window.indexedDB) return reject(new Error("IndexedDB is not supported in this browser."));
+    const request=indexedDB.open("he-little-world-media-db",1);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains("items")) db.createObjectStore("items",{keyPath:"id"});
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error("Could not open media storage."));
+  });
+  return mediaDBPromise;
+}
+function mediaSource(item) {
+  if(item.blob instanceof Blob) {
+    if(!mediaURLCache.has(item.id)) mediaURLCache.set(item.id,URL.createObjectURL(item.blob));
+    return mediaURLCache.get(item.id);
+  }
+  return item.data || "";
+}
+async function loadMediaFromDB() {
+  try {
+    const db=await openMediaDB();
+    const stored=await new Promise((resolve,reject)=>{
+      const tx=db.transaction("items","readonly");
+      const req=tx.objectStore("items").getAll();
+      req.onsuccess=()=>resolve(req.result||[]);
+      req.onerror=()=>reject(req.error);
+    });
+    if(stored.length) {
+      mediaItems=stored;
+    } else if(mediaItems.length) {
+      const migrated=mediaItems.map(item=>{
+        if(item.data && !item.blob) {
+          try {
+            const parts=item.data.split(",");
+            const mime=(parts[0].match(/data:([^;]+)/)||[])[1]||"application/octet-stream";
+            const raw=atob(parts[1]||"");
+            const bytes=new Uint8Array(raw.length);
+            for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+            return {...item,blob:new Blob([bytes],{type:mime}),data:""};
+          } catch { return item; }
+        }
+        return item;
+      });
+      const tx=db.transaction("items","readwrite");
+      migrated.forEach(item=>tx.objectStore("items").put(item));
+      await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+      mediaItems=migrated;
+      try { localStorage.removeItem(MEDIA_KEY); } catch {}
+    }
+  } catch(error) {
+    console.warn("IndexedDB gallery storage unavailable:",error);
+    toast("Gallery storage is unavailable in this browser. Try opening the app in a normal browser tab.",true);
+  }
+  renderMedia();
+}
+async function saveMedia() {
+  try {
+    const db=await openMediaDB();
+    const tx=db.transaction("items","readwrite");
+    const store=tx.objectStore("items");
+    store.clear();
+    mediaItems.forEach(item=>store.put(item));
+    await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});
+    return true;
+  } catch(error) {
+    console.error(error);
+    toast("The browser's available storage is full or unavailable. Free device space or use a browser with more storage.",true);
+    return false;
+  }
+}
+function saveEvents() {
+  try {
+    localStorage.setItem(EVENT_KEY,JSON.stringify(events));
+    return true;
+  } catch {
+    toast("Could not save this event.",true);
+    return false;
+  }
+}
+function toast(message,error=false) {
+  const box=$("toast");
+  box.textContent=message;
+  box.style.background=error?"#8c2438":"#310b14";
+  box.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
+}
+function showPage(page) {
+  document.querySelectorAll(".page").forEach(section =>
+    section.classList.toggle("active",section.id==="page-"+page)
+  );
+  document.querySelectorAll("[data-page]").forEach(button =>
+    button.classList.toggle("active",button.dataset.page===page)
+  );
+  window.scrollTo({top:0,behavior:"smooth"});
+  if(page==="calendar") renderCalendar();
+  if(page==="gallery") { closeGalleryFolder(); renderMedia(); }
+  if(page==="wallet") renderWallet();
+}
+document.querySelectorAll("[data-page]").forEach(button =>
+  button.addEventListener("click",()=>showPage(button.dataset.page))
+);
+document.querySelectorAll("[data-go]").forEach(button =>
+  button.addEventListener("click",()=>showPage(button.dataset.go))
+);
+
+/* GALLERY */
+function renderHomeMedia() {
+  const items=[...mediaItems].sort((a,b)=>b.createdAt-a.createdAt).slice(0,4);
+  $("homeMedia").innerHTML=items.length ? items.map(item => `
+    <article class="media-card">
+      ${item.type==="image"
+        ? `<img class="media-preview" src="${mediaSource(item)}" alt="${escapeHTML(item.title)}" data-view-media="${escapeHTML(item.id)}">`
+        : `<video class="media-preview" src="${mediaSource(item)}" controls preload="metadata"></video>`}
+      <div class="media-info"><p><strong>${escapeHTML(item.title)}</strong></p></div>
+    </article>`).join("")
+    : '<p class="muted">Your gallery is waiting for its first photo or video. ♡</p>';
+
+  $("photoCount").textContent=mediaItems.filter(item=>item.type==="image").length;
+  $("videoCount").textContent=mediaItems.filter(item=>item.type==="video").length;
+}
+function renderMedia() {
+  const sort=$("mediaSort").value;
+  const items=mediaItems.filter(item=>item.type===mediaFilter);
+  if(sort==="newest") items.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(sort==="oldest") items.sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  if(sort==="name") items.sort((a,b)=>(a.title||"").localeCompare(b.title||""));
+  $("mediaTotal").textContent=`${items.length} ${mediaFilter==="image"?"photo":"video"}${items.length===1?"":"s"}`;
+  $("collectionTitle").textContent=mediaFilter==="image"?"Photos":"Videos";
+  $("folderPhotoCount").textContent=`${mediaItems.filter(x=>x.type==="image").length} items`;
+  $("folderVideoCount").textContent=`${mediaItems.filter(x=>x.type==="video").length} items`;
+  $("mediaCollection").innerHTML=items.map(item=>`
+    <article class="media-card ${selectedMedia.has(item.id)?"selected":""}">
+      ${item.type==="image"?`<img class="media-preview" src="${mediaSource(item)}" alt="${escapeHTML(item.title||item.name||"Photo")}" data-view-media="${escapeHTML(item.id)}">`:`<video class="media-preview" src="${mediaSource(item)}" preload="metadata" playsinline data-view-media="${escapeHTML(item.id)}"></video>`}
+      <div class="media-info"><p><strong>${escapeHTML(item.title||item.name||(item.type==="image"?"Photo":"Video"))}</strong></p><p class="muted">${escapeHTML(item.date||"")}</p><button class="link-button" data-view-media="${escapeHTML(item.id)}" type="button">Open</button><button class="link-button" data-delete-media="${escapeHTML(item.id)}" type="button">Delete</button>${selectMode?`<label><input type="checkbox" data-select-media="${escapeHTML(item.id)}" ${selectedMedia.has(item.id)?"checked":""} style="width:auto"> Select</label>`:""}</div>
+    </article>`).join("")||`<div class="empty-gallery"><p class="muted">No ${mediaFilter==="image"?"photos":"videos"}.</p><button class="primary" id="emptyAdd" type="button">＋ Add ${mediaFilter==="image"?"Photos":"Videos"}</button></div>`;
+  $("deleteSelected").classList.toggle("hidden",!selectMode);
+  $("toggleSelect").textContent=selectMode?"Cancel selection":"Select items";
+  renderHomeMedia();
+}
+function openGalleryFolder(type) {
+  mediaFilter=type;
+  selectedMedia.clear(); selectMode=false;
+  $("galleryFolders").classList.add("hidden");
+  $("galleryContents").classList.remove("hidden");
+  $("galleryMenu").classList.add("hidden");
+  $("sortTools").classList.add("hidden");
+  $("selectTools").classList.add("hidden");
+  renderMedia();
+}
+function closeGalleryFolder() {
+  $("galleryContents").classList.add("hidden");
+  $("galleryFolders").classList.remove("hidden");
+  $("galleryMenu").classList.add("hidden");
+}
+$("openPhotos").addEventListener("click",()=>openGalleryFolder("image"));
+$("openVideos").addEventListener("click",()=>openGalleryFolder("video"));
+$("backFolders").addEventListener("click",closeGalleryFolder);
+$("mediaSort").addEventListener("change",renderMedia);
+$("galleryMenuButton").addEventListener("click",()=>$("galleryMenu").classList.toggle("hidden"));
+$("menuAdd").addEventListener("click",()=>{ $("galleryMenu").classList.add("hidden"); (mediaFilter==="image"?$("photoFiles"):$("videoFiles")).click(); });
+$("menuSort").addEventListener("click",()=>{ $("sortTools").classList.toggle("hidden"); $("galleryMenu").classList.add("hidden"); });
+$("menuSelect").addEventListener("click",()=>{ selectMode=true; selectedMedia.clear(); $("selectTools").classList.remove("hidden"); $("galleryMenu").classList.add("hidden"); renderMedia(); });
+$("toggleSelect").addEventListener("click",()=>{selectMode=false;selectedMedia.clear();$("selectTools").classList.add("hidden");renderMedia();});
+$("deleteSelected").addEventListener("click",async()=>{if(!selectedMedia.size)return toast("Select at least one file first.",true);if(!confirm(`Delete ${selectedMedia.size} selected file(s) from this device?`))return;for(const item of mediaItems)if(selectedMedia.has(item.id)&&mediaURLCache.has(item.id)){URL.revokeObjectURL(mediaURLCache.get(item.id));mediaURLCache.delete(item.id);}mediaItems=mediaItems.filter(item=>!selectedMedia.has(item.id));selectedMedia.clear();if(await saveMedia()){renderMedia();toast("Selected files deleted.");}});
+document.addEventListener("click",event=>{if(event.target.id==="emptyAdd")(mediaFilter==="image"?$("photoFiles"):$("videoFiles")).click();if(!event.target.closest(".menu-wrap"))$("galleryMenu")?.classList.add("hidden");});
+async function addGalleryFiles(input, expectedType) {
+  const files=[...input.files];
+  input.value="";
+  if(!files.length) return;
+  const valid=files.filter(file=>expectedType==="image"?file.type.startsWith("image/"):file.type.startsWith("video/"));
+  if(!valid.length) return toast(`Choose ${expectedType==="image"?"photo":"video"} files only.`,true);
+  const previous=[...mediaItems];
+  const added=valid.map(file=>{
+    const fileDate=new Date(file.lastModified||Date.now());
+    return {
+      id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),
+      title:file.name,
+      name:file.name,
+      date:dateString(fileDate),
+      note:"",
+      type:expectedType,
+      blob:file,
+      data:"",
+      createdAt:file.lastModified||Date.now(),
+      size:file.size,
+      mimeType:file.type
+    };
+  });
+  mediaItems.push(...added);
+  if(await saveMedia()) {
+    mediaFilter=expectedType;
+    renderMedia();
+    toast(`${added.length} ${expectedType==="image"?"photo":"video"}${added.length===1?"":"s"} saved. ♡`);
+  } else mediaItems=previous;
+}
+$("photoFiles").addEventListener("change",()=>addGalleryFiles($("photoFiles"),"image"));
+$("videoFiles").addEventListener("change",()=>addGalleryFiles($("videoFiles"),"video"));
+$("mediaCollection").addEventListener("change",event=>{
+  const checkbox=event.target.closest("[data-select-media]");
+  if(!checkbox) return;
+  if(checkbox.checked) selectedMedia.add(checkbox.dataset.selectMedia);
+  else selectedMedia.delete(checkbox.dataset.selectMedia);
+  renderMedia();
+});
+function openViewer(item) {
+  if(!item) return;
+  $("modalContent").innerHTML=item.type==="video"
+    ? `<video src="${mediaSource(item)}" controls autoplay playsinline></video><p>${escapeHTML(item.title)}</p>`
+    : `<img src="${mediaSource(item)}" alt="${escapeHTML(item.title)}"><p>${escapeHTML(item.title)}</p>`;
+  $("mediaModal").classList.add("open");
+}
+function closeViewer() {
+  $("mediaModal").classList.remove("open");
+  $("modalContent").innerHTML="";
+}
+$("closeModal").addEventListener("click",closeViewer);
+$("mediaModal").addEventListener("click",event=>{
+  if(event.target===$("mediaModal")) closeViewer();
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape") closeViewer();
+});
+document.addEventListener("click",event=>{
+  const view=event.target.closest("[data-view-media]");
+  if(view) openViewer(mediaItems.find(item=>item.id===view.dataset.viewMedia));
+
+  const remove=event.target.closest("[data-delete-media]");
+  if(remove) {
+    if(!confirm("Delete this file from this device?")) return;
+    const deleted=mediaItems.find(item=>item.id===remove.dataset.deleteMedia);
+    if(deleted && mediaURLCache.has(deleted.id)) { URL.revokeObjectURL(mediaURLCache.get(deleted.id)); mediaURLCache.delete(deleted.id); }
+    mediaItems=mediaItems.filter(item=>item.id!==remove.dataset.deleteMedia);
+    selectedMedia.delete(remove.dataset.deleteMedia);
+    saveMedia().then(ok=>{ if(ok) { renderMedia(); toast("File deleted."); } });
+  }
+});
+
+/* PERSONAL PROFILE */
+$("profileForm").addEventListener("submit",event=>{event.preventDefault();state.profile={...state.profile,you:$("yourName").value.trim(),phone:$("profilePhone").value.trim(),email:$("profileEmail").value.trim()};if(saveState())toast("Profile saved on this device.");});
+function renderProfile(){$("yourName").value=state.profile.you||"";$("profilePhone").value=state.profile.phone||"";$("profileEmail").value=state.profile.email||"";if(state.profile.photo){$("profilePhotoPreview").src=state.profile.photo;$("profilePhotoPreview").hidden=false;$("profilePhotoPlaceholder").hidden=true;}else{$("profilePhotoPreview").hidden=true;$("profilePhotoPlaceholder").hidden=false;}}
+$("profilePhotoInput").addEventListener("change",()=>{const file=$("profilePhotoInput").files[0];if(!file)return;if(!file.type.startsWith("image/"))return toast("Choose an image file.",true);const reader=new FileReader();reader.onload=()=>{state.profile.photo=String(reader.result);renderProfile();if(saveState())toast("Profile picture saved on this device.");};reader.readAsDataURL(file);});
+$("pinForm").addEventListener("submit",event=>{event.preventDefault();const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);if(pin!==confirmPin)return toast("PINs do not match.",true);state.wallet.pin=pin;if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}});
+$("logoutButton").addEventListener("click",()=>{
+  if(!confirm("Log out of H&E on this device? Your saved content will remain on this device.")) return;
+  location.reload();
+});
+
+/* MESSAGES — DEVICE ONLY */
+
+/* H&E CHAT — LOCAL MESSAGING */
+let pendingChatFile = null;
+let chatRecorder = null;
+let chatStream = null;
+let chatChunks = [];
+
+function chatId() {
+  return crypto.randomUUID
+    ? crypto.randomUUID()
+    : Date.now() + "-" + Math.random().toString(36).slice(2);
+}
+
+function scrollChatToBottom() {
+  const list = $("chatList");
+  list.scrollTop = list.scrollHeight;
+}
+
+function saveChatFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderChats() {
+  const list = $("chatList");
+
+  if (!state.chats.length) {
+    list.innerHTML = `
+      <div class="chat-date-divider">Your story starts here ♡</div>
+      <p class="muted" style="text-align:center">
+        Send your first message from the composer below.
+      </p>`;
+    return;
+  }
+
+  list.innerHTML = state.chats.map(chat => {
+    const isMine = chat.mine !== false;
+    const name = chat.name || "You";
+    const time = chat.date || "";
+    let media = "";
+
+    if (chat.attachment && chat.attachment.data) {
+      media = chat.attachment.type === "video"
+        ? `<video class="chat-media" controls playsinline preload="metadata"
+             src="${chat.attachment.data}"></video>`
+        : `<img class="chat-media" src="${chat.attachment.data}"
+             alt="Shared photo">`;
+    }
+
+    if (chat.voice) {
+      media += `<audio class="chat-audio" controls preload="metadata"
+                  src="${chat.voice}"></audio>`;
+    }
+
+    return `
+      <article class="chat-bubble ${isMine ? "mine" : "theirs"}">
+        ${!isMine ? `<div class="chat-sender">${escapeHTML(name)}</div>` : ""}
+        ${chat.message
+          ? `<p class="chat-text">${escapeHTML(chat.message)}</p>` : ""}
+        ${media}
+        <div class="chat-time">
+          <span>${escapeHTML(time)}</span>
+          ${isMine ? '<span class="chat-tick">✓</span>' : ""}
+        </div>
+        <div class="chat-message-actions">
+          <button class="chat-delete" type="button"
+            data-delete-chat="${escapeHTML(chat.id)}">Delete</button>
+        </div>
+      </article>`;
+  }).join("");
+
+  scrollChatToBottom();
+}
+
+$("chatAttachment").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/") &&
+      !file.type.startsWith("video/")) {
+    toast("Choose a photo or video.", true);
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    pendingChatFile = {
+      name: file.name,
+      type: file.type.startsWith("video/") ? "video" : "image",
+      data: await saveChatFile(file)
+    };
+
+    $("chatPreviewContent").innerHTML =
+      pendingChatFile.type === "video"
+        ? `<video controls src="${pendingChatFile.data}"></video>`
+        : `<img src="${pendingChatFile.data}" alt="Attachment preview">`;
+
+    $("chatAttachmentPreview").classList.remove("hidden");
+  } catch (error) {
+    console.error(error);
+    toast("Could not load this attachment.", true);
+  }
+});
+
+$("cancelChatAttachment").addEventListener("click", () => {
+  pendingChatFile = null;
+  $("chatAttachment").value = "";
+  $("chatPreviewContent").innerHTML = "";
+  $("chatAttachmentPreview").classList.add("hidden");
+});
+
+$("chatForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const message = $("chatMessage").value.trim();
+  if (!message && !pendingChatFile) return;
+
+  const attachment = pendingChatFile;
+  const chat = {
+    id: chatId(),
+    name: state.profile.you || "You",
+    message,
+    date: new Date().toLocaleTimeString([], {
+      hour: "2-digit", minute: "2-digit"
+    }),
+    createdAt: Date.now(),
+    mine: true,
+    attachment,
+    voice: null
+  };
+
+  state.chats.push(chat);
+
+  if (saveState()) {
+    $("chatMessage").value = "";
+    $("chatAttachment").value = "";
+    $("chatPreviewContent").innerHTML = "";
+    $("chatAttachmentPreview").classList.add("hidden");
+    pendingChatFile = null;
+    renderChats();
+  } else {
+    state.chats.pop();
+  }
+});
+
+$("chatList").addEventListener("click", event => {
+  const button = event.target.closest("[data-delete-chat]");
+  if (!button) return;
+
+  if (!confirm("Delete this message from this device?")) return;
+
+  const previous = state.chats;
+  state.chats = previous.filter(chat => chat.id !== button.dataset.deleteChat);
+
+  if (saveState()) {
+    renderChats();
+    toast("Message deleted.");
+  } else {
+    state.chats = previous;
+  }
+});
+
+$("chatMessage").addEventListener("input", event => {
+  event.target.style.height = "auto";
+  event.target.style.height =
+    Math.min(event.target.scrollHeight, 120) + "px";
+});
+
+$("chatInfoButton").addEventListener("click", () => {
+  alert(
+    "H&E — Our Little World\n\n" +
+    "Messages and attachments are stored locally in this browser. " +
+    "They do not sync to your partner's device in this version."
+  );
+});
+
+/* VOICE NOTES */
+$("recordVoice").addEventListener("click", async () => {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    toast("Voice recording is not supported by this browser.", true);
+    return;
+  }
+
+  try {
+    chatStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chatChunks = [];
+    chatRecorder = new MediaRecorder(chatStream);
+
+    chatRecorder.addEventListener("dataavailable", event => {
+      if (event.data.size) chatChunks.push(event.data);
+    });
+
+    chatRecorder.addEventListener("stop", async () => {
+      try {
+        const blob = new Blob(chatChunks, {
+          type: chatRecorder.mimeType || "audio/webm"
+        });
+
+        if (blob.size > 500000) {
+          toast("Voice note is too large for local storage.", true);
+          return;
+        }
+
+        const voice = await saveChatFile(blob);
+        state.chats.push({
+          id: chatId(),
+          name: state.profile.you || "You",
+          message: "",
+          date: new Date().toLocaleTimeString([], {
+            hour: "2-digit", minute: "2-digit"
+          }),
+          createdAt: Date.now(),
+          mine: true,
+          attachment: null,
+          voice
+        });
+
+        if (saveState()) {
+          renderChats();
+          toast("Voice note saved ♡");
+        }
+      } catch (error) {
+        console.error(error);
+        toast("Could not save this voice note.", true);
+      } finally {
+        chatStream?.getTracks().forEach(track => track.stop());
+        chatStream = null;
+        chatRecorder = null;
+        $("recordVoice").textContent = "🎙";
+        $("recordingPanel").classList.add("hidden");
+      }
+    });
+
+    chatRecorder.start();
+    $("recordVoice").classList.add("hidden");
+    $("recordingPanel").classList.remove("hidden");
+    $("recordingStatus").textContent = "Recording voice note…";
+  } catch (error) {
+    console.error(error);
+    toast("Allow microphone access to record a voice note.", true);
+    chatStream?.getTracks().forEach(track => track.stop());
+    chatStream = null;
+  }
+});
+
+$("stopVoice").addEventListener("click", () => {
+  if (chatRecorder && chatRecorder.state !== "inactive") {
+    chatRecorder.stop();
+  }
+});
+
+$("cancelVoice").addEventListener("click", () => {
+  if (chatRecorder && chatRecorder.state !== "inactive") {
+    chatRecorder.ondataavailable = null;
+    chatRecorder.stop();
+  }
+  chatChunks = [];
+  $("recordingPanel").classList.add("hidden");
+  $("recordVoice").classList.remove("hidden");
+  chatStream?.getTracks().forEach(track => track.stop());
+  chatStream = null;
+  chatRecorder = null;
+});
+
+
+/* WALLET — LOCAL DEMO ONLY; NO REAL MONEY MOVES */
+function walletMoney(amount){return "KSh "+Number(amount||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function renderWallet(){const balance=Number(state.wallet?.balance||0);$("walletBalance").textContent=walletMoney(balance);$("homeWalletBalance").textContent=walletMoney(balance);const txs=state.wallet?.transactions||[];$("walletHistory").innerHTML=txs.length?[...txs].reverse().map(t=>`<div class="item"><strong>${t.type==="deposit"?"＋ Deposit":"↗ Withdrawal"} · ${walletMoney(t.amount)}</strong><p class="muted">${escapeHTML(t.date||"")}</p><span class="pill">Demo record only</span></div>`).join(""):'<p class="muted">No wallet activity yet.</p>';}
+function openWalletAction(type){$("walletAction").value=type;$("walletActionTitle").textContent=type==="deposit"?"Deposit to Wallet":"Withdraw from Wallet";$("walletSubmit").textContent=type==="deposit"?"Confirm deposit":"Confirm withdrawal";$("walletActionCard").classList.remove("hidden");$("walletAmount").value="";$("walletPin").value="";}
+$("showDeposit").addEventListener("click",()=>openWalletAction("deposit"));$("showWithdraw").addEventListener("click",()=>openWalletAction("withdraw"));$("cancelWalletAction").addEventListener("click",()=>$("walletActionCard").classList.add("hidden"));
+$("walletForm").addEventListener("submit",event=>{event.preventDefault();const type=$("walletAction").value,amount=Number($("walletAmount").value),pin=$("walletPin").value;if(!state.wallet.pin)return toast("Set a Wallet PIN in Settings first.",true);if(pin!==state.wallet.pin)return toast("Incorrect Wallet PIN.",true);if(!Number.isFinite(amount)||amount<=0)return toast("Enter a valid amount.",true);if(type==="withdraw"&&amount>Number(state.wallet.balance||0))return toast("Insufficient demo wallet balance.",true);state.wallet.balance=Number(state.wallet.balance||0)+(type==="deposit"?amount:-amount);state.wallet.transactions=state.wallet.transactions||[];state.wallet.transactions.push({type,amount,date:new Date().toLocaleString()});if(saveState()){event.target.reset();$("walletActionCard").classList.add("hidden");renderWallet();toast(type==="deposit"?"Demo deposit recorded; no real money moved.":"Demo withdrawal recorded; no real money moved.");}});
+function renderGoal(){renderWallet();}
+
+/* CALENDAR AND IN-APP REMINDERS */
+function eventsOnDate(date) {
+  return events.filter(item=>item.date===date);
+}
+function renderCalendar() {
+  const first=new Date(calendarYear,calendarMonth,1);
+  const days=new Date(calendarYear,calendarMonth+1,0).getDate();
+  const start=first.getDay();
+  const previousDays=new Date(calendarYear,calendarMonth,0).getDate();
+
+  $("calendarMonth").textContent=first.toLocaleDateString("en",{month:"long",year:"numeric"});
+  let html=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+    .map(day=>`<div class="calendar-day-name">${day}</div>`).join("");
+
+  for(let index=0;index<42;index++) {
+    let date,outside=false;
+    if(index<start) {
+      date=new Date(calendarYear,calendarMonth-1,previousDays-start+index+1);
+      outside=true;
+    } else if(index>=start+days) {
+      date=new Date(calendarYear,calendarMonth+1,index-start-days+1);
+      outside=true;
+    } else {
+      date=new Date(calendarYear,calendarMonth,index-start+1);
+    }
+
+    const value=dateString(date);
+    const dayEvents=eventsOnDate(value);
+
+    html+=`<button type="button" class="calendar-day${outside?" outside":""}${value===dateString(new Date())?" today":""}${value===selectedDate?" selected":""}${dayEvents.length?" has-event":""}" data-select-date="${value}">
+      <span class="day-number">${date.getDate()}</span>
+      ${dayEvents.length?`<span class="event-count">${dayEvents.length} event${dayEvents.length===1?"":"s"}</span>`:""}
+    </button>`;
+  }
+
+  $("calendarGrid").innerHTML=html;
+  $("selectedDateTitle").textContent=new Date(selectedDate+"T12:00:00").toLocaleDateString("en",{
+    weekday:"long",day:"numeric",month:"long",year:"numeric"
+  });
+  $("eventDate").value=selectedDate;
+  renderSelectedEvents();
+  renderAllEvents();
+  renderHomeEvents();
+}
+$("calendarGrid").addEventListener("click",event=>{
+  const button=event.target.closest("[data-select-date]");
+  if(!button) return;
+  selectedDate=button.dataset.selectDate;
+  const date=new Date(selectedDate+"T12:00:00");
+  calendarYear=date.getFullYear();
+  calendarMonth=date.getMonth();
+  renderCalendar();
+});
+$("previousMonth").addEventListener("click",()=>{
+  calendarMonth--;
+  if(calendarMonth<0) { calendarMonth=11;calendarYear--; }
+  renderCalendar();
+});
+$("nextMonth").addEventListener("click",()=>{
+  calendarMonth++;
+  if(calendarMonth>11) { calendarMonth=0;calendarYear++; }
+  renderCalendar();
+});
+$("todayButton").addEventListener("click",()=>{
+  const date=new Date();
+  selectedDate=dateString(date);
+  calendarYear=date.getFullYear();
+  calendarMonth=date.getMonth();
+  renderCalendar();
+});
+$("eventForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  const title=$("eventTitle").value.trim();
+  const date=$("eventDate").value;
+  if(!title||!date) return toast("Enter an event title and date.",true);
+
+  events.push({
+    id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),
+    title,date,
+    time:$("eventTime").value,
+    note:$("eventNote").value.trim(),
+    reminder:Number($("reminderMinutes").value||0),
+    reminded:false
+  });
+
+  if(saveEvents()) {
+    selectedDate=date;
+    const dateObj=new Date(date+"T12:00:00");
+    calendarYear=dateObj.getFullYear();
+    calendarMonth=dateObj.getMonth();
+    event.target.reset();
+    renderCalendar();
+    toast("Event saved on this device. ♡");
+  }
+});
+function eventMarkup(item) {
+  return `<div class="item">
+    <span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span>
+    <h3>${escapeHTML(item.title)}</h3>
+    ${item.note?`<p class="muted">${escapeHTML(item.note)}</p>`:""}
+    ${item.reminder?`<small class="muted">Reminder set</small><br>`:""}
+    <button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>
+  </div>`;
+}
+function renderSelectedEvents() {
+  const list=eventsOnDate(selectedDate).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+  $("selectedDayEvents").innerHTML=list.length
+    ?list.map(eventMarkup).join("")
+    :'<p class="muted">Nothing planned for this day yet.</p>';
+}
+function renderAllEvents() {
+  const todayValue=dateString(new Date());
+  const list=events.filter(item=>item.date>=todayValue)
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
+  $("allEvents").innerHTML=list.length
+    ?list.map(eventMarkup).join("")
+    :'<p class="muted">No upcoming events. Add a date to look forward to. ♡</p>';
+}
+function renderHomeEvents() {
+  const todayValue=dateString(new Date());
+  const list=events.filter(item=>item.date>=todayValue)
+    .sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
+  $("homeEvents").innerHTML=list.length
+    ?list.map(item=>`<div class="item"><span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span><strong>${escapeHTML(item.title)}</strong></div>`).join("")
+    :'<p class="muted">Your next special moment can go here.</p>';
+}
+document.addEventListener("click",event=>{
+  const button=event.target.closest("[data-delete-event]");
+  if(!button) return;
+  if(!confirm("Remove this calendar event?")) return;
+  events=events.filter(item=>item.id!==button.dataset.deleteEvent);
+  if(saveEvents()) {
+    renderCalendar();
+    toast("Event removed.");
+  }
+});
+$("enableNotifications").addEventListener("click",async()=>{
+  if(!("Notification" in window)) return toast("This browser does not support notifications.",true);
+  const permission=await Notification.requestPermission();
+  toast(permission==="granted"?"Notifications enabled while this app is open.":"Notification permission was not granted.",permission!=="granted");
+});
+function checkReminders() {
+  if(!("Notification" in window)||Notification.permission!=="granted") return;
+  const now=Date.now();
+  let changed=false;
+
+  for(const item of events) {
+    if(!item.reminder||!item.time||item.reminded) continue;
+    const reminderAt=new Date(item.date+"T"+item.time).getTime()-item.reminder*60000;
+    if(now>=reminderAt&&now<reminderAt+60000) {
+      new Notification("H&E reminder",{body:item.title+" is coming up ♡"});
+      item.reminded=true;
+      changed=true;
+    }
+  }
+  if(changed) saveEvents();
+}
+setInterval(checkReminders,30000);
+
+/* BACKUP AND RESET */
+$("exportData").addEventListener("click",()=>{
+  const backup={state,mediaItems,events};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download="he-our-little-world-backup.json";
+  link.click();
+  URL.revokeObjectURL(url);
+  toast("Backup exported.");
+});
+$("clearData").addEventListener("click",()=>{
+  if(!confirm("This removes local profile, wallet demo records, messages, gallery items and events from this browser. Export a backup first if needed. Continue?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(MEDIA_KEY);
+  localStorage.removeItem(EVENT_KEY);
+  location.reload();
+});
+
+/* LETTER-BY-LETTER WELCOME AND ROSE PETALS */
+function startWelcome() {
+  const screen=$("welcomeScreen");
+  screen.classList.remove("initial-hidden");
+  const title=$("welcomeHE");
+  const subtitle=$("welcomeSubtitle");
+  const petals=$("rosePetals");
+
+  function revealLetters(element,text,delay) {
+    [...text].forEach((character,index)=>{
+      const span=document.createElement("span");
+      span.className="letter";
+      span.textContent=character===" "?"\u00a0":character;
+      span.style.animationDelay=(delay+index*.13)+"s";
+      element.appendChild(span);
+    });
+  }
+
+  revealLetters(title,"H&E",.3);
+  revealLetters(subtitle,"Our Little World",.9);
+
+  const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(!reduced) {
+    for(let i=0;i<24;i++) {
+      const petal=document.createElement("span");
+      petal.className="petal";
+      petal.textContent=i%3===0?"🌹":"❀";
+      petal.style.setProperty("--left",Math.random()*100+"%");
+      petal.style.setProperty("--size",12+Math.random()*13+"px");
+      petal.style.setProperty("--duration",5+Math.random()*5+"s");
+      petal.style.setProperty("--delay",1.8+Math.random()*3+"s");
+      petals.appendChild(petal);
+    }
+  }
+
+  setTimeout(()=>{
+    screen.classList.add("leaving");
+    setTimeout(()=>screen.remove(),1100);
+  },reduced?1800:6500);
+}
+
+loadData();
+renderProfile();
+renderMedia();
+loadMediaFromDB();
+renderChats();
+renderGoal();
+renderWallet();
+renderCalendar();
+$("loginForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  const name=$("loginName").value.trim(),phone=$("loginPhone").value.trim(),email=$("loginEmail").value.trim();
+  const normalizedPhone=phone.replace(/[\s()-]/g,"");
+  if(!name||!email||! /^(?:\+?254|0)[17][0-9]{8}$/.test(normalizedPhone)) { toast("Enter a valid Kenyan mobile number, for example 0712345678 or 0112345678.",true); return; }
+  state.profile={...state.profile,you:name,phone:normalizedPhone,email};
+  saveState(); renderProfile();
+  $("loginScreen").remove();
+  startWelcome();
+});
+</script>
+</body>
+</html>
