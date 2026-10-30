@@ -173,7 +173,7 @@
     });
     if (error) throw error;
   }
-  async function enterApp(nextSession) {
+  async function enterApp(nextSession, showIntro = true) {
     const activeSession = nextSession || (await db.auth.getSession()).data.session;
     if (!activeSession || (session && session.user.id === activeSession.user.id && !document.getElementById("loginScreen"))) return;
     const previousSession = session; session = activeSession;
@@ -182,7 +182,7 @@
       const name = document.getElementById("loginName")?.value.trim() || state.profile.you || session.user.user_metadata?.display_name || "H&E";
       state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
       saveState(); renderProfile(); await ensureKeys();
-      const login = document.getElementById("loginScreen"); if (login) login.remove(); startWelcome();
+      const login = document.getElementById("loginScreen"); if (login) login.remove(); if (showIntro) startWelcome();
     } catch (error) { session = previousSession; throw error; }
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
@@ -371,14 +371,25 @@
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Mute":"Unmute";}});$("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Turn camera off":"Turn camera on";}});
   async function boot() {
     addSetupUI();
+    const loginScreen = document.getElementById("loginScreen");
+    if (loginScreen) loginScreen.style.display = "none";
     const { data, error } = await db.auth.getSession();
     if (error) throw error;
-    // Require a deliberate sign-in every time the app is opened. Remove an older
-    // persisted session locally so a previously used phone cannot silently reopen it.
     if (data.session) {
-      const { error: signOutError } = await db.auth.signOut({ scope: "local" });
-      if (signOutError) console.warn("Previous local sign-in could not be cleared", signOutError);
+      await enterApp(data.session, false);
+    } else if (loginScreen) {
+      loginScreen.style.display = "grid";
     }
   }
-  boot().catch(error => { console.error(error); const box=document.getElementById("loginFeedback"); if(box){box.textContent="Secure sign-in could not start. Refresh the page and try again.";box.hidden=false;} toast("Shared app setup failed: " + (error.message || "unknown error"), true); });
+  boot().catch(error => {
+    console.error(error);
+    const loginScreen = document.getElementById("loginScreen");
+    if (loginScreen) loginScreen.style.display = "grid";
+    const box = document.getElementById("loginFeedback");
+    if (box) {
+      box.textContent = "Secure sign-in could not start. Refresh the page and try again.";
+      box.hidden = false;
+    }
+    toast("Shared app setup failed: " + (error.message || "unknown error"), true);
+  });
 })();
