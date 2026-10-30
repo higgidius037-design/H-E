@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <link rel="manifest" href="/H-E/manifest.json">
-<link rel="icon" href="/H-E/icon-192.png">
+<link rel="icon" type="image/svg+xml" href="/H-E/icon-192.png">
   
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -521,6 +521,29 @@ textarea { min-height:90px;resize:vertical; }
 .calendar-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:15px 0; }
 .calendar-head h3 { margin:0;font-weight:normal;text-align:center; }
 .calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px; }
+/* Stable page sizing and readable calendar/wallet panels */
+.page { min-width:0; width:100%; }
+.page.active { display:block; animation:pageAppear .18s ease-out; }
+/* Keep the chat page's flex layout after the shared page visibility rules. */
+#page-messages.active { display:flex; flex-direction:column; min-height:calc(100dvh - 100px); }
+#page-messages .chat-app { min-height: min(480px, calc(100dvh - 190px)); }
+@media(max-width:650px) {
+  #page-messages.active { min-height:calc(100dvh - 160px); }
+  #page-messages .chat-app { height:calc(100dvh - 230px); min-height:420px; }
+}
+
+@keyframes pageAppear { from { opacity:.65; } to { opacity:1; } }
+.wallet-card { position:relative; isolation:isolate; overflow:visible; }
+.wallet-balance { position:relative; z-index:1; display:block; min-height:112px; overflow:visible; }
+.wallet-balance strong { display:block; position:relative; z-index:2; color:#fff; line-height:1.25; overflow-wrap:anywhere; }
+.calendar-grid { width:100%; min-width:0; align-items:stretch; }
+.calendar-day { min-width:0; min-height:54px; height:auto; }
+.calendar-day .event-count { overflow-wrap:anywhere; }
+@media(max-width:650px) {
+  .calendar-day { min-height:44px; padding:5px 1px 8px; }
+  .calendar-day .event-count { font-size:9px; }
+}
+
 .calendar-day-name { text-align:center;color:var(--muted);padding:8px 0;font-size:12px; }
 .calendar-day { min-height:62px;border:1px solid var(--line);background:#fffdfa;color:var(--ink);border-radius:8px;padding:6px 3px;text-align:center;position:relative; }
 .calendar-day.outside { opacity:.4; }
@@ -582,7 +605,6 @@ textarea { min-height:90px;resize:vertical; }
   *,*::before,*::after { animation:none!important;transition:none!important;scroll-behavior:auto!important; }
 }
 
-
 .login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#310b14,#70263b);overflow:auto}.login-card{width:min(100%,420px);padding:30px;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b55}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:32px;margin:8px 0}.login-card h2{margin-top:25px;color:var(--wine)}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-note{font-size:12px;margin-top:16px}.login-feedback{font-size:14px;margin:14px 0 0;padding:11px 13px;border-radius:9px;background:#f7e6e3;color:#651e31}.login-feedback[data-kind="wait"]{background:#fff4e4;color:#62411b}.login-feedback[data-kind="ok"]{background:#e8f5e9;color:#225b2b}
 
 /* FOLDER GALLERY, WALLET AND PROFILE */
@@ -592,12 +614,12 @@ textarea { min-height:90px;resize:vertical; }
 .folder-toolbar{display:flex;align-items:center;gap:12px}.folder-toolbar h2{flex:1;margin:0;font-size:20px}.menu-wrap{position:relative}.dots-button{font-size:25px;line-height:1;padding:8px 14px}.gallery-menu{position:absolute;z-index:30;right:0;top:calc(100% + 6px);min-width:155px;padding:6px;background:#fffaf6;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #310b1420}.gallery-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:11px 12px;color:var(--wine);border-radius:8px;cursor:pointer}.gallery-menu button:hover{background:#f4e5e7}.wallet-balance{padding:24px;border-radius:16px;background:linear-gradient(135deg,#310b14,#70263b);color:#fff;margin:18px 0}.wallet-balance span{display:block;color:#f0d8dc;font-size:13px}.wallet-balance strong{display:block;font-size:clamp(28px,5vw,40px);margin-top:8px}.wallet-actions{display:flex;gap:10px;flex-wrap:wrap}.wallet-disclaimer{margin-top:18px;font-size:12px}.profile-photo-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:18px 0}.profile-photo{width:88px;height:88px;border-radius:50%;object-fit:cover;border:2px solid var(--rose)}.profile-photo.placeholder{display:grid;place-items:center;background:#f4e5e7;color:var(--wine);font-size:34px}.upload-profile{display:inline-flex;align-items:center;padding:10px 14px;border-radius:10px;cursor:pointer}.security-row{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:16px}.security-row p{margin:6px 0}.hidden{display:none!important}
 @media(max-width:520px){.folder-toolbar{gap:8px}.folder-toolbar h2{font-size:18px}.wallet-balance{padding:20px}.security-row{flex-direction:column}}
 
-/* Launch mark sits on a pale background so the original wine and gold logo stands out. */
-#welcomeScreen { background:#f8f1ef; color:#310b14; }
-#welcomeScreen .welcome-glow { border-color:#310b141c; box-shadow:0 0 85px #310b1410; }
+/* Full-bleed burgundy launch screen; the PNG itself carries its transparent rounded corners. */
+#welcomeScreen { background:#310b14; color:#e8c58a; }
+#welcomeScreen .welcome-glow { border-color:#e8c58a22; box-shadow:0 0 85px #00000020; }
 #welcomeScreen .welcome-content { display:grid; justify-items:center; gap:14px; padding:24px; }
-#welcomeScreen .welcome-logo { display:block; width:clamp(172px,48vw,230px); height:auto; border-radius:24px; box-shadow:0 16px 42px #310b1430; animation:welcomeRise .8s ease both; }
-#welcomeScreen .welcome-subtitle { margin:0; color:#5b2432; font-family:Georgia,serif; font-size:clamp(19px,5vw,25px); font-style:italic; }
+#welcomeScreen .welcome-logo { display:block; width:clamp(172px,48vw,230px); height:auto; border:0; border-radius:0; background:transparent; box-shadow:none; animation:welcomeRise .8s ease both; }
+#welcomeScreen .welcome-subtitle { margin:0; color:#e8c58a; font-family:Georgia,serif; font-size:clamp(19px,5vw,25px); font-style:italic; }
 </style>
 </head>
 <body>
@@ -614,7 +636,7 @@ textarea { min-height:90px;resize:vertical; }
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
     <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
-    <p class="muted login-note">Sign in each time you open H&amp;E. Use your email and password, or set up a passkey in Settings for fingerprint, face unlock, or your phone PIN.</p>
+    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. You can also set up a passkey in Settings for fingerprint or face unlock.</p>
   </form>
 </section>
 
@@ -670,31 +692,15 @@ textarea { min-height:90px;resize:vertical; }
         <button class="quick" data-go="messages"><div class="icon">♡</div><strong>Messages</strong><span class="arrow">→</span></button>
         <button class="quick" data-go="calendar"><div class="icon">▦</div><strong>Our Calendar</strong><span class="arrow">→</span></button>
         <button class="quick" data-go="wallet"><div class="icon">▣</div><strong>Wallet</strong><span class="arrow">→</span></button>
-      </div>
+     </div>
 
       <div class="card">
-        <div class="card-heading"><h2>Your Private Gallery</h2></div>
-        <p class="muted">Your photos and videos stay in their own folders. Open one to view its contents.</p>
-        <div class="quick-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:0">
-          <button class="quick" type="button" data-open-gallery="image"><div class="icon">▧</div><strong>Open Photos</strong><span class="arrow">→</span></button>
-          <button class="quick" type="button" data-open-gallery="video"><div class="icon">▷</div><strong>Open Videos</strong><span class="arrow">→</span></button>
-        </div>
-      </div>
-
-      <div class="lower-grid">
-        <div class="card">
-          <div class="card-heading"><h2>Private &amp; Personal</h2></div>
-          <p class="muted">Only open the gallery when you want to see your saved moments.</p>
-          <button class="primary" data-go="gallery" type="button">Open Gallery →</button>
-        </div>
-        <div class="card">
-          <div class="card-heading"><h2>Wallet</h2><button class="link-button" data-go="wallet">View →</button></div>
-          <div class="stat">
-            <h3>Wallet balance</h3>
-            <strong id="homeWalletBalance">KSh 0.00</strong>
-            <p>Manage your wallet in Kenyan shillings.</p>
-            <button class="primary" data-go="wallet">Open Wallet →</button>
-          </div>
+        <div class="card-heading"><h2>Wallet</h2><button class="link-button" data-go="wallet">View →</button></div>
+        <div class="stat">
+          <h3>Wallet balance</h3>
+          <strong id="homeWalletBalance">KSh 0.00</strong>
+          <p>Manage your wallet in Kenyan shillings.</p>
+          <button class="primary" data-go="wallet">Open Wallet →</button>
         </div>
       </div>
 
@@ -854,7 +860,7 @@ textarea { min-height:90px;resize:vertical; }
         <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
       </div>
       <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
-        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on supported device/browser integration and is not active in this HTML prototype.</p></div><span class="pill">Not available here</span></div>
+        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on device and browser support.</p></div><span class="pill">Not available here</span></div>
         <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
         <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
       </div>
@@ -1039,16 +1045,27 @@ function toast(message,error=false) {
   toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
 }
 function showPage(page) {
-  document.querySelectorAll(".page").forEach(section =>
-    section.classList.toggle("active",section.id==="page-"+page)
-  );
-  document.querySelectorAll("[data-page]").forEach(button =>
-    button.classList.toggle("active",button.dataset.page===page)
-  );
-  window.scrollTo({top:0,behavior:"smooth"});
-  if(page==="calendar") renderCalendar();
-  if(page==="gallery") { closeGalleryFolder(); renderMedia(); }
-  if(page==="wallet") renderWallet();
+  const target = document.getElementById("page-" + page);
+  if (!target) return;
+  document.querySelectorAll(".page").forEach(section => {
+    const active = section === target;
+    section.classList.toggle("active", active);
+    section.setAttribute("aria-hidden", active ? "false" : "true");
+  });
+  document.querySelectorAll("[data-page]").forEach(button => {
+    const active = button.dataset.page === page;
+    button.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  if (page === "calendar") renderCalendar();
+  if (page === "gallery") { closeGalleryFolder(); renderMedia(); }
+  if (page === "wallet") renderWallet();
+  if (page === "messages") renderChats();
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    target.classList.add("page-ready");
+  });
 }
 document.querySelectorAll("[data-page]").forEach(button =>
   button.addEventListener("click",()=>showPage(button.dataset.page))
@@ -1173,8 +1190,6 @@ $("mediaCollection").addEventListener("click",async event=>{
 $("closeModal").addEventListener("click",()=>$("mediaModal").classList.remove("open"));
 $("mediaModal").addEventListener("click",event=>{if(event.target.id==="mediaModal")$("mediaModal").classList.remove("open");});
 document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
-document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
-document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
 
 /* PROFILE */
 function renderProfile() {
@@ -1211,10 +1226,6 @@ $("pinForm").addEventListener("submit",event=>{
   if(pin!==confirmPin)return toast("PINs do not match.",true);
   state.wallet.pin=pin;
   if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
-});
-$("logoutButton").addEventListener("click",()=>{
-  if(!confirm("Log out of H&E on this device? Your saved content will remain on this device.")) return;
-  location.reload();
 });
 
 /* MESSAGES — DEVICE ONLY */
@@ -1700,15 +1711,20 @@ function startWelcome() {
 loadData();
 renderProfile();
 renderMedia();
-loadMediaFromDB();
-renderChats();
-renderGoal();
+renderHomeEvents();
 renderWallet();
 renderCalendar();
-function showLoginFeedback(message,kind="error") { const box=$("loginFeedback"); if(!box)return; box.textContent=message; box.dataset.kind=kind; box.hidden=false; }
-$("loginForm").addEventListener("submit",event=>{ event.preventDefault(); showLoginFeedback("The secure sign-in service did not load. Check your connection, refresh the page, and try again."); });
-$("loginPasskey").addEventListener("click",()=>showLoginFeedback("The secure sign-in service did not load. Refresh the page and try again."));
-</script>
+renderChats();
+loadMediaFromDB();
+function showLoginFeedback(message,kind="error") {
+  const box = $("loginFeedback");
+  if (!box) return;
+  box.textContent = message;
+  box.dataset.kind = kind;
+  box.hidden = false;
+}
+   </script>
+
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("/H-E/sw.js").catch(error => {
@@ -1716,7 +1732,9 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   });
 }
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=7"></script>
+<script src="/H-E/H%26E/shared.js?v=10"></script>
+
 </body>
 </html>
