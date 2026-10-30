@@ -583,7 +583,7 @@ textarea { min-height:90px;resize:vertical; }
 }
 
 
-.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#310b14,#70263b);overflow:auto}.login-card{width:min(100%,420px);padding:30px;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b55}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:32px;margin:8px 0}.login-card h2{margin-top:25px;color:var(--wine)}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-note{font-size:12px;margin-top:16px}
+.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#310b14,#70263b);overflow:auto}.login-card{width:min(100%,420px);padding:30px;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b55}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:32px;margin:8px 0}.login-card h2{margin-top:25px;color:var(--wine)}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-note{font-size:12px;margin-top:16px}.login-feedback{font-size:14px;margin:14px 0 0;padding:11px 13px;border-radius:9px;background:#f7e6e3;color:#651e31}.login-feedback[data-kind="wait"]{background:#fff4e4;color:#62411b}.login-feedback[data-kind="ok"]{background:#e8f5e9;color:#225b2b}
 
 /* FOLDER GALLERY, WALLET AND PROFILE */
 .folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin-top:18px}
@@ -606,8 +606,9 @@ textarea { min-height:90px;resize:vertical; }
     <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Enter your password">
     <button class="primary" id="loginSubmit" type="submit">Log in →</button>
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
-    <button class="secondary" id="loginPasskey" type="button" style="width:100%">Sign in with a passkey / biometrics</button>
-    <p class="muted login-note">Sign in securely with your email and password, or use a passkey after setting it up in Settings.</p>
+    <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
+    <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
+    <p class="muted login-note">Use your email and password the first time. Then set up a passkey in Settings to use fingerprint, face unlock, or your phone PIN next time.</p>
   </form>
 </section>
 
@@ -1744,10 +1745,9 @@ renderChats();
 renderGoal();
 renderWallet();
 renderCalendar();
-$("loginForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  toast("Secure sign-in is unavailable right now. Check your connection and refresh the app.",true);
-});
+function showLoginFeedback(message,kind="error") { const box=$("loginFeedback"); if(!box)return; box.textContent=message; box.dataset.kind=kind; box.hidden=false; }
+$("loginForm").addEventListener("submit",event=>{ event.preventDefault(); showLoginFeedback("The secure sign-in service did not load. Check your connection, refresh the page, and try again."); });
+$("loginPasskey").addEventListener("click",()=>showLoginFeedback("The secure sign-in service did not load. Refresh the page and try again."));
 </script>
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") {
@@ -1756,7 +1756,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   });
 }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/H-E/H%26E/shared.js?v=5"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
+<script src="/H-E/H%26E/shared.js?v=6"></script>
 </body>
 </html>

@@ -47,8 +47,23 @@
     const passkeyButton = document.getElementById("loginPasskey");
     let isSignUp = false;
     const note = form.querySelector(".login-note");
+    const feedback = document.getElementById("loginFeedback");
+    const reportLogin = (message, kind = "error") => { if (feedback) { feedback.textContent = message; feedback.dataset.kind = kind; feedback.hidden = false; } };
+    const friendlyAuthError = error => {
+      const code = String(error?.code || "").toLowerCase(); const message = String(error?.message || "");
+      if (code === "invalid_credentials") return "That email and password did not match. Check them and try again.";
+      if (code === "email_not_confirmed") return "Confirm your email using the link we sent, then sign in again.";
+      if (code === "user_banned") return "This account is temporarily unavailable. Contact the app owner for help.";
+      if (code === "passkey_disabled") return "Passkey sign-in is not enabled for this account yet. Sign in with your password first.";
+      if (code === "webauthn_credential_not_found") return "No passkey is enrolled for this account yet. Sign in with your email and password, then enable fingerprint unlock in Settings.";
+      if (code === "webauthn_challenge_expired") return "That biometric request expired. Tap the fingerprint button again.";
+      if (/failed to fetch|network|load failed/i.test(message)) return "Could not reach secure sign-in. Check your internet connection and retry.";
+      if (error?.name === "NotAllowedError" || error?.name === "AbortError") return "The phone cancelled the biometric prompt. Tap again and approve it on your device.";
+      return message || "Sign-in did not complete. Please try again.";
+    };
     toggleMethod.addEventListener("click", () => {
       isSignUp = !isSignUp;
+      if (feedback) feedback.hidden = true;
       document.getElementById("loginName").required = isSignUp;
       submitButton.textContent = isSignUp ? "Create account →" : "Log in →";
       toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
@@ -59,21 +74,20 @@
     });
     passkeyButton.addEventListener("click", async () => {
       passkeyButton.disabled = true;
+      reportLogin("Waiting for your phone to verify your passkey…", "wait");
       try {
         const { data, error } = await db.auth.signInWithPasskey();
         if (error) throw error;
         if (!data.session) throw new Error("Passkey sign-in did not return a session.");
         await enterApp(data.session);
-      } catch (error) {
-        const message = error.code === "passkey_disabled"
-          ? "Passkey sign-in is not enabled for this app yet. Use email and password for now."
-          : error.message || "Passkey sign-in failed.";
-        toast(message, true);
-      } finally { passkeyButton.disabled = false; }
+      } catch (error) { const message = friendlyAuthError(error); reportLogin(message); toast(message, true); }
+      finally { passkeyButton.disabled = false; }
     });
     form.addEventListener("submit", async event => {
       event.preventDefault(); event.stopImmediatePropagation();
       submitButton.disabled = true;
+      submitButton.textContent = isSignUp ? "Creating account…" : "Signing in…";
+      reportLogin(isSignUp ? "Creating your secure account…" : "Checking your sign-in…", "wait");
       try {
         const address = normalEmail(email.value);
         const displayName = document.getElementById("loginName").value.trim();
@@ -88,6 +102,7 @@
             await enterApp(data.session);
           } else {
             if (note) note.textContent = "Account created. Check your email to confirm it, then return here to log in.";
+            reportLogin("Account created. Confirm your email from the link we sent, then log in.", "ok");
             toast("Account created. Check your email to confirm it.");
             isSignUp = false;
             document.getElementById("loginName").required = false;
@@ -100,8 +115,8 @@
           if (!data.session) throw new Error("Sign-in did not return a session. Check your email confirmation and try again.");
           await enterApp(data.session);
         }
-      } catch (error) { toast(error.message || "Sign-in failed.", true); }
-      finally { submitButton.disabled = false; }
+      } catch (error) { const message = friendlyAuthError(error); reportLogin(message); toast(message, true); }
+      finally { submitButton.disabled = false; submitButton.textContent = isSignUp ? "Create account →" : "Log in →"; }
     }, true);
 
     const settings = document.getElementById("page-settings");
@@ -118,7 +133,7 @@
       <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
-      <button class="secondary" id="registerPasskey" type="button">Set up passkey / biometrics on this device</button>
+      <button class="secondary" id="registerPasskey" type="button">Enable fingerprint / face unlock on this device</button>
       <button class="secondary" id="sharedSignOut" type="button">Sign out</button>`;
     settings.prepend(card);
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
@@ -126,11 +141,12 @@
     document.getElementById("registerPasskey").addEventListener("click", async event => {
       const button = event.currentTarget; button.disabled = true;
       try {
+        if (!session) throw new Error("Sign in with your email and password first, then enable biometrics here.");
         const { data, error } = await db.auth.registerPasskey();
         if (error) throw error;
-        toast("Passkey set up for this device.");
-        button.textContent = "Passkey ready on this device";
-      } catch (error) { toast(error.message || "Could not set up a passkey.", true); }
+        toast("Fingerprint / face unlock is ready on this device.");
+        button.textContent = "Biometric passkey ready";
+      } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
     });
     document.getElementById("sharedSignOut").addEventListener("click", async () => {
@@ -159,16 +175,16 @@
   }
   async function enterApp(nextSession) {
     const activeSession = nextSession || (await db.auth.getSession()).data.session;
-    if (!activeSession || (session && session.user.id === activeSession.user.id)) return;
-    session = activeSession;
-    const phone = session.user.phone || state.profile.phone || "";
-    const name = document.getElementById("loginName").value.trim() || state.profile.you || "H&E";
-    state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
-    saveState(); renderProfile();
-    await ensureKeys();
-    document.getElementById("loginScreen").remove();
-    startWelcome();
-    await refreshPairing();
+    if (!activeSession || (session && session.user.id === activeSession.user.id && !document.getElementById("loginScreen"))) return;
+    const previousSession = session; session = activeSession;
+    try {
+      const phone = session.user.phone || state.profile.phone || "";
+      const name = document.getElementById("loginName")?.value.trim() || state.profile.you || session.user.user_metadata?.display_name || "H&E";
+      state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
+      saveState(); renderProfile(); await ensureKeys();
+      const login = document.getElementById("loginScreen"); if (login) login.remove(); startWelcome();
+    } catch (error) { session = previousSession; throw error; }
+    try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
   async function refreshPairing() {
     const { data: members, error } = await db.from("couple_members").select("couple_id,user_id").eq("user_id", session.user.id).limit(1);
@@ -357,7 +373,7 @@
     addSetupUI();
     const { data } = await db.auth.getSession();
     if (data.session) { session = data.session; await enterApp(session); }
-    db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => toast(e.message, true)); });
+    db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => { const box=document.getElementById("loginFeedback"); if(box){box.textContent=e.message||"Sign-in setup failed. Please retry.";box.hidden=false;} toast(e.message||"Sign-in setup failed.",true); }); });
   }
-  boot().catch(error => { console.error(error); toast("Shared app setup failed: " + (error.message || "unknown error"), true); });
+  boot().catch(error => { console.error(error); const box=document.getElementById("loginFeedback"); if(box){box.textContent="Secure sign-in could not start. Refresh the page and try again.";box.hidden=false;} toast("Shared app setup failed: " + (error.message || "unknown error"), true); });
 })();
