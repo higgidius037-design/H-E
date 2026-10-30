@@ -94,6 +94,28 @@ jobs:
           PY
           file android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
 
+      - name: Register explicit adaptive launcher icon resources
+        run: |
+          mkdir -p android-apk/app/src/main/res/mipmap-anydpi-v26
+          mkdir -p android-apk/app/src/main/res/drawable-nodpi
+          cat > android-apk/app/src/main/res/drawable/launcher_icon_background.xml <<'XML'
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+              <solid android:color="#310B14"/>
+          </shape>
+          XML
+          cat > android-apk/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'XML'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/launcher_icon_background"/>
+              <foreground android:drawable="@drawable/ic_launcher"/>
+          </adaptive-icon>
+          XML
+          cat > android-apk/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml <<'XML'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@drawable/launcher_icon_background"/>
+              <foreground android:drawable="@drawable/ic_launcher"/>
+          </adaptive-icon>
+          XML
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
