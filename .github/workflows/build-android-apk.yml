@@ -76,22 +76,11 @@ jobs:
             test "$FINGERPRINT" = "$EXPECTED" || { echo "Signing key fingerprint mismatch. Build stopped to protect update compatibility."; exit 1; }
           fi
 
-      - name: Build launcher icon from the approved burgundy-and-gold H&E artwork
+      - name: Use the exact H&E icon already supplied in the repository
         run: |
-          python -m pip install --quiet pillow cairosvg
-          python - <<'PY'
-          import cairosvg
-          from PIL import Image
-          import io, os
-          with open("approved-icon.svg", "rb") as f:
-              svg = f.read()
-          png = cairosvg.svg2png(bytestring=svg, output_width=512, output_height=512)
-          im = Image.open(io.BytesIO(png)).convert("RGBA")
-          im.save("icon-512.png", optimize=True)
-          im.resize((192, 192), Image.Resampling.LANCZOS).save("icon-192.png", optimize=True)
-          os.makedirs("android-apk/app/src/main/res/drawable-nodpi", exist_ok=True)
-          im.save("android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png", optimize=True)
-          PY
+          mkdir -p android-apk/app/src/main/res/drawable-nodpi
+          cp icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
+          cp icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher_round.png
           file icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
 
       - name: Register explicit adaptive launcher icon resources
