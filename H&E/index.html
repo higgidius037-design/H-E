@@ -1230,6 +1230,7 @@ $("logoutButton").addEventListener("click",()=>{
 /* H&E CHAT — LOCAL MESSAGING */
 let pendingChatFile = null;
 let chatRecorder = null;
+let cancelVoiceRecording=false;
 let chatStream = null;
 let voiceAudioContext=null,voiceAnalyser=null,waveFrame=0;
 let chatChunks = [];
@@ -1427,6 +1428,7 @@ $("recordVoice").addEventListener("click", async () => {
     });
 
     chatRecorder.addEventListener("stop", async () => {
+      if(cancelVoiceRecording){cancelVoiceRecording=false;chatChunks=[];chatStream?.getTracks().forEach(track=>track.stop());chatStream=null;chatRecorder=null;$("recordVoice").classList.remove("hidden");$("recordingPanel").classList.add("hidden");return;}
       try {
         const blob = new Blob(chatChunks, {
           type: chatRecorder.mimeType || "audio/webm"
@@ -1492,6 +1494,7 @@ $("stopVoice").addEventListener("click", () => {
 });
 
 $("cancelVoice").addEventListener("click", () => {
+  cancelVoiceRecording=true;
   if (chatRecorder && chatRecorder.state !== "inactive") {
     chatRecorder.ondataavailable = null;
     chatRecorder.stop();
