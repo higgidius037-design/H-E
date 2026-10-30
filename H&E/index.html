@@ -137,7 +137,8 @@
   margin-top: 5px;
   background: var(--blush);
 }
-.chat-audio { width: 2in; max-width: 100%; height: 2in; margin-top: 7px; }
+.chat-audio { display:none; }
+.voice-tile{width:2in;height:2in;max-width:100%;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#f7e5e1,#fff4eb);border:1px solid var(--line);margin:8px 0}.voice-play{width:56px;height:56px;border-radius:50%;border:0;background:var(--burgundy);color:white;font-size:25px}
 .view-once-control{display:flex;align-items:center;gap:8px;margin:7px 4px;color:var(--burgundy)}.view-once-control input{width:auto}#voiceWaveform{width:min(100%,360px);height:52px;background:#fff8ee;border-radius:8px}
 .chat-message-actions {
   display: flex;
@@ -1280,8 +1281,8 @@ function renderChats() {
     }
 
     if (chat.voice) {
-      media += `<audio class="chat-audio" controls preload="metadata"
-                  src="${chat.voice}"></audio>`;
+      media += `<div class="voice-tile"><audio class="chat-audio" preload="metadata"
+                  src="${chat.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
     }
 
     return `
@@ -1391,6 +1392,8 @@ $("chatList").addEventListener("click", event => {
     state.chats = previous;
   }
 });
+
+$("chatList").addEventListener("click",event=>{const button=event.target.closest("[data-voice-play]");if(!button)return;const audio=button.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();button.textContent="Ⅱ";}else{audio.pause();button.textContent="▶";}audio.onended=()=>button.textContent="▶";});
 
 $("chatMessage").addEventListener("input", event => {
   event.target.style.height = "auto";
