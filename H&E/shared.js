@@ -37,7 +37,7 @@
   const putKeyPair = pair => keyStore("readwrite", s => s.put(pair, "pair"));
   const originalRenderChats = renderChats;
   let session = null, coupleId = null, ownKeyPair = null, partner = null;
-  let remoteChats = [], openedOnce = new Map(), channel = null;
+  let remoteChats = [], openedOnce = new Map(), channel = null, callChannel = null, peerConnection = null, localStream = null, pendingOffer = null, queuedIce = [], callKind = "voice";
 
   function addSetupUI() {
     const form = document.getElementById("loginForm");
@@ -186,6 +186,8 @@
     await showSafetyCode();
     await refreshMessages();
     if (channel) db.removeChannel(channel);
+    if (callChannel) db.removeChannel(callChannel);
+    callChannel = db.channel("he-call-" + coupleId, { config: { private: true } }).on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload)).subscribe();
     channel = db.channel("he-chat-" + coupleId)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + coupleId }, () => refreshMessages())
       .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + coupleId }, () => refreshWallet())
@@ -339,11 +341,19 @@
     list.querySelectorAll("[data-close-once]").forEach(btn => btn.addEventListener("click", () => { openedOnce.delete(btn.dataset.closeOnce); refreshMessages(); }));
     const bottom = document.getElementById("chatList"); bottom.scrollTop = bottom.scrollHeight;
   };
+  async function callSignal(type, data = {}) { if (!callChannel || !partner) throw new Error("Pair your phones first in Settings."); const result = await callChannel.send({ type: "broadcast", event: "signal", payload: { from: session.user.id, to: partner.id, type, ...data } }); if (result !== "ok") throw new Error("Could not reach your paired phone."); }
+  function showCall(incoming=false) { $("callOverlay").classList.add("open"); $("callTitle").textContent=(callKind==="video"?"Video":"Voice")+" call"; $("callStatus").textContent=incoming?partner.name+" is calling you":"Calling "+partner.name+"…"; $("incomingCallControls").style.display=incoming?"flex":"none"; $("activeCallControls").style.display=incoming?"none":"flex"; }
+  async function getCallMedia(video) { if (!navigator.mediaDevices?.getUserMedia) throw new Error("Calls need a secure browser connection and microphone permission."); localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video?{facingMode:"user"}:false}); $("localCallVideo").srcObject=localStream; $("localCallVideo").style.display=video?"block":"none"; }
+  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{$("remoteCallVideo").srcObject=e.streams[0];}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected")$("callStatus").textContent="Connected securely with "+partner.name;if(["failed","disconnected"].includes(peerConnection?.connectionState))$("callStatus").textContent="Connection interrupted. Try again on another network.";}; localStream.getTracks().forEach(t=>peerConnection.addTrack(t,localStream)); }
+  async function startCall(video) { try { if(!coupleId||!partner)throw new Error("Pair your phones first in Settings.");if(!callChannel)throw new Error("Private calling is not ready. Reload after the security update.");callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind}); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
+  async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
+  async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});showCall(false); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
+  function stopCall() { if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
+  $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
+  $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
+  $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Mute":"Unmute";}});$("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Turn camera off":"Turn camera on";}});
   async function boot() {
     addSetupUI();
-    const preview = document.getElementById("chatForm");
-    const onceLabel = document.createElement("label"); onceLabel.className = "muted"; onceLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0";
-    onceLabel.innerHTML = '<input id="viewOnceToggle" type="checkbox"> View once'; preview.insertAdjacentElement("beforebegin", onceLabel);
     const { data } = await db.auth.getSession();
     if (data.session) { session = data.session; await enterApp(session); }
     db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => toast(e.message, true)); });

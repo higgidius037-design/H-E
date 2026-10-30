@@ -137,7 +137,8 @@
   margin-top: 5px;
   background: var(--blush);
 }
-.chat-audio { width: 100%; max-width: 290px; margin-top: 7px; }
+.chat-audio { width: 2in; max-width: 100%; height: 2in; margin-top: 7px; }
+.view-once-control{display:flex;align-items:center;gap:8px;margin:7px 4px;color:var(--burgundy)}.view-once-control input{width:auto}#voiceWaveform{width:min(100%,360px);height:52px;background:#fff8ee;border-radius:8px}
 .chat-message-actions {
   display: flex;
   justify-content: flex-end;
@@ -264,7 +265,7 @@
 * { box-sizing:border-box; }
 body {
   margin:0;
-  background:var(--cream);
+  background:var(--app-wallpaper,var(--cream));
   color:var(--ink);
   font-family:Georgia,"Times New Roman",serif;
 }
@@ -538,6 +539,7 @@ textarea { min-height:90px;resize:vertical; }
 .modal.open { display:flex; }
 .modal-content { max-width:95vw;max-height:90vh;text-align:center;color:white; }
 .modal-content img,.modal-content video { max-width:95vw;max-height:75vh;object-fit:contain; }
+.viewer-controls{display:flex;justify-content:center;align-items:center;gap:20px;margin:12px auto;color:white}.viewer-controls button{width:44px;height:44px;border:1px solid #ffffff77;border-radius:50%;background:#310b14;color:white;font-size:25px}.call-actions{display:flex;gap:5px}html.theme-dark{--cream:#1c1116;--blush:#33232a;--ink:#f4e9e5;--muted:#c8b4b7;--line:#4e3940}html.theme-dark .card,html.theme-dark .media-card{background:#281b21;color:var(--ink)}html.theme-dark input,html.theme-dark textarea,html.theme-dark select{background:#24171d;color:var(--ink);border-color:#5b424a}html.theme-dark .chat-app{background:#251820}.call-overlay{position:fixed;inset:0;z-index:1200;display:none;place-items:center;background:#17040def;color:white;padding:20px}.call-overlay.open{display:grid}.call-card{width:min(100%,560px);text-align:center;background:linear-gradient(145deg,#310b14,#70263b);border:1px solid var(--gold);border-radius:18px;padding:20px}.call-videos{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin:16px 0}.call-videos video{width:100%;max-height:40vh;background:#16040b;border-radius:12px;object-fit:cover}
 .modal-close { position:absolute;top:15px;right:18px;background:transparent;color:white;border:1px solid #ffffff66;border-radius:50%;width:42px;height:42px;font-size:25px; }
 
 @media(max-width:950px) {
@@ -561,25 +563,8 @@ textarea { min-height:90px;resize:vertical; }
   .card { padding:14px;margin-top:12px; }
   .card-heading h2,.section-title { font-size:21px; }
   .media-preview { height:120px; }
-  .media-grid {
-    display:flex;
-    gap:12px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    padding:2px 2px 10px;
-    scroll-snap-type:x mandatory;
-    touch-action:pan-x;
-    -webkit-overflow-scrolling:touch;
-  }
-  .media-grid > .media-card { flex:0 0 min(78%,260px); scroll-snap-align:start; }
-  .media-grid > .empty-gallery { flex:0 0 100%; }
-  #mediaCollection {
-    max-height:none;
-    min-height:140px;
-    overscroll-behavior:contain;
-    -webkit-overflow-scrolling:touch;
-    align-content:start;
-  }
+  .media-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:2px 2px 10px; }
+  #mediaCollection { max-height:58dvh;min-height:140px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start;touch-action:pan-y; }
   .bottom-nav {
     position:fixed;z-index:20;bottom:0;left:0;right:0;
     display:grid;grid-template-columns:repeat(5,1fr);
@@ -762,6 +747,7 @@ textarea { min-height:90px;resize:vertical; }
       </div>
       <button type="button" class="chat-header-btn"
         id="chatInfoButton" aria-label="Chat information">ⓘ</button>
+      <div class="call-actions"><button type="button" class="chat-header-btn" id="startVoiceCall" aria-label="Voice call">☎</button><button type="button" class="chat-header-btn" id="startVideoCall" aria-label="Video call">▣</button></div>
     </header>
 
     <div class="chat-notice">
@@ -771,7 +757,7 @@ textarea { min-height:90px;resize:vertical; }
     <div class="chat-messages" id="chatList" aria-live="polite"></div>
 
     <div class="chat-attachment-preview hidden" id="chatAttachmentPreview">
-      <div id="chatPreviewContent"></div>
+      <div id="chatPreviewContent"></div><label class="view-once-control"><input id="viewOnceToggle" type="checkbox"> View once</label>
       <button type="button" id="cancelChatAttachment"
         aria-label="Remove attachment">✕</button>
     </div>
@@ -794,7 +780,7 @@ textarea { min-height:90px;resize:vertical; }
 
     <div class="chat-recording hidden" id="recordingPanel">
       <span class="recording-dot"></span>
-      <span id="recordingStatus">Recording voice note…</span>
+      <span id="recordingStatus">Recording voice note…</span><canvas id="voiceWaveform" width="360" height="52" aria-label="Live voice recording level"></canvas><label class="view-once-control"><input id="recordingViewOnce" type="checkbox"> View once</label>
       <button type="button" id="stopVoice">Stop &amp; send</button>
       <button type="button" id="cancelVoice">Cancel</button>
     </div>
@@ -861,6 +847,7 @@ textarea { min-height:90px;resize:vertical; }
 
     <!-- SETTINGS -->
     <section class="page" id="page-settings">
+      <div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div>
       <div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
         <div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
         <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
@@ -888,6 +875,7 @@ textarea { min-height:90px;resize:vertical; }
   <button class="modal-close" id="closeModal" aria-label="Close viewer">×</button>
   <div class="modal-content" id="modalContent"></div>
 </div>
+<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true"><div class="call-card"><h2 id="callTitle">Private call</h2><p id="callStatus">Waiting…</p><div class="call-videos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video></div><div id="incomingCallControls"><button class="primary" id="acceptCall" type="button">Accept</button><button class="secondary" id="rejectCall" type="button">Decline</button></div><div id="activeCallControls"><button class="secondary" id="muteCall" type="button">Mute</button><button class="secondary" id="cameraCall" type="button">Camera off</button><button class="secondary" id="endCall" type="button">End call</button></div></div></div>
 
 <script>
 "use strict";
@@ -896,6 +884,10 @@ const $ = id => document.getElementById(id);
 const STORAGE_KEY = "he-little-world-v1";
 const MEDIA_KEY = "he-little-world-media-v1";
 const EVENT_KEY = "he-little-world-events-v1";
+const DISPLAY_KEY = "he-display-v1";
+function applyDisplayPreferences(){const pref=JSON.parse(localStorage.getItem(DISPLAY_KEY)||"{}");const theme=$("themeChoice");const wallpaper=$("wallpaperChoice");if(theme)theme.value=pref.theme||"light";if(wallpaper)wallpaper.value=pref.wallpaper||"#fff9f1";document.documentElement.classList.toggle("theme-dark",pref.theme==="dark");document.documentElement.style.setProperty("--app-wallpaper",pref.wallpaper||"#fff9f1");}
+function saveDisplayPreferences(){const data={theme:$("themeChoice").value,wallpaper:$("wallpaperChoice").value};localStorage.setItem(DISPLAY_KEY,JSON.stringify(data));applyDisplayPreferences();}
+applyDisplayPreferences();$("themeChoice").addEventListener("change",saveDisplayPreferences);$("wallpaperChoice").addEventListener("input",saveDisplayPreferences);
 
 let state = {
   chats: [],
@@ -1163,13 +1155,10 @@ $("mediaCollection").addEventListener("change",event=>{
   else selectedMedia.delete(checkbox.dataset.selectMedia);
   renderMedia();
 });
-function openViewer(item) {
-  if(!item) return;
-  $("modalContent").innerHTML=item.type==="video"
-    ? `<video src="${mediaSource(item)}" controls autoplay playsinline></video><p>${escapeHTML(item.title)}</p>`
-    : `<img src="${mediaSource(item)}" alt="${escapeHTML(item.title)}"><p>${escapeHTML(item.title)}</p>`;
-  $("mediaModal").classList.add("open");
-}
+let viewerItems=[],viewerIndex=0;
+function renderViewer(){const item=viewerItems[viewerIndex];if(!item)return;const media=item.type==="video"?`<video src="${mediaSource(item)}" controls autoplay playsinline></video>`:`<img src="${mediaSource(item)}" alt="${escapeHTML(item.title||item.name||"Media")}">`;$("modalContent").innerHTML=media+`<p>${escapeHTML(item.title||item.name||"Media")}</p><div class="viewer-controls"><button id="viewerPrevious" type="button" aria-label="Previous">‹</button><span>${viewerIndex+1} / ${viewerItems.length}</span><button id="viewerNext" type="button" aria-label="Next">›</button></div>`;$("viewerPrevious").addEventListener("click",()=>moveViewer(-1));$("viewerNext").addEventListener("click",()=>moveViewer(1));}
+function moveViewer(n){if(viewerItems.length){viewerIndex=(viewerIndex+n+viewerItems.length)%viewerItems.length;renderViewer();}}
+function openViewer(item,items=mediaItems.filter(x=>x.type===item?.type)){if(!item)return;viewerItems=[...items];viewerIndex=Math.max(0,viewerItems.findIndex(x=>x.id===item.id));renderViewer();$("mediaModal").classList.add("open");}
 $("mediaCollection").addEventListener("click",async event=>{
   const deleteButton=event.target.closest("[data-delete-media]");
   if(deleteButton) {
@@ -1190,6 +1179,9 @@ $("homeMedia").addEventListener("click",event=>{
 });
 $("closeModal").addEventListener("click",()=>$("mediaModal").classList.remove("open"));
 $("mediaModal").addEventListener("click",event=>{if(event.target.id==="mediaModal")$("mediaModal").classList.remove("open");});
+document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
+document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
+document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
 
 /* PROFILE */
 function renderProfile() {
@@ -1238,6 +1230,7 @@ $("logoutButton").addEventListener("click",()=>{
 let pendingChatFile = null;
 let chatRecorder = null;
 let chatStream = null;
+let voiceAudioContext=null,voiceAnalyser=null,waveFrame=0;
 let chatChunks = [];
 
 function chatId() {
@@ -1422,6 +1415,7 @@ $("recordVoice").addEventListener("click", async () => {
 
   try {
     chatStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceAudioContext=new (window.AudioContext||window.webkitAudioContext)();voiceAnalyser=voiceAudioContext.createAnalyser();voiceAnalyser.fftSize=128;voiceAudioContext.createMediaStreamSource(chatStream).connect(voiceAnalyser);drawVoiceWaveform();
     chatChunks = [];
     chatRecorder = new MediaRecorder(chatStream);
 
@@ -1455,7 +1449,8 @@ $("recordVoice").addEventListener("click", async () => {
         });
 
         if (saveState()) {
-          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice");
+          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice",$("recordingViewOnce").checked);
+          $("recordingViewOnce").checked=false;
           renderChats();
           toast("Voice note saved ♡");
         }
@@ -1464,6 +1459,7 @@ $("recordVoice").addEventListener("click", async () => {
         toast("Could not save this voice note.", true);
       } finally {
         chatStream?.getTracks().forEach(track => track.stop());
+        if(voiceAudioContext)voiceAudioContext.close().catch(()=>{});voiceAudioContext=null;voiceAnalyser=null;cancelAnimationFrame(waveFrame);
         chatStream = null;
         chatRecorder = null;
         $("recordVoice").textContent = "🎙";
@@ -1472,6 +1468,7 @@ $("recordVoice").addEventListener("click", async () => {
     });
 
     chatRecorder.start();
+    $("recordingViewOnce").checked=false;
     $("recordVoice").classList.add("hidden");
     $("recordingPanel").classList.remove("hidden");
     $("recordingStatus").textContent = "Recording voice note…";
@@ -1482,6 +1479,8 @@ $("recordVoice").addEventListener("click", async () => {
     chatStream = null;
   }
 });
+
+function drawVoiceWaveform(){const canvas=$("voiceWaveform"),ctx=canvas.getContext("2d");if(!voiceAnalyser||!ctx)return;const data=new Uint8Array(voiceAnalyser.frequencyBinCount);voiceAnalyser.getByteFrequencyData(data);ctx.clearRect(0,0,canvas.width,canvas.height);const w=canvas.width/data.length;for(let i=0;i<data.length;i++){const h=Math.max(3,data[i]/255*canvas.height);ctx.fillStyle="#70263b";ctx.fillRect(i*w, (canvas.height-h)/2, Math.max(1,w-2),h);}waveFrame=requestAnimationFrame(drawVoiceWaveform);}
 
 $("stopVoice").addEventListener("click", () => {
   if (chatRecorder && chatRecorder.state !== "inactive") {
@@ -1752,6 +1751,6 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/H-E/H%26E/shared.js?v=4"></script>
+<script src="/H-E/H%26E/shared.js?v=5"></script>
 </body>
 </html>
