@@ -8,6 +8,7 @@ on:
     paths:
       - 'android-apk/**'
       - '.github/workflows/build-android-apk.yml'
+      - 'approved-icon.svg'
 
 permissions:
   contents: write
