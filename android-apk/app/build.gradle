@@ -10,7 +10,22 @@ android {
         applicationId 'com.hande.ourlittleworld'
         minSdk 23
         targetSdk 35
-        versionCode 5
-        versionName '1.0.4'
+        versionCode 6
+        versionName '1.0.5'
+    }
+
+    signingConfigs {
+        permanent {
+            storeFile file(System.getenv('ANDROID_KEYSTORE_PATH') ?: 'hande-release.jks')
+            storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('ANDROID_KEY_ALIAS')
+            keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.permanent
+        }
     }
 }
