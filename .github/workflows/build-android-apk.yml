@@ -2,6 +2,8 @@ name: Build H&E Android APK
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 */5 * *'
   push:
     paths:
       - 'android-apk/**'
@@ -23,32 +25,61 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Restore permanent signing key
+        id: signing-cache
+        uses: actions/cache@v4
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          path: ${{ runner.temp }}/hande-signing
+          key: hande-signing-key-v1
+
+      - name: Create signing key on first build only
+        shell: bash
+        run: |
+          set -euo pipefail
+          SIGN_DIR="$RUNNER_TEMP/hande-signing"
+          mkdir -p "$SIGN_DIR"
+          if [ ! -f "$SIGN_DIR/hande-release.jks" ]; then
+            if [ -f android-signing-cert.sha256 ]; then
+              echo "Permanent signing cache is missing. Refusing to create a replacement key because that would break updates."
+              exit 1
+            fi
+            STORE_PASS="$(openssl rand -hex 32)"
+            KEY_PASS="$(openssl rand -hex 32)"
+            echo "$STORE_PASS" > "$SIGN_DIR/store-password"
+            echo "$KEY_PASS" > "$SIGN_DIR/key-password"
+            chmod 600 "$SIGN_DIR"/*
+            keytool -genkeypair -v -keystore "$SIGN_DIR/hande-release.jks" -storetype JKS -storepass "$STORE_PASS" -keypass "$KEY_PASS" -alias hande-release -keyalg RSA -keysize 3072 -validity 10000 -dname "CN=H&E Our Little World, OU=Mobile, O=H&E, L=Kenya, ST=Kenya, C=KE"
+            echo "ANDROID_KEYSTORE_PATH=$SIGN_DIR/hande-release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$STORE_PASS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=hande-release" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASS" >> "$GITHUB_ENV"
+            FINGERPRINT="$(keytool -list -v -keystore "$SIGN_DIR/hande-release.jks" -storepass "$STORE_PASS" -alias hande-release | awk -F': ' '/SHA256:/{print $2; exit}')"
+            test -n "$FINGERPRINT"
+            printf '%s\n' "$FINGERPRINT" > android-signing-cert.sha256
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add android-signing-cert.sha256
+            git commit -m "Record permanent H&E app signing certificate"
+            git push
+          else
+            test -f "$SIGN_DIR/store-password"
+            test -f "$SIGN_DIR/key-password"
+            STORE_PASS="$(cat "$SIGN_DIR/store-password")"
+            KEY_PASS="$(cat "$SIGN_DIR/key-password")"
+            echo "ANDROID_KEYSTORE_PATH=$SIGN_DIR/hande-release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_KEYSTORE_PASSWORD=$STORE_PASS" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_ALIAS=hande-release" >> "$GITHUB_ENV"
+            echo "ANDROID_KEY_PASSWORD=$KEY_PASS" >> "$GITHUB_ENV"
+            FINGERPRINT="$(keytool -list -v -keystore "$SIGN_DIR/hande-release.jks" -storepass "$STORE_PASS" -alias hande-release | awk -F': ' '/SHA256:/{print $2; exit}')"
+            EXPECTED="$(tr -d '\r\n' < android-signing-cert.sha256)"
+            test "$FINGERPRINT" = "$EXPECTED" || { echo "Signing key fingerprint mismatch. Build stopped to protect update compatibility."; exit 1; }
+          fi
 
       - name: Restore original H&E launcher icon
         run: |
           mkdir -p android-apk/app/src/main/res/drawable-nodpi
           curl -fL https://raw.githubusercontent.com/higgidius037-design/H-E/main/icon-512.png -o android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
           file android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
-
-      - name: Configure permanent signing key
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          test -n "$KEYSTORE_BASE64" || { echo "Missing repository secret ANDROID_KEYSTORE_BASE64"; exit 1; }
-          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing repository secret ANDROID_KEYSTORE_PASSWORD"; exit 1; }
-          test -n "$ANDROID_KEY_ALIAS" || { echo "Missing repository secret ANDROID_KEY_ALIAS"; exit 1; }
-          test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing repository secret ANDROID_KEY_PASSWORD"; exit 1; }
-          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hande-release.jks"
-          chmod 600 "$RUNNER_TEMP/hande-release.jks"
-          keytool -list -keystore "$RUNNER_TEMP/hande-release.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
-          echo "Permanent signing key verified."
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -57,11 +88,6 @@ jobs:
 
       - name: Build APK with permanent signing
         working-directory: android-apk
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/hande-release.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle assembleDebug
 
       - name: Verify APK signature
@@ -70,7 +96,7 @@ jobs:
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK"
 
-      - name: Upload APK as a GitHub Release download
+      - name: Publish APK release asset
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -81,10 +107,10 @@ jobs:
             gh release delete-asset "$TAG" app-debug.apk --yes || true
             gh release upload "$TAG" H-and-E.apk --clobber
           else
-            gh release create "$TAG" H-and-E.apk --title "H&E Android APK" --notes "Android installer for H&E – Our Little World. Signed with the permanent H&E update key."
+            gh release create "$TAG" H-and-E.apk --title "H&E Android APK" --notes "H&E – Our Little World. Signed with the permanent update key."
           fi
 
-      - name: Upload APK as workflow artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: H-and-E-Android-APK
