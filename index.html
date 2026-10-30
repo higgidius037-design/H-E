@@ -561,11 +561,21 @@ textarea { min-height:90px;resize:vertical; }
   .card { padding:14px;margin-top:12px; }
   .card-heading h2,.section-title { font-size:21px; }
   .media-preview { height:120px; }
+  .media-grid {
+    display:flex;
+    gap:12px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:2px 2px 10px;
+    scroll-snap-type:x mandatory;
+    touch-action:pan-x;
+    -webkit-overflow-scrolling:touch;
+  }
+  .media-grid > .media-card { flex:0 0 min(78%,260px); scroll-snap-align:start; }
+  .media-grid > .empty-gallery { flex:0 0 100%; }
   #mediaCollection {
-    max-height:58vh;
-    max-height:58dvh;
-    min-height:0;
-    overflow-y:auto;
+    max-height:none;
+    min-height:140px;
     overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
     align-content:start;
@@ -606,11 +616,14 @@ textarea { min-height:90px;resize:vertical; }
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2><p class="muted">Sign in to open your little world on this device.</p>
     <label for="loginName">Your name</label><input id="loginName" maxlength="60" required autocomplete="name" placeholder="Enter your name">
-    <label for="loginPhone">Phone number (M-PESA)</label><input id="loginPhone" type="tel" maxlength="16" required autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678">
-    <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" required autocomplete="email" placeholder="you@example.com">
-    <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="4" required autocomplete="current-password" placeholder="Enter a password">
+    <label for="loginPhone" id="loginPhoneLabel">Phone number</label><input id="loginPhone" type="tel" maxlength="16" required autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678">
+    <div id="emailLoginFields" hidden>
+      <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" autocomplete="email" placeholder="you@example.com">
+      <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="4" autocomplete="current-password" placeholder="Enter a password">
+    </div>
+    <button class="link-button" id="toggleLoginMethod" type="button" style="margin-top:12px">Use email and password instead</button>
     <button class="primary" type="submit">Log in →</button>
-    <p class="muted login-note">Prototype sign-in only. Your phone number is saved in this browser; it is not verified by SMS and does not create a secure account. Wallet payments below are simulated only.</p>
+    <p class="muted login-note">Sign in with your phone number, or use email and password for an existing account. Phone sign-in sends a one-time verification code.</p>
   </form>
 </section>
 
@@ -842,7 +855,7 @@ textarea { min-height:90px;resize:vertical; }
         <p class="muted">Kenyan shillings (KSh)</p>
         <div class="wallet-balance"><span>Available balance</span><strong id="walletBalance">KSh 0.00</strong></div>
         <div class="wallet-actions"><button class="primary" id="showDeposit" type="button">＋ Deposit</button><button class="secondary" id="showWithdraw" type="button">↗ Withdraw</button></div>
-        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals update a shared demo balance between paired phones. No real money is moved, and no M-PESA request is sent. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
+        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals update a shared demo balance between paired phones. No real money is moved. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
       </div>
       <div class="card hidden" id="walletActionCard"><h3 id="walletActionTitle">Deposit</h3><form id="walletForm"><input type="hidden" id="walletAction" value="deposit"><label for="walletAmount">Amount (KSh)</label><input id="walletAmount" type="number" min="1" step="0.01" required placeholder="500"><label for="walletPin">Wallet PIN</label><input id="walletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Enter wallet PIN" required><button class="primary" type="submit" id="walletSubmit">Confirm deposit</button><button class="secondary" id="cancelWalletAction" type="button">Cancel</button></form></div>
       <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">Shared demo activity</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
@@ -852,7 +865,7 @@ textarea { min-height:90px;resize:vertical; }
     <section class="page" id="page-settings">
       <div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
         <div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
-        <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number (M-PESA)</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
+        <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
       </div>
       <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
         <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on supported device/browser integration and is not active in this HTML prototype.</p></div><span class="pill">Not available here</span></div>
@@ -1747,6 +1760,6 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/H-E/H%26E/shared.js?v=2"></script>
+<script src="/H-E/shared.js?v=3"></script>
 </body>
 </html>
