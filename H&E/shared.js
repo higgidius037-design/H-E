@@ -297,10 +297,9 @@
   };
   async function boot() {
     addSetupUI();
-    const attach = document.getElementById("chatAttachmentPreview");
     const preview = document.getElementById("chatForm");
     const onceLabel = document.createElement("label"); onceLabel.className = "muted"; onceLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0";
-    onceLabel.innerHTML = '<input id="viewOnceToggle" type="checkbox"> View once'; preview.insertBefore(onceLabel, attach);
+    onceLabel.innerHTML = '<input id="viewOnceToggle" type="checkbox"> View once'; preview.insertAdjacentElement("beforebegin", onceLabel);
     const { data } = await db.auth.getSession();
     if (data.session) { session = data.session; await enterApp(session); }
     db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => toast(e.message, true)); });
