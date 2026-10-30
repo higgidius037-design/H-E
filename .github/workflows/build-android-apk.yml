@@ -81,8 +81,9 @@ jobs:
         run: |
           python -m pip install --quiet pillow
           python - <<'PY'
-          from PIL import Image, ImageDraw
+          from PIL import Image, ImageDraw, ImageFile
           import os
+          ImageFile.LOAD_TRUNCATED_IMAGES = True
           im = Image.open("hande-approved-artwork.jpg").convert("RGB").resize((512, 512), Image.Resampling.LANCZOS).convert("RGBA")
           mask = Image.new("L", (512, 512), 0)
           ImageDraw.Draw(mask).rounded_rectangle((0, 0, 511, 511), radius=92, fill=255)
