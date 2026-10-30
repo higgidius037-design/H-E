@@ -1202,10 +1202,6 @@ $("pinForm").addEventListener("submit",event=>{
   state.wallet.pin=pin;
   if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
 });
-$("logoutButton").addEventListener("click",()=>{
-  if(!confirm("Log out of H&E on this device? Your saved content will remain on this device.")) return;
-  location.reload();
-});
 
 /* MESSAGES — DEVICE ONLY */
 
@@ -1756,7 +1752,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
     isSignup = signup;
 
     loginName.required = signup;
-    loginName.parentElement.style.display = signup ? "" : "none";
+   loginName.style.display = signup ? "" : "none";
+loginName.previousElementSibling.style.display = signup ? "" : "none";
 
     loginPassword.autocomplete = signup
       ? "new-password"
