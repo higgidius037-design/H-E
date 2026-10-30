@@ -615,15 +615,13 @@ textarea { min-height:90px;resize:vertical; }
   <form id="loginForm" class="login-card">
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2><p class="muted">Sign in to open your little world on this device.</p>
-    <label for="loginName">Your name</label><input id="loginName" maxlength="60" required autocomplete="name" placeholder="Enter your name">
-    <label for="loginPhone" id="loginPhoneLabel">Phone number</label><input id="loginPhone" type="tel" maxlength="16" required autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678">
-    <div id="emailLoginFields" hidden>
-      <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" autocomplete="email" placeholder="you@example.com">
-      <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="4" autocomplete="current-password" placeholder="Enter a password">
-    </div>
-    <button class="link-button" id="toggleLoginMethod" type="button" style="margin-top:12px">Use email and password instead</button>
-    <button class="primary" type="submit">Log in →</button>
-    <p class="muted login-note">Sign in with your phone number, or use email and password for an existing account. Phone sign-in sends a one-time verification code.</p>
+    <label for="loginName">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Enter your name">
+    <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" required autocomplete="email" placeholder="you@example.com">
+    <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Enter your password">
+    <button class="primary" id="loginSubmit" type="submit">Log in →</button>
+    <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
+    <button class="secondary" id="loginPasskey" type="button" style="width:100%">Sign in with a passkey / biometrics</button>
+    <p class="muted login-note">Sign in securely with your email and password, or use a passkey after setting it up in Settings.</p>
   </form>
 </section>
 
@@ -1743,13 +1741,7 @@ renderWallet();
 renderCalendar();
 $("loginForm").addEventListener("submit",event=>{
   event.preventDefault();
-  const name=$("loginName").value.trim(),phone=$("loginPhone").value.trim(),email=$("loginEmail").value.trim();
-  const normalizedPhone=phone.replace(/[\s()-]/g,"");
-  if(!name||!email||! /^(?:\+?254|0)[17][0-9]{8}$/.test(normalizedPhone)) { toast("Enter a valid Kenyan mobile number, for example 0712345678 or 0112345678.",true); return; }
-  state.profile={...state.profile,you:name,phone:normalizedPhone,email};
-  saveState(); renderProfile();
-  $("loginScreen").remove();
-  startWelcome();
+  toast("Secure sign-in is unavailable right now. Check your connection and refresh the app.",true);
 });
 </script>
 <script>
@@ -1760,6 +1752,6 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/H-E/H%26E/shared.js?v=3"></script>
+<script src="/H-E/H%26E/shared.js?v=4"></script>
 </body>
 </html>
