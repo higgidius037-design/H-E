@@ -76,17 +76,23 @@ jobs:
             test "$FINGERPRINT" = "$EXPECTED" || { echo "Signing key fingerprint mismatch. Build stopped to protect update compatibility."; exit 1; }
           fi
 
-      - name: Use the exact H&E icon already supplied in the repository
+      - name: Prepare the approved H&E icon for Android adaptive masks
         run: |
-          mkdir -p android-apk/app/src/main/res/drawable-nodpi
-          cp icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
-          cp icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher_round.png
-          file icon-512.png android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
-
-      - name: Register explicit adaptive launcher icon resources
-        run: |
-          mkdir -p android-apk/app/src/main/res/mipmap-anydpi-v26 android-apk/app/src/main/res/drawable
-          mkdir -p android-apk/app/src/main/res/drawable-nodpi
+          python3 -m pip install --quiet Pillow
+          mkdir -p android-apk/app/src/main/res/drawable-nodpi android-apk/app/src/main/res/mipmap-anydpi-v26 android-apk/app/src/main/res/drawable
+          python3 - <<'PY'
+          from PIL import Image
+          source = Image.open("icon-512.png").convert("RGBA")
+          # Keep the approved artwork unchanged; add breathing room so Android's
+          # launcher mask does not crop the rounded corners or gold edge.
+          source.thumbnail((420, 420), Image.Resampling.LANCZOS)
+          foreground = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          foreground.alpha_composite(source, ((512-source.width)//2, (512-source.height)//2))
+          foreground.save("android-apk/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png")
+          # Legacy launcher resources use the original approved image.
+          Image.open("icon-512.png").save("android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png")
+          Image.open("icon-512.png").save("android-apk/app/src/main/res/drawable-nodpi/ic_launcher_round.png")
+          PY
           cat > android-apk/app/src/main/res/drawable/launcher_icon_background.xml <<'XML'
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
               <solid android:color="#310B14"/>
@@ -95,13 +101,13 @@ jobs:
           cat > android-apk/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'XML'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@drawable/launcher_icon_background"/>
-              <foreground android:drawable="@drawable/ic_launcher"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           XML
           cat > android-apk/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml <<'XML'
           <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
               <background android:drawable="@drawable/launcher_icon_background"/>
-              <foreground android:drawable="@drawable/ic_launcher"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
           </adaptive-icon>
           XML
 
