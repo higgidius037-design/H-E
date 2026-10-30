@@ -4,18 +4,19 @@
   const SUPABASE_URL = "https://tqhvlazzvypbqrsjqmwz.supabase.co";
   const SUPABASE_PUBLIC_KEY = "sb_publishable_N9cMzyM6ULmYXZTxiu2zQw_opajzSu1";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: {
+      persistSession: true, autoRefreshToken: true, detectSessionInUrl: true,
+      experimental: { passkey: true }
+    }
   });
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   const bytesToB64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes)));
   const b64ToBytes = value => Uint8Array.from(atob(value), c => c.charCodeAt(0));
-  const normalPhone = value => {
-    const digits = String(value || "").replace(/[\s()-]/g, "");
-    if (/^0[17]\d{8}$/.test(digits)) return "+254" + digits.slice(1);
-    if (/^254[17]\d{8}$/.test(digits)) return "+" + digits;
-    if (/^\+?[1-9]\d{7,14}$/.test(digits)) return digits[0] === "+" ? digits : "+" + digits;
-    throw new Error("Enter the phone number with country code, such as +254712345678.");
+  const normalEmail = value => {
+    const email = String(value || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
+    return email;
   };
   const idb = new Promise((resolve, reject) => {
     const request = indexedDB.open("he-private-keys-v1", 1);
@@ -36,73 +37,80 @@
   const putKeyPair = pair => keyStore("readwrite", s => s.put(pair, "pair"));
   const originalRenderChats = renderChats;
   let session = null, coupleId = null, ownKeyPair = null, partner = null;
-  let remoteChats = [], openedOnce = new Map(), channel = null, pendingPhone = "";
+  let remoteChats = [], openedOnce = new Map(), channel = null;
 
   function addSetupUI() {
     const form = document.getElementById("loginForm");
     const email = document.getElementById("loginEmail"), password = document.getElementById("loginPassword");
-    const emailFields = document.getElementById("emailLoginFields");
-    const phone = document.getElementById("loginPhone");
-    const phoneLabel = document.getElementById("loginPhoneLabel");
     const toggleMethod = document.getElementById("toggleLoginMethod");
-    let loginMode = "phone";
+    const submitButton = document.getElementById("loginSubmit");
+    const passkeyButton = document.getElementById("loginPasskey");
+    let isSignUp = false;
     const note = form.querySelector(".login-note");
-    if (note) note.textContent = "Phone sign-in sends a one-time verification code. Email sign-in works for an existing account with a verified phone number.";
     toggleMethod.addEventListener("click", () => {
-      loginMode = loginMode === "phone" ? "email" : "phone";
-      const useEmail = loginMode === "email";
-      emailFields.hidden = !useEmail;
-      email.required = useEmail;
-      password.required = useEmail;
-      phone.hidden = useEmail;
-      phone.required = !useEmail;
-      phoneLabel.hidden = useEmail;
-      toggleMethod.textContent = useEmail ? "Use phone number instead" : "Use email and password instead";
-      otp.hidden = true;
-      otp.required = false;
-      if (note) note.textContent = useEmail
-        ? "Enter the email and password for your existing account."
-        : "Enter your phone number to receive a one-time verification code.";
+      isSignUp = !isSignUp;
+      document.getElementById("loginName").required = isSignUp;
+      submitButton.textContent = isSignUp ? "Create account →" : "Log in →";
+      toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
+      password.autocomplete = isSignUp ? "new-password" : "current-password";
+      if (note) note.textContent = isSignUp
+        ? "Create your account with an email and password. Check your email if confirmation is required."
+        : "Sign in securely with your email and password. Phone verification is not required.";
     });
-    const otp = document.createElement("input");
-    otp.id = "sharedOtp"; otp.inputMode = "numeric"; otp.autocomplete = "one-time-code";
-    otp.placeholder = "6-digit SMS code"; otp.maxLength = 6; otp.hidden = true;
-    otp.setAttribute("aria-label", "SMS verification code");
-    form.insertBefore(otp, form.querySelector("button[type=submit]"));
+    passkeyButton.addEventListener("click", async () => {
+      passkeyButton.disabled = true;
+      try {
+        const { data, error } = await db.auth.signInWithPasskey();
+        if (error) throw error;
+        if (!data.session) throw new Error("Passkey sign-in did not return a session.");
+        await enterApp(data.session);
+      } catch (error) {
+        const message = error.code === "passkey_disabled"
+          ? "Passkey sign-in is not enabled for this app yet. Use email and password for now."
+          : error.message || "Passkey sign-in failed.";
+        toast(message, true);
+      } finally { passkeyButton.disabled = false; }
+    });
     form.addEventListener("submit", async event => {
       event.preventDefault(); event.stopImmediatePropagation();
-      const button = form.querySelector("button[type=submit]");
-      button.disabled = true;
+      submitButton.disabled = true;
       try {
-        if (loginMode === "email") {
-          const { data, error } = await db.auth.signInWithPassword({ email: email.value.trim(), password: password.value });
+        const address = normalEmail(email.value);
+        const displayName = document.getElementById("loginName").value.trim();
+        if (isSignUp) {
+          const { data, error } = await db.auth.signUp({
+            email: address,
+            password: password.value,
+            options: { data: { display_name: displayName } }
+          });
           if (error) throw error;
-          if (!data.session?.user?.phone) throw new Error("This account has no verified phone number yet. Use phone sign-in to continue.");
-          await enterApp(data.session);
-        } else if (!otp.hidden) {
-          const { data, error } = await db.auth.verifyOtp({ phone: pendingPhone, token: otp.value.trim(), type: "sms" });
-          if (error) throw error;
-          await enterApp(data.session);
+          if (data.session) {
+            await enterApp(data.session);
+          } else {
+            if (note) note.textContent = "Account created. Check your email to confirm it, then return here to log in.";
+            toast("Account created. Check your email to confirm it.");
+            isSignUp = false;
+            document.getElementById("loginName").required = false;
+            submitButton.textContent = "Log in →";
+            toggleMethod.textContent = "New here? Create an account";
+          }
         } else {
-          pendingPhone = normalPhone(document.getElementById("loginPhone").value);
-          const { error } = await db.auth.signInWithOtp({ phone: pendingPhone });
+          const { data, error } = await db.auth.signInWithPassword({ email: address, password: password.value });
           if (error) throw error;
-          otp.hidden = false; otp.required = true;
-          button.textContent = "Verify code →";
-          note.textContent = "Enter the SMS code sent to " + pendingPhone + ".";
-          otp.focus(); toast("Verification code sent.");
+          if (!data.session) throw new Error("Sign-in did not return a session. Check your email confirmation and try again.");
+          await enterApp(data.session);
         }
-      } catch (error) { toast(error.message || "Phone sign-in failed.", true); }
-      finally { button.disabled = false; }
+      } catch (error) { toast(error.message || "Sign-in failed.", true); }
+      finally { submitButton.disabled = false; }
     }, true);
 
     const settings = document.getElementById("page-settings");
     const card = document.createElement("div");
     card.className = "card"; card.id = "sharedSetupCard";
     card.innerHTML = `<h2 class="section-title">Connect our phones</h2>
-      <p class="muted" id="sharedStatus">Sign in with your phone to start a private shared space.</p>
-      <label for="partnerPhone">Your partner's phone (international format)</label>
-      <input id="partnerPhone" type="tel" inputmode="tel" placeholder="+254712345678">
+      <p class="muted" id="sharedStatus">Sign in with your email to start a private shared space.</p>
+      <label for="partnerEmail">Your partner's email</label>
+      <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
       <button class="secondary" id="makePairInvite" type="button">Create pairing code</button>
       <p id="pairCodeText" class="muted" hidden></p>
       <label for="pairCode">Pairing code from your partner</label>
@@ -110,10 +118,21 @@
       <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
+      <button class="secondary" id="registerPasskey" type="button">Set up passkey / biometrics on this device</button>
       <button class="secondary" id="sharedSignOut" type="button">Sign out</button>`;
     settings.prepend(card);
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
+    document.getElementById("registerPasskey").addEventListener("click", async event => {
+      const button = event.currentTarget; button.disabled = true;
+      try {
+        const { data, error } = await db.auth.registerPasskey();
+        if (error) throw error;
+        toast("Passkey set up for this device.");
+        button.textContent = "Passkey ready on this device";
+      } catch (error) { toast(error.message || "Could not set up a passkey.", true); }
+      finally { button.disabled = false; }
+    });
     document.getElementById("sharedSignOut").addEventListener("click", async () => {
       if (!confirm("Sign out of H&E on this phone?")) return;
       await db.auth.signOut(); location.reload();
@@ -133,7 +152,7 @@
     const publicKey = bytesToB64(await crypto.subtle.exportKey("raw", ownKeyPair.publicKey));
     const { data: existingProfile } = await db.from("profiles").select("display_name").eq("user_id", session.user.id).maybeSingle();
     const { error } = await db.from("profiles").upsert({
-      user_id: session.user.id, display_name: document.getElementById("loginName").value.trim() || state.profile.you || existingProfile?.display_name || "H&E",
+      user_id: session.user.id, display_name: document.getElementById("loginName").value.trim() || state.profile.you || session.user.user_metadata?.display_name || existingProfile?.display_name || "H&E",
       encryption_public_key: publicKey, encryption_key_version: 1, updated_at: new Date().toISOString()
     });
     if (error) throw error;
@@ -142,9 +161,9 @@
     const activeSession = nextSession || (await db.auth.getSession()).data.session;
     if (!activeSession || (session && session.user.id === activeSession.user.id)) return;
     session = activeSession;
-    const phone = session.user.phone || pendingPhone;
+    const phone = session.user.phone || state.profile.phone || "";
     const name = document.getElementById("loginName").value.trim() || state.profile.you || "H&E";
-    state.profile = { ...state.profile, you: name, phone, email: "" };
+    state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
     saveState(); renderProfile();
     await ensureKeys();
     document.getElementById("loginScreen").remove();
@@ -154,7 +173,7 @@
   async function refreshPairing() {
     const { data: members, error } = await db.from("couple_members").select("couple_id,user_id").eq("user_id", session.user.id).limit(1);
     if (error) throw error;
-    if (!members?.length) { coupleId = null; setStatus("Your account is verified. Enter your partner's number to create a pairing code, or paste theirs to join."); return; }
+    if (!members?.length) { coupleId = null; setStatus("Your account is ready. Enter your partner's email to create a pairing code, or paste theirs to join."); return; }
     coupleId = members[0].couple_id;
     const { data: allMembers, error: memberError } = await db.from("couple_members").select("user_id").eq("couple_id", coupleId);
     if (memberError) throw memberError;
@@ -176,12 +195,12 @@
   async function createInvite() {
     try {
       if (!session) throw new Error("Sign in first.");
-      const phone = normalPhone(document.getElementById("partnerPhone").value);
-      const { data, error } = await db.rpc("create_pair_invite", { p_recipient_phone: phone });
+      const email = normalEmail(document.getElementById("partnerEmail").value);
+      const { data, error } = await db.rpc("create_pair_invite", { p_recipient: email });
       if (error) throw error;
       const target = document.getElementById("pairCodeText"); target.hidden = false;
-      target.textContent = "Share this one-time code privately with " + phone + ": " + data;
-      document.getElementById("partnerPhone").value = phone;
+      target.textContent = "Share this one-time code privately with " + email + ": " + data;
+      document.getElementById("partnerEmail").value = email;
       toast("Pairing code created. It expires in 24 hours."); await refreshPairing();
     } catch (error) { toast(error.message || "Could not create a pairing code.", true); }
   }
