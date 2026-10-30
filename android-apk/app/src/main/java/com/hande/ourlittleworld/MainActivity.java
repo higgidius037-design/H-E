@@ -3,11 +3,13 @@ package com.hande.ourlittleworld;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.CookieManager;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,7 +17,9 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/";
+    // The published H&E page lives in the H&E folder, not at the repository root.
+    private static final String APP_URL =
+            "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
 
     private WebView webView;
@@ -26,6 +30,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         webView = new WebView(this);
+        webView.setBackgroundColor(0xFFFFF9F1);
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
@@ -33,10 +38,14 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setMediaPlaybackRequiresUserGesture(true);
+        settings.setLoadsImagesAutomatically(true);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
-        CookieManager.getInstance().setAcceptCookie(true);
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        CookieManager cookies = CookieManager.getInstance();
+        cookies.setAcceptCookie(true);
+        cookies.setAcceptThirdPartyCookies(webView, true);
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -47,8 +56,23 @@ public class MainActivity extends Activity {
                         || host.endsWith(".supabase.co"))) {
                     return false;
                 }
-                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(MainActivity.this, "No app can open this link.", Toast.LENGTH_SHORT).show();
+                }
                 return true;
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                view.setBackgroundColor(0xFFFFF9F1);
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request,
+                                        WebResourceError error) {
+                if (request.isForMainFrame()) showLoadError();
             }
         });
 
@@ -70,11 +94,19 @@ public class MainActivity extends Activity {
             }
         });
 
-        if (savedInstanceState == null) {
-            webView.loadUrl(APP_URL);
-        } else {
-            webView.restoreState(savedInstanceState);
-        }
+        // Always open the current published page; do not restore an old blank/root URL.
+        webView.loadUrl(APP_URL);
+    }
+
+    private void showLoadError() {
+        if (webView == null) return;
+        String html = "<html><body style='font-family:Arial;background:#fff9f1;color:#310b14;"
+                + "padding:32px;text-align:center'><h2>H&amp;E could not connect</h2>"
+                + "<p>Check your internet connection, then try again.</p>"
+                + "<button onclick='location.href="" + APP_URL + ""' "
+                + "style='padding:12px 22px;background:#70263b;color:white;border:0;border-radius:8px'>"
+                + "Try again</button></body></html>";
+        webView.loadDataWithBaseURL(APP_URL, html, "text/html", "UTF-8", null);
     }
 
     @Override
@@ -88,24 +120,19 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (webView != null) webView.saveState(outState);
-    }
-
-    @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (webView != null && webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 
     @Override
     protected void onDestroy() {
         if (fileCallback != null) fileCallback.onReceiveValue(null);
-        if (webView != null) webView.destroy();
+        if (webView != null) {
+            webView.stopLoading();
+            webView.destroy();
+            webView = null;
+        }
         super.onDestroy();
     }
 }
