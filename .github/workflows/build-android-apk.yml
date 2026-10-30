@@ -75,10 +75,22 @@ jobs:
             test "$FINGERPRINT" = "$EXPECTED" || { echo "Signing key fingerprint mismatch. Build stopped to protect update compatibility."; exit 1; }
           fi
 
-      - name: Restore original H&E launcher icon
+      - name: Build approved burgundy-and-gold launcher icon with clean curved corners
         run: |
-          mkdir -p android-apk/app/src/main/res/drawable-nodpi
-          curl -fL https://raw.githubusercontent.com/higgidius037-design/H-E/main/icon-512.png -o android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
+          python -m pip install --quiet cairosvg pillow
+          python - <<'PY'
+          import cairosvg
+          from PIL import Image, ImageDraw
+          import io, os
+          svg = open("approved-icon.svg", encoding="utf-8").read()
+          raw = cairosvg.svg2png(bytestring=svg.encode(), output_width=512, output_height=512)
+          im = Image.open(io.BytesIO(raw)).convert("RGBA")
+          mask = Image.new("L", (512, 512), 0)
+          ImageDraw.Draw(mask).rounded_rectangle((0, 0, 511, 511), radius=88, fill=255)
+          im.putalpha(mask)
+          os.makedirs("android-apk/app/src/main/res/drawable-nodpi", exist_ok=True)
+          im.save("android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png")
+          PY
           file android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
 
       - name: Set up Gradle
