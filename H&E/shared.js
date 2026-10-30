@@ -149,10 +149,27 @@
       } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
     });
-    document.getElementById("sharedSignOut").addEventListener("click", async () => {
-      if (!confirm("Sign out of H&E on this phone?")) return;
-      await db.auth.signOut(); location.reload();
-    });
+    const signOut = async () => {
+      if (!confirm("Log out of H&E on this device? You will need to enter your email and password again.")) return;
+      const buttons = [document.getElementById("logoutButton"), document.getElementById("sharedSignOut")].filter(Boolean);
+      buttons.forEach(button => { button.disabled = true; });
+      try {
+        const { error } = await db.auth.signOut({ scope: "local" });
+        if (error) throw error;
+        session = null;
+        coupleId = null;
+        partner = null;
+        remoteChats = [];
+        if (channel) { await db.removeChannel(channel); channel = null; }
+        if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
+        location.reload();
+      } catch (error) {
+        buttons.forEach(button => { button.disabled = false; });
+        toast(error.message || "Could not log out. Please try again.", true);
+      }
+    };
+    document.getElementById("sharedSignOut").addEventListener("click", signOut);
+    document.getElementById("logoutButton")?.addEventListener("click", signOut);
     document.getElementById("chatForm").addEventListener("submit", sendMessage, true);
     document.getElementById("chatList").addEventListener("click", openViewOnce, true);
     document.getElementById("walletForm").addEventListener("submit", sharedWallet, true);
