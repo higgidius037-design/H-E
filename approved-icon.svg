@@ -18,7 +18,6 @@
  <text x="91" y="330" font-family="Georgia,serif" font-size="250" font-weight="normal">H</text>
  <text x="291" y="330" font-family="Georgia,serif" font-size="230" font-weight="normal">E</text>
 </g>
-<path d="M229 210 C212 180 174 190 178 222 C181 250 256 315 256 315 C256 315 331 250 334 222 C338 190 300 180 283 210 C270 231 256 250 256 250 C256 250 242 231 229 210Z" fill="none" stroke="url(#gold)" stroke-width="2.1" opacity=".9"/>
 <path d="M178 355 Q256 392 334 355" fill="none" stroke="url(#gold)" stroke-width="1.8"/>
 <g fill="url(#gold)">
  <circle cx="237" cy="153" r="1.7"/><circle cx="249" cy="151" r="1.8"/><circle cx="263" cy="151" r="2.3"/><circle cx="276" cy="153" r="1.7"/>
