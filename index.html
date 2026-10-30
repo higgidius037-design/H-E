@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="../manifest.json">
-<link rel="icon" href="../icon-192.png">
+<link rel="manifest" href="/H-E/manifest.json">
+<link rel="icon" href="/H-E/icon-192.png">
   
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -297,20 +297,25 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 .welcome-glow {
   position:absolute;
+  top:50%;
+  left:50%;
   width:70vw;
   height:70vw;
   max-width:550px;
   max-height:550px;
   border:1px solid #e8c58a35;
   border-radius:50%;
+  transform:translate(-50%,-50%);
   box-shadow:0 0 100px #e8c58a10;
   animation:welcomeGlow 4s ease-in-out infinite alternate;
 }
 .welcome-content {
   position:relative;
   z-index:2;
+  width:min(100%,760px);
   padding:24px;
   text-align:center;
+  justify-self:center;
   animation:welcomeRise 1.4s ease both;
 }
 .welcome-flourish {
@@ -322,6 +327,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   display:grid;
   gap:12px;
   margin:25px 0;
+  width:100%;
+  text-align:center;
   font-weight:normal;
 }
 .welcome-he {
@@ -359,8 +366,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   to { opacity:1;transform:translateY(0); }
 }
 @keyframes welcomeGlow {
-  from { transform:scale(.92);opacity:.5; }
-  to { transform:scale(1.06);opacity:1; }
+  from { transform:translate(-50%,-50%) scale(.92);opacity:.5; }
+  to { transform:translate(-50%,-50%) scale(1.06);opacity:1; }
 }
 @keyframes petalDrift {
   0% { opacity:0;transform:translate(0,-5vh) rotate(0); }
@@ -835,10 +842,10 @@ textarea { min-height:90px;resize:vertical; }
         <p class="muted">Kenyan shillings (KSh)</p>
         <div class="wallet-balance"><span>Available balance</span><strong id="walletBalance">KSh 0.00</strong></div>
         <div class="wallet-actions"><button class="primary" id="showDeposit" type="button">＋ Deposit</button><button class="secondary" id="showWithdraw" type="button">↗ Withdraw</button></div>
-        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals only change a local demo balance. No real money is moved, no M-PESA request is sent, and the phone number is not verified. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
+        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals update a shared demo balance between paired phones. No real money is moved, and no M-PESA request is sent. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
       </div>
       <div class="card hidden" id="walletActionCard"><h3 id="walletActionTitle">Deposit</h3><form id="walletForm"><input type="hidden" id="walletAction" value="deposit"><label for="walletAmount">Amount (KSh)</label><input id="walletAmount" type="number" min="1" step="0.01" required placeholder="500"><label for="walletPin">Wallet PIN</label><input id="walletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Enter wallet PIN" required><button class="primary" type="submit" id="walletSubmit">Confirm deposit</button><button class="secondary" id="cancelWalletAction" type="button">Cancel</button></form></div>
-      <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">This device</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
+      <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">Shared demo activity</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
     </section>
 
     <!-- SETTINGS -->
@@ -852,7 +859,7 @@ textarea { min-height:90px;resize:vertical; }
         <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
         <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
       </div>
-      <div class="card"><h2 class="section-title">Account</h2><p class="muted">This standalone file stores profile and demo wallet data in this browser only. The phone number is not verified by SMS, and data does not sync across phones. Do not use this prototype for real funds.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
+      <div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
     </section>
   </main>
 </div>
@@ -1390,8 +1397,8 @@ $("chatMessage").addEventListener("input", event => {
 $("chatInfoButton").addEventListener("click", () => {
   alert(
     "H&E — Our Little World\n\n" +
-    "Messages and attachments are stored locally in this browser. " +
-    "They do not sync to your partner's device in this version."
+    "Paired messages are encrypted on this device and sync between phones. " +
+    "Check the shared-space safety code with your partner before sharing sensitive messages."
   );
 });
 
@@ -1437,6 +1444,7 @@ $("recordVoice").addEventListener("click", async () => {
         });
 
         if (saveState()) {
+          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice");
           renderChats();
           toast("Voice note saved ♡");
         }
@@ -1737,5 +1745,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
     console.error("Service worker registration failed:", error);
   });
 }
-</script></body>
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/H-E/H%26E/shared.js"></script>
+</body>
 </html>
