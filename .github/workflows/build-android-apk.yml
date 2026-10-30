@@ -34,14 +34,42 @@ jobs:
           curl -fL https://raw.githubusercontent.com/higgidius037-design/H-E/main/icon-512.png -o android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
           file android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
 
+      - name: Configure permanent signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "Missing repository secret ANDROID_KEYSTORE_BASE64"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing repository secret ANDROID_KEYSTORE_PASSWORD"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Missing repository secret ANDROID_KEY_ALIAS"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing repository secret ANDROID_KEY_PASSWORD"; exit 1; }
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hande-release.jks"
+          chmod 600 "$RUNNER_TEMP/hande-release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/hande-release.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/hande-release.jks" >> "$GITHUB_ENV"
+          echo "Permanent signing key verified."
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build debug APK
+      - name: Build APK with permanent signing
         working-directory: android-apk
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ env.ANDROID_KEYSTORE_PATH }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: gradle assembleDebug
+
+      - name: Verify APK signature
+        run: |
+          APK="android-apk/app/build/outputs/apk/debug/app-debug.apk"
+          apksigner verify --verbose "$APK"
+          apksigner verify --print-certs "$APK"
 
       - name: Upload APK as a GitHub Release download
         env:
@@ -54,7 +82,7 @@ jobs:
             gh release delete-asset "$TAG" app-debug.apk --yes || true
             gh release upload "$TAG" H-and-E.apk --clobber
           else
-            gh release create "$TAG" H-and-E.apk --title "H&E Android APK" --notes "Android installer for H&E – Our Little World. Requires an internet connection."
+            gh release create "$TAG" H-and-E.apk --title "H&E Android APK" --notes "Android installer for H&E – Our Little World. Signed with the permanent H&E update key."
           fi
 
       - name: Upload APK as workflow artifact
