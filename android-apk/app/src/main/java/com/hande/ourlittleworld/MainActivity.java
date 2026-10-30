@@ -17,7 +17,6 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
-    // The published H&E page lives in the H&E folder, not at the repository root.
     private static final String APP_URL =
             "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
@@ -94,7 +93,6 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Always open the current published page; do not restore an old blank/root URL.
         webView.loadUrl(APP_URL);
     }
 
@@ -103,7 +101,7 @@ public class MainActivity extends Activity {
         String html = "<html><body style='font-family:Arial;background:#fff9f1;color:#310b14;"
                 + "padding:32px;text-align:center'><h2>H&amp;E could not connect</h2>"
                 + "<p>Check your internet connection, then try again.</p>"
-                + "<button onclick='location.href="" + APP_URL + ""' "
+                + "<button onclick=\"location.href='" + APP_URL + "'\" "
                 + "style='padding:12px 22px;background:#70263b;color:white;border:0;border-radius:8px'>"
                 + "Try again</button></body></html>";
         webView.loadDataWithBaseURL(APP_URL, html, "text/html", "UTF-8", null);
