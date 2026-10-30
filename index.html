@@ -1705,10 +1705,15 @@ renderChats();
 renderGoal();
 renderWallet();
 renderCalendar();
-function showLoginFeedback(message,kind="error") { const box=$("loginFeedback"); if(!box)return; box.textContent=message; box.dataset.kind=kind; box.hidden=false; }
-$("loginForm").addEventListener("submit",event=>{ event.preventDefault(); showLoginFeedback("The secure sign-in service did not load. Check your connection, refresh the page, and try again."); });
-$("loginPasskey").addEventListener("click",()=>showLoginFeedback("The secure sign-in service did not load. Refresh the page and try again."));
-</script>
+function showLoginFeedback(message,kind="error") {
+  const box = $("loginFeedback");
+  if (!box) return;
+  box.textContent = message;
+  box.dataset.kind = kind;
+  box.hidden = false;
+}
+   </script>
+
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") {
   navigator.serviceWorker.register("/H-E/sw.js").catch(error => {
@@ -1716,7 +1721,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   });
 }
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=7"></script>
+<script src="/H-E/H%26E/shared.js?v=8"></script>
 </body>
 </html>
