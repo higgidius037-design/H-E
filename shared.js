@@ -333,12 +333,13 @@
         const item = openedOnce.get(chat.id) || chat;
         if (item.message) content += `<p class="chat-text">${escapeHTML(item.message)}</p>`;
         if (item.attachment?.data) content += item.attachment.type === "video" ? `<video class="chat-media" controls playsinline src="${item.attachment.data}"></video>` : `<img class="chat-media" alt="Shared photo" src="${item.attachment.data}">`;
-        if (item.voice) content += `<audio class="chat-audio" controls src="${item.voice}"></audio>`;
+        if (item.voice) content += `<div class="voice-tile"><audio class="chat-audio" preload="metadata" src="${item.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
         if (chat.viewOnce && openedOnce.has(chat.id)) content += `<button class="link-button" type="button" data-close-once="${chat.id}">Close view</button>`;
       }
       return `<article class="chat-bubble ${isMine ? "mine" : "theirs"}">${!isMine ? `<div class="chat-sender">${escapeHTML(chat.name || partner?.name || "Partner")}</div>` : ""}${content}<div class="chat-time"><span>${escapeHTML(chat.date || "")}</span>${isMine ? '<span class="chat-tick">✓</span>' : ""}</div></article>`;
     }).join("");
     list.querySelectorAll("[data-close-once]").forEach(btn => btn.addEventListener("click", () => { openedOnce.delete(btn.dataset.closeOnce); refreshMessages(); }));
+    list.querySelectorAll("[data-voice-play]").forEach(btn=>btn.addEventListener("click",()=>{const audio=btn.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();btn.textContent="Ⅱ";}else{audio.pause();btn.textContent="▶";}audio.onended=()=>btn.textContent="▶";}));
     const bottom = document.getElementById("chatList"); bottom.scrollTop = bottom.scrollHeight;
   };
   async function callSignal(type, data = {}) { if (!callChannel || !partner) throw new Error("Pair your phones first in Settings."); const result = await callChannel.send({ type: "broadcast", event: "signal", payload: { from: session.user.id, to: partner.id, type, ...data } }); if (result !== "ok") throw new Error("Could not reach your paired phone."); }
@@ -354,9 +355,6 @@
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Mute":"Unmute";}});$("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Turn camera off":"Turn camera on";}});
   async function boot() {
     addSetupUI();
-    const preview = document.getElementById("chatForm");
-    const onceLabel = document.createElement("label"); onceLabel.className = "muted"; onceLabel.style.cssText = "display:flex;align-items:center;gap:8px;margin:8px 0";
-    onceLabel.innerHTML = '<input id="viewOnceToggle" type="checkbox"> View once'; preview.insertAdjacentElement("beforebegin", onceLabel);
     const { data } = await db.auth.getSession();
     if (data.session) { session = data.session; await enterApp(session); }
     db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => toast(e.message, true)); });
