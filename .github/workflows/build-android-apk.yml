@@ -96,7 +96,7 @@ jobs:
 
       - name: Register explicit adaptive launcher icon resources
         run: |
-          mkdir -p android-apk/app/src/main/res/mipmap-anydpi-v26
+          mkdir -p android-apk/app/src/main/res/mipmap-anydpi-v26 android-apk/app/src/main/res/drawable
           mkdir -p android-apk/app/src/main/res/drawable-nodpi
           cat > android-apk/app/src/main/res/drawable/launcher_icon_background.xml <<'XML'
           <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
