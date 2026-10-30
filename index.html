@@ -521,6 +521,21 @@ textarea { min-height:90px;resize:vertical; }
 .calendar-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin:15px 0; }
 .calendar-head h3 { margin:0;font-weight:normal;text-align:center; }
 .calendar-grid { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px; }
+/* Stable page sizing and readable calendar/wallet panels */
+.page { min-width:0; width:100%; }
+.page.active { display:block; animation:pageAppear .18s ease-out; }
+@keyframes pageAppear { from { opacity:.65; } to { opacity:1; } }
+.wallet-card { position:relative; isolation:isolate; overflow:visible; }
+.wallet-balance { position:relative; z-index:1; display:block; min-height:112px; overflow:visible; }
+.wallet-balance strong { display:block; position:relative; z-index:2; color:#fff; line-height:1.25; overflow-wrap:anywhere; }
+.calendar-grid { width:100%; min-width:0; align-items:stretch; }
+.calendar-day { min-width:0; min-height:54px; height:auto; }
+.calendar-day .event-count { overflow-wrap:anywhere; }
+@media(max-width:650px) {
+  .calendar-day { min-height:44px; padding:5px 1px 8px; }
+  .calendar-day .event-count { font-size:9px; }
+}
+
 .calendar-day-name { text-align:center;color:var(--muted);padding:8px 0;font-size:12px; }
 .calendar-day { min-height:62px;border:1px solid var(--line);background:#fffdfa;color:var(--ink);border-radius:8px;padding:6px 3px;text-align:center;position:relative; }
 .calendar-day.outside { opacity:.4; }
@@ -672,18 +687,12 @@ textarea { min-height:90px;resize:vertical; }
      </div>
 
       <div class="card">
-        <div class="card-heading"><h2>Coming Up</h2>
-      <h2>Wallet</h2>
-      <button class="link-button" data-go="wallet">View →</button>
-    </div>
-    <div class="stat">
-      <h3>Wallet balance</h3>
-      <strong id="homeWalletBalance">KSh 0.00</strong>
-      <p>Manage your wallet in Kenyan shillings.</p>
-      <button class="primary" data-go="wallet">Open Wallet →</button>
-    </div>
-  </div>
-</div>
+        <div class="card-heading"><h2>Wallet</h2><button class="link-button" data-go="wallet">View →</button></div>
+        <div class="stat">
+          <h3>Wallet balance</h3>
+          <strong id="homeWalletBalance">KSh 0.00</strong>
+          <p>Manage your wallet in Kenyan shillings.</p>
+          <button class="primary" data-go="wallet">Open Wallet →</button>
         </div>
       </div>
 
@@ -843,7 +852,7 @@ textarea { min-height:90px;resize:vertical; }
         <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
       </div>
       <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
-        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on supported device/browser integration and is not active in this HTML prototype.</p></div><span class="pill">Not available here</span></div>
+        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on device and browser support.</p></div><span class="pill">Not available here</span></div>
         <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
         <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
       </div>
@@ -1028,16 +1037,27 @@ function toast(message,error=false) {
   toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
 }
 function showPage(page) {
-  document.querySelectorAll(".page").forEach(section =>
-    section.classList.toggle("active",section.id==="page-"+page)
-  );
-  document.querySelectorAll("[data-page]").forEach(button =>
-    button.classList.toggle("active",button.dataset.page===page)
-  );
-  window.scrollTo({top:0,behavior:"smooth"});
-  if(page==="calendar") renderCalendar();
-  if(page==="gallery") { closeGalleryFolder(); renderMedia(); }
-  if(page==="wallet") renderWallet();
+  const target = document.getElementById("page-" + page);
+  if (!target) return;
+  document.querySelectorAll(".page").forEach(section => {
+    const active = section === target;
+    section.classList.toggle("active", active);
+    section.setAttribute("aria-hidden", active ? "false" : "true");
+  });
+  document.querySelectorAll("[data-page]").forEach(button => {
+    const active = button.dataset.page === page;
+    button.classList.toggle("active", active);
+    if (active) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+  if (page === "calendar") renderCalendar();
+  if (page === "gallery") { closeGalleryFolder(); renderMedia(); }
+  if (page === "wallet") renderWallet();
+  if (page === "messages") renderChats();
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    target.classList.add("page-ready");
+  });
 }
 document.querySelectorAll("[data-page]").forEach(button =>
   button.addEventListener("click",()=>showPage(button.dataset.page))
@@ -1683,11 +1703,11 @@ function startWelcome() {
 loadData();
 renderProfile();
 renderMedia();
-loadMediaFromDB();
-renderChats();
-renderGoal();
+renderHomeEvents();
 renderWallet();
 renderCalendar();
+renderChats();
+loadMediaFromDB();
 function showLoginFeedback(message,kind="error") {
   const box = $("loginFeedback");
   if (!box) return;
