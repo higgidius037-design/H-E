@@ -1715,5 +1715,190 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
 <script src="/H-E/H%26E/shared.js?v=8"></script>
+  
+<script>
+(() => {
+  "use strict";
+
+  const db = window.heSupabase;
+
+  const loginScreen = document.getElementById("loginScreen");
+  const loginForm = document.getElementById("loginForm");
+  const loginName = document.getElementById("loginName");
+  const loginEmail = document.getElementById("loginEmail");
+  const loginPassword = document.getElementById("loginPassword");
+  const loginSubmit = document.getElementById("loginSubmit");
+  const toggleButton = document.getElementById("toggleLoginMethod");
+  const feedback = document.getElementById("loginFeedback");
+  const passkeyButton = document.getElementById("loginPasskey");
+
+  if (!db || !loginForm || !loginScreen) {
+    console.error("H&E login could not initialize.");
+    return;
+  }
+
+  let isSignup = false;
+
+  function message(text, success = false) {
+    feedback.textContent = text;
+    feedback.hidden = false;
+    feedback.dataset.kind = success ? "success" : "error";
+  }
+
+  function showLogin() {
+    loginScreen.style.display = "grid";
+  }
+
+  function hideLogin() {
+    loginScreen.style.display = "none";
+  }
+
+  function setMode(signup) {
+    isSignup = signup;
+
+    loginName.required = signup;
+    loginName.parentElement.style.display = signup ? "" : "none";
+
+    loginPassword.autocomplete = signup
+      ? "new-password"
+      : "current-password";
+
+    loginSubmit.textContent = signup
+      ? "Create account →"
+      : "Log in →";
+
+    toggleButton.textContent = signup
+      ? "Already have an account? Log in"
+      : "New here? Create an account";
+
+    message("");
+    feedback.hidden = true;
+  }
+
+  toggleButton.addEventListener("click", () => {
+    setMode(!isSignup);
+  });
+
+  loginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    loginSubmit.disabled = true;
+    loginSubmit.textContent = "Please wait...";
+
+    try {
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value;
+
+      let result;
+
+      if (isSignup) {
+        result = await db.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: loginName.value.trim()
+            }
+          }
+        });
+
+        if (result.error) throw result.error;
+
+        if (!result.data.session) {
+          message(
+            "Account created. Check your email for the confirmation link.",
+            true
+          );
+          return;
+        }
+      } else {
+        result = await db.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (result.error) throw result.error;
+      }
+
+      hideLogin();
+      loginForm.reset();
+      setMode(false);
+
+      window.dispatchEvent(
+        new CustomEvent("he-user-authenticated", {
+          detail: { user: result.data.user }
+        })
+      );
+
+    } catch (error) {
+      message(error.message || "Login failed. Please try again.");
+    } finally {
+      loginSubmit.disabled = false;
+      loginSubmit.textContent = isSignup
+        ? "Create account →"
+        : "Log in →";
+    }
+  });
+
+  // Passkey option is not implemented yet.
+  if (passkeyButton) {
+    passkeyButton.style.display = "none";
+  }
+
+  // Restore an existing session when the app opens.
+  async function restoreSession() {
+    showLogin();
+
+    const { data, error } = await db.auth.getSession();
+
+    if (error) {
+      message("Could not restore your session. Please log in.");
+      return;
+    }
+
+    if (data.session) {
+      hideLogin();
+      window.dispatchEvent(
+        new CustomEvent("he-user-authenticated", {
+          detail: { user: data.session.user }
+        })
+      );
+    } else {
+      showLogin();
+    }
+  }
+
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_OUT") {
+      showLogin();
+    }
+  });
+
+  // Replace the existing logout handler with this one.
+  const logoutButton = document.getElementById("logoutButton");
+
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async event => {
+      event.preventDefault();
+
+      if (!confirm("Log out of H&E on this device?")) return;
+
+      const { error } = await db.auth.signOut();
+
+      if (error) {
+        alert("Logout failed: " + error.message);
+        return;
+      }
+
+      location.reload();
+    });
+  }
+
+  setMode(false);
+  restoreSession();
+
+})();
+</script>
+
 </body>
 </html>
