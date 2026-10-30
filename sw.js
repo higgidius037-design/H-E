@@ -1,5 +1,5 @@
 const CACHE_NAME = "he-app-v1";
-const APP_URL = "/H-E/";
+const APP_URL = "/H-E/H%26E/index.html";
 
 self.addEventListener("install", event => {
   event.waitUntil(
