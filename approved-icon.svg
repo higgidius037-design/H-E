@@ -1,1 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#650817"/><stop offset=".48" stop-color="#3b0010"/><stop offset="1" stop-color="#260008"/></linearGradient><linearGradient id="gold" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#fff0ad"/><stop offset=".25" stop-color="#d9a447"/><stop offset=".52" stop-color="#fff0a0"/><stop offset=".78" stop-color="#b87924"/><stop offset="1" stop-color="#ffe7a0"/></linearGradient><clipPath id="round"><rect width="512" height="512" rx="88"/></clipPath></defs><g clip-path="url(#round)"><rect width="512" height="512" fill="url(#bg)"/><rect x="8" y="8" width="496" height="496" rx="82" fill="none" stroke="#6e1421" stroke-width="2"/><circle cx="256" cy="232" r="178" fill="none" stroke="#1b0006" stroke-width="9" opacity=".65"/><circle cx="256" cy="232" r="178" fill="none" stroke="url(#gold)" stroke-width="5"/><circle cx="256" cy="232" r="171" fill="none" stroke="#a76f2d" stroke-width="1" opacity=".8"/><text x="158" y="286" font-family="Georgia,serif" font-size="190" font-weight="bold" fill="url(#gold)" stroke="#9b6426" stroke-width="1">H</text><text x="258" y="286" font-family="Georgia,serif" font-size="175" font-weight="bold" fill="url(#gold)" stroke="#9b6426" stroke-width="1">E</text><path d="M255 207 C238 177 195 188 198 222 C201 250 256 283 256 283 C256 283 312 249 314 220 C316 188 274 177 255 207Z" fill="#3d0010" stroke="url(#gold)" stroke-width="5"/><path d="M210 270 Q252 306 300 264" fill="none" stroke="url(#gold)" stroke-width="5"/><text x="256" y="348" text-anchor="middle" font-family="Georgia,serif" font-size="23" letter-spacing="4" fill="url(#gold)">OUR LITTLE WORLD</text><path d="M158 377 H229 M283 377 H354" stroke="url(#gold)" stroke-width="2"/><path d="M256 389 C246 376 232 383 238 394 L256 411 L274 394 C280 383 266 376 256 389Z" fill="url(#gold)"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+ <radialGradient id="burgundy" cx="38%" cy="30%" r="75%"><stop stop-color="#64121f"/><stop offset=".52" stop-color="#3b0712"/><stop offset="1" stop-color="#21040b"/></radialGradient>
+ <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0bd"/><stop offset=".28" stop-color="#e5bd70"/><stop offset=".55" stop-color="#f8dda0"/><stop offset=".82" stop-color="#bd873b"/><stop offset="1" stop-color="#f7d994"/></linearGradient>
+ <radialGradient id="shine" cx="25%" cy="18%" r="80%"><stop stop-color="#a9434b" stop-opacity=".35"/><stop offset=".7" stop-color="#400711" stop-opacity="0"/><stop offset="1" stop-color="#160208" stop-opacity=".55"/></radialGradient>
+</defs>
+<!-- A true circular medallion; everything outside the circle remains transparent. -->
+<circle cx="256" cy="256" r="250" fill="url(#burgundy)" stroke="#8c3d3b" stroke-width="2"/>
+<circle cx="256" cy="256" r="247" fill="url(#shine)"/>
+<g fill="none" stroke="url(#gold)" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M130 178 Q177 135 224 133 M290 133 Q351 128 390 176" stroke-width="1.6" opacity=".9"/>
+ <path d="M104 217 Q78 238 75 275 M407 270 Q438 296 428 335" stroke-width="1.4" opacity=".75"/>
+ <path d="M116 205 Q94 205 78 220 Q101 225 116 205Z M105 230 Q81 238 68 260 Q94 255 105 230Z M98 259 Q76 275 73 298 Q96 286 98 259Z M99 286 Q83 308 88 329 Q105 311 99 286Z M112 311 Q102 335 115 354 Q126 332 112 311Z" stroke-width="1.7"/>
+ <path d="M396 258 Q420 250 438 265 Q416 276 396 258Z M405 284 Q430 281 448 300 Q423 309 405 284Z M408 313 Q434 318 444 341 Q417 344 408 313Z M397 340 Q421 353 425 376 Q399 371 397 340Z" stroke-width="1.7"/>
+ <path d="M124 193 Q103 245 117 292 M388 197 Q412 249 397 294" stroke-width="1.3" opacity=".8"/>
+</g>
+<g fill="url(#gold)" stroke="#a87535" stroke-width=".8" paint-order="stroke">
+ <text x="91" y="330" font-family="Georgia,serif" font-size="250" font-weight="normal">H</text>
+ <text x="291" y="330" font-family="Georgia,serif" font-size="230" font-weight="normal">E</text>
+</g>
+<path d="M229 210 C212 180 174 190 178 222 C181 250 256 315 256 315 C256 315 331 250 334 222 C338 190 300 180 283 210 C270 231 256 250 256 250 C256 250 242 231 229 210Z" fill="none" stroke="url(#gold)" stroke-width="2.1" opacity=".9"/>
+<path d="M178 355 Q256 392 334 355" fill="none" stroke="url(#gold)" stroke-width="1.8"/>
+<g fill="url(#gold)">
+ <circle cx="237" cy="153" r="1.7"/><circle cx="249" cy="151" r="1.8"/><circle cx="263" cy="151" r="2.3"/><circle cx="276" cy="153" r="1.7"/>
+</g>
+</svg>
