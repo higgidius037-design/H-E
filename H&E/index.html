@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="../manifest.json">
-<link rel="icon" href="../icon-192.png">
+<link rel="manifest" href="/H-E/manifest.json">
+<link rel="icon" href="/H-E/icon-192.png">
   
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -297,20 +297,25 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 }
 .welcome-glow {
   position:absolute;
+  top:50%;
+  left:50%;
   width:70vw;
   height:70vw;
   max-width:550px;
   max-height:550px;
   border:1px solid #e8c58a35;
   border-radius:50%;
+  transform:translate(-50%,-50%);
   box-shadow:0 0 100px #e8c58a10;
   animation:welcomeGlow 4s ease-in-out infinite alternate;
 }
 .welcome-content {
   position:relative;
   z-index:2;
+  width:min(100%,760px);
   padding:24px;
   text-align:center;
+  justify-self:center;
   animation:welcomeRise 1.4s ease both;
 }
 .welcome-flourish {
@@ -322,6 +327,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   display:grid;
   gap:12px;
   margin:25px 0;
+  width:100%;
+  text-align:center;
   font-weight:normal;
 }
 .welcome-he {
@@ -359,8 +366,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
   to { opacity:1;transform:translateY(0); }
 }
 @keyframes welcomeGlow {
-  from { transform:scale(.92);opacity:.5; }
-  to { transform:scale(1.06);opacity:1; }
+  from { transform:translate(-50%,-50%) scale(.92);opacity:.5; }
+  to { transform:translate(-50%,-50%) scale(1.06);opacity:1; }
 }
 @keyframes petalDrift {
   0% { opacity:0;transform:translate(0,-5vh) rotate(0); }
@@ -554,9 +561,18 @@ textarea { min-height:90px;resize:vertical; }
   .card { padding:14px;margin-top:12px; }
   .card-heading h2,.section-title { font-size:21px; }
   .media-preview { height:120px; }
+  #mediaCollection {
+    max-height:58vh;
+    max-height:58dvh;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    align-content:start;
+  }
   .bottom-nav {
     position:fixed;z-index:20;bottom:0;left:0;right:0;
-    display:grid;grid-template-columns:repeat(4,1fr);
+    display:grid;grid-template-columns:repeat(5,1fr);
     padding:8px 4px calc(8px + env(safe-area-inset-bottom));
     background:linear-gradient(100deg,#2c0812,#4a1221);
     border-top:1px solid var(--gold);
@@ -826,10 +842,10 @@ textarea { min-height:90px;resize:vertical; }
         <p class="muted">Kenyan shillings (KSh)</p>
         <div class="wallet-balance"><span>Available balance</span><strong id="walletBalance">KSh 0.00</strong></div>
         <div class="wallet-actions"><button class="primary" id="showDeposit" type="button">＋ Deposit</button><button class="secondary" id="showWithdraw" type="button">↗ Withdraw</button></div>
-        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals only change a local demo balance. No real money is moved, no M-PESA request is sent, and the phone number is not verified. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
+        <p class="muted wallet-disclaimer">SANDBOX / DEMO ONLY: deposits and withdrawals update a shared demo balance between paired phones. No real money is moved, and no M-PESA request is sent. Live payments require a secure backend, provider approval, verified transactions and appropriate adult/business oversight.</p>
       </div>
       <div class="card hidden" id="walletActionCard"><h3 id="walletActionTitle">Deposit</h3><form id="walletForm"><input type="hidden" id="walletAction" value="deposit"><label for="walletAmount">Amount (KSh)</label><input id="walletAmount" type="number" min="1" step="0.01" required placeholder="500"><label for="walletPin">Wallet PIN</label><input id="walletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Enter wallet PIN" required><button class="primary" type="submit" id="walletSubmit">Confirm deposit</button><button class="secondary" id="cancelWalletAction" type="button">Cancel</button></form></div>
-      <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">This device</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
+      <div class="card"><div class="card-heading"><h2>Recent activity</h2><span class="muted">Shared demo activity</span></div><div id="walletHistory"><p class="muted">No wallet activity yet.</p></div></div>
     </section>
 
     <!-- SETTINGS -->
@@ -843,7 +859,7 @@ textarea { min-height:90px;resize:vertical; }
         <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
         <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
       </div>
-      <div class="card"><h2 class="section-title">Account</h2><p class="muted">This standalone file stores profile and demo wallet data in this browser only. The phone number is not verified by SMS, and data does not sync across phones. Do not use this prototype for real funds.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
+      <div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
     </section>
   </main>
 </div>
@@ -853,6 +869,7 @@ textarea { min-height:90px;resize:vertical; }
   <button data-page="gallery"><span>▧</span>Gallery</button>
   <button data-page="messages"><span>♡</span>Messages</button>
   <button data-page="calendar"><span>▦</span>Calendar</button>
+  <button data-page="settings"><span>⚙</span>Settings</button>
 </nav>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1142,37 +1159,63 @@ function openViewer(item) {
     : `<img src="${mediaSource(item)}" alt="${escapeHTML(item.title)}"><p>${escapeHTML(item.title)}</p>`;
   $("mediaModal").classList.add("open");
 }
-function closeViewer() {
-  $("mediaModal").classList.remove("open");
-  $("modalContent").innerHTML="";
-}
-$("closeModal").addEventListener("click",closeViewer);
-$("mediaModal").addEventListener("click",event=>{
-  if(event.target===$("mediaModal")) closeViewer();
-});
-document.addEventListener("keydown",event=>{
-  if(event.key==="Escape") closeViewer();
-});
-document.addEventListener("click",event=>{
-  const view=event.target.closest("[data-view-media]");
-  if(view) openViewer(mediaItems.find(item=>item.id===view.dataset.viewMedia));
-
-  const remove=event.target.closest("[data-delete-media]");
-  if(remove) {
+$("mediaCollection").addEventListener("click",async event=>{
+  const deleteButton=event.target.closest("[data-delete-media]");
+  if(deleteButton) {
     if(!confirm("Delete this file from this device?")) return;
-    const deleted=mediaItems.find(item=>item.id===remove.dataset.deleteMedia);
-    if(deleted && mediaURLCache.has(deleted.id)) { URL.revokeObjectURL(mediaURLCache.get(deleted.id)); mediaURLCache.delete(deleted.id); }
-    mediaItems=mediaItems.filter(item=>item.id!==remove.dataset.deleteMedia);
-    selectedMedia.delete(remove.dataset.deleteMedia);
-    saveMedia().then(ok=>{ if(ok) { renderMedia(); toast("File deleted."); } });
+    const id=deleteButton.dataset.deleteMedia;
+    const item=mediaItems.find(media=>media.id===id);
+    if(item&&mediaURLCache.has(id)){URL.revokeObjectURL(mediaURLCache.get(id));mediaURLCache.delete(id);}
+    mediaItems=mediaItems.filter(media=>media.id!==id);
+    if(await saveMedia()){renderMedia();toast("File deleted.");}
+    return;
   }
+  const viewButton=event.target.closest("[data-view-media]");
+  if(viewButton) openViewer(mediaItems.find(item=>item.id===viewButton.dataset.viewMedia));
 });
+$("homeMedia").addEventListener("click",event=>{
+  const target=event.target.closest("[data-view-media]");
+  if(target) openViewer(mediaItems.find(item=>item.id===target.dataset.viewMedia));
+});
+$("closeModal").addEventListener("click",()=>$("mediaModal").classList.remove("open"));
+$("mediaModal").addEventListener("click",event=>{if(event.target.id==="mediaModal")$("mediaModal").classList.remove("open");});
 
-/* PERSONAL PROFILE */
-$("profileForm").addEventListener("submit",event=>{event.preventDefault();state.profile={...state.profile,you:$("yourName").value.trim(),phone:$("profilePhone").value.trim(),email:$("profileEmail").value.trim()};if(saveState())toast("Profile saved on this device.");});
-function renderProfile(){$("yourName").value=state.profile.you||"";$("profilePhone").value=state.profile.phone||"";$("profileEmail").value=state.profile.email||"";if(state.profile.photo){$("profilePhotoPreview").src=state.profile.photo;$("profilePhotoPreview").hidden=false;$("profilePhotoPlaceholder").hidden=true;}else{$("profilePhotoPreview").hidden=true;$("profilePhotoPlaceholder").hidden=false;}}
-$("profilePhotoInput").addEventListener("change",()=>{const file=$("profilePhotoInput").files[0];if(!file)return;if(!file.type.startsWith("image/"))return toast("Choose an image file.",true);const reader=new FileReader();reader.onload=()=>{state.profile.photo=String(reader.result);renderProfile();if(saveState())toast("Profile picture saved on this device.");};reader.readAsDataURL(file);});
-$("pinForm").addEventListener("submit",event=>{event.preventDefault();const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);if(pin!==confirmPin)return toast("PINs do not match.",true);state.wallet.pin=pin;if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}});
+/* PROFILE */
+function renderProfile() {
+  $("yourName").value=state.profile.you||"";
+  $("profilePhone").value=state.profile.phone||"";
+  $("profileEmail").value=state.profile.email||"";
+  $("profilePhotoPreview").src=state.profile.photo||"";
+  $("profilePhotoPreview").hidden=!state.profile.photo;
+  $("profilePhotoPlaceholder").classList.toggle("hidden",!!state.profile.photo);
+}
+$("profileForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  state.profile.you=$("yourName").value.trim();
+  state.profile.phone=$("profilePhone").value.trim();
+  state.profile.email=$("profileEmail").value.trim();
+  if(saveState()){renderProfile();toast("Profile saved on this device.");}
+});
+$("profilePhotoInput").addEventListener("change",()=>{
+  const file=$("profilePhotoInput").files[0];
+  if(!file)return;
+  if(!file.type.startsWith("image/"))return toast("Choose an image file.",true);
+  const reader=new FileReader();
+  reader.onload=()=>{
+    state.profile.photo=String(reader.result);
+    renderProfile();
+    if(saveState())toast("Profile picture saved on this device.");
+  };
+  reader.readAsDataURL(file);
+});
+$("pinForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;
+  if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);
+  if(pin!==confirmPin)return toast("PINs do not match.",true);
+  state.wallet.pin=pin;
+  if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
+});
 $("logoutButton").addEventListener("click",()=>{
   if(!confirm("Log out of H&E on this device? Your saved content will remain on this device.")) return;
   location.reload();
@@ -1354,8 +1397,8 @@ $("chatMessage").addEventListener("input", event => {
 $("chatInfoButton").addEventListener("click", () => {
   alert(
     "H&E — Our Little World\n\n" +
-    "Messages and attachments are stored locally in this browser. " +
-    "They do not sync to your partner's device in this version."
+    "Paired messages are encrypted on this device and sync between phones. " +
+    "Check the shared-space safety code with your partner before sharing sensitive messages."
   );
 });
 
@@ -1401,6 +1444,7 @@ $("recordVoice").addEventListener("click", async () => {
         });
 
         if (saveState()) {
+          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice");
           renderChats();
           toast("Voice note saved ♡");
         }
@@ -1556,7 +1600,7 @@ function eventMarkup(item) {
     <span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span>
     <h3>${escapeHTML(item.title)}</h3>
     ${item.note?`<p class="muted">${escapeHTML(item.note)}</p>`:""}
-    ${item.reminder?`<small class="muted">Reminder set</small><br>`:""}
+    ${item.reminder?`<small class="muted" style="display:block">Reminder set</small>`:""}
     <button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>
   </div>`;
 }
@@ -1695,5 +1739,14 @@ $("loginForm").addEventListener("submit",event=>{
   startWelcome();
 });
 </script>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("/H-E/sw.js").catch(error => {
+    console.error("Service worker registration failed:", error);
+  });
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/H-E/H%26E/shared.js"></script>
 </body>
 </html>
