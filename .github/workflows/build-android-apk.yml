@@ -8,7 +8,7 @@ on:
       - '.github/workflows/build-android-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -37,7 +37,19 @@ jobs:
         working-directory: android-apk
         run: gradle assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK as a GitHub Release download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-apk-v1"
+          APK="android-apk/app/build/outputs/apk/debug/app-debug.apk"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK#H-and-E.apk" --clobber
+          else
+            gh release create "$TAG" "$APK#H-and-E.apk" --title "H&E Android APK" --notes "Android installer for H&E – Our Little World. Requires an internet connection."
+          fi
+
+      - name: Upload APK as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: H-and-E-Android-APK
