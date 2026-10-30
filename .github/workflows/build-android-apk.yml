@@ -28,6 +28,12 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
+      - name: Restore original H&E launcher icon
+        run: |
+          mkdir -p android-apk/app/src/main/res/drawable-nodpi
+          curl -fL https://raw.githubusercontent.com/higgidius037-design/H-E/main/icon-512.png -o android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
+          file android-apk/app/src/main/res/drawable-nodpi/ic_launcher.png
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
