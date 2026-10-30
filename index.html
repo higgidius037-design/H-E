@@ -1142,37 +1142,63 @@ function openViewer(item) {
     : `<img src="${mediaSource(item)}" alt="${escapeHTML(item.title)}"><p>${escapeHTML(item.title)}</p>`;
   $("mediaModal").classList.add("open");
 }
-function closeViewer() {
-  $("mediaModal").classList.remove("open");
-  $("modalContent").innerHTML="";
-}
-$("closeModal").addEventListener("click",closeViewer);
-$("mediaModal").addEventListener("click",event=>{
-  if(event.target===$("mediaModal")) closeViewer();
-});
-document.addEventListener("keydown",event=>{
-  if(event.key==="Escape") closeViewer();
-});
-document.addEventListener("click",event=>{
-  const view=event.target.closest("[data-view-media]");
-  if(view) openViewer(mediaItems.find(item=>item.id===view.dataset.viewMedia));
-
-  const remove=event.target.closest("[data-delete-media]");
-  if(remove) {
+$("mediaCollection").addEventListener("click",async event=>{
+  const deleteButton=event.target.closest("[data-delete-media]");
+  if(deleteButton) {
     if(!confirm("Delete this file from this device?")) return;
-    const deleted=mediaItems.find(item=>item.id===remove.dataset.deleteMedia);
-    if(deleted && mediaURLCache.has(deleted.id)) { URL.revokeObjectURL(mediaURLCache.get(deleted.id)); mediaURLCache.delete(deleted.id); }
-    mediaItems=mediaItems.filter(item=>item.id!==remove.dataset.deleteMedia);
-    selectedMedia.delete(remove.dataset.deleteMedia);
-    saveMedia().then(ok=>{ if(ok) { renderMedia(); toast("File deleted."); } });
+    const id=deleteButton.dataset.deleteMedia;
+    const item=mediaItems.find(media=>media.id===id);
+    if(item&&mediaURLCache.has(id)){URL.revokeObjectURL(mediaURLCache.get(id));mediaURLCache.delete(id);}
+    mediaItems=mediaItems.filter(media=>media.id!==id);
+    if(await saveMedia()){renderMedia();toast("File deleted.");}
+    return;
   }
+  const viewButton=event.target.closest("[data-view-media]");
+  if(viewButton) openViewer(mediaItems.find(item=>item.id===viewButton.dataset.viewMedia));
 });
+$("homeMedia").addEventListener("click",event=>{
+  const target=event.target.closest("[data-view-media]");
+  if(target) openViewer(mediaItems.find(item=>item.id===target.dataset.viewMedia));
+});
+$("closeModal").addEventListener("click",()=>$("mediaModal").classList.remove("open"));
+$("mediaModal").addEventListener("click",event=>{if(event.target.id==="mediaModal")$("mediaModal").classList.remove("open");});
 
-/* PERSONAL PROFILE */
-$("profileForm").addEventListener("submit",event=>{event.preventDefault();state.profile={...state.profile,you:$("yourName").value.trim(),phone:$("profilePhone").value.trim(),email:$("profileEmail").value.trim()};if(saveState())toast("Profile saved on this device.");});
-function renderProfile(){$("yourName").value=state.profile.you||"";$("profilePhone").value=state.profile.phone||"";$("profileEmail").value=state.profile.email||"";if(state.profile.photo){$("profilePhotoPreview").src=state.profile.photo;$("profilePhotoPreview").hidden=false;$("profilePhotoPlaceholder").hidden=true;}else{$("profilePhotoPreview").hidden=true;$("profilePhotoPlaceholder").hidden=false;}}
-$("profilePhotoInput").addEventListener("change",()=>{const file=$("profilePhotoInput").files[0];if(!file)return;if(!file.type.startsWith("image/"))return toast("Choose an image file.",true);const reader=new FileReader();reader.onload=()=>{state.profile.photo=String(reader.result);renderProfile();if(saveState())toast("Profile picture saved on this device.");};reader.readAsDataURL(file);});
-$("pinForm").addEventListener("submit",event=>{event.preventDefault();const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);if(pin!==confirmPin)return toast("PINs do not match.",true);state.wallet.pin=pin;if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}});
+/* PROFILE */
+function renderProfile() {
+  $("yourName").value=state.profile.you||"";
+  $("profilePhone").value=state.profile.phone||"";
+  $("profileEmail").value=state.profile.email||"";
+  $("profilePhotoPreview").src=state.profile.photo||"";
+  $("profilePhotoPreview").hidden=!state.profile.photo;
+  $("profilePhotoPlaceholder").classList.toggle("hidden",!!state.profile.photo);
+}
+$("profileForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  state.profile.you=$("yourName").value.trim();
+  state.profile.phone=$("profilePhone").value.trim();
+  state.profile.email=$("profileEmail").value.trim();
+  if(saveState()){renderProfile();toast("Profile saved on this device.");}
+});
+$("profilePhotoInput").addEventListener("change",()=>{
+  const file=$("profilePhotoInput").files[0];
+  if(!file)return;
+  if(!file.type.startsWith("image/"))return toast("Choose an image file.",true);
+  const reader=new FileReader();
+  reader.onload=()=>{
+    state.profile.photo=String(reader.result);
+    renderProfile();
+    if(saveState())toast("Profile picture saved on this device.");
+  };
+  reader.readAsDataURL(file);
+});
+$("pinForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;
+  if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);
+  if(pin!==confirmPin)return toast("PINs do not match.",true);
+  state.wallet.pin=pin;
+  if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
+});
 $("logoutButton").addEventListener("click",()=>{
   if(!confirm("Log out of H&E on this device? Your saved content will remain on this device.")) return;
   location.reload();
@@ -1556,7 +1582,7 @@ function eventMarkup(item) {
     <span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span>
     <h3>${escapeHTML(item.title)}</h3>
     ${item.note?`<p class="muted">${escapeHTML(item.note)}</p>`:""}
-    ${item.reminder?`<small class="muted">Reminder set</small><br>`:""}
+    ${item.reminder?`<small class="muted" style="display:block">Reminder set</small>`:""}
     <button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>
   </div>`;
 }
