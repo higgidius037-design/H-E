@@ -524,6 +524,14 @@ textarea { min-height:90px;resize:vertical; }
 /* Stable page sizing and readable calendar/wallet panels */
 .page { min-width:0; width:100%; }
 .page.active { display:block; animation:pageAppear .18s ease-out; }
+/* Keep the chat page's flex layout after the shared page visibility rules. */
+#page-messages.active { display:flex; flex-direction:column; min-height:calc(100dvh - 100px); }
+#page-messages .chat-app { min-height: min(480px, calc(100dvh - 190px)); }
+@media(max-width:650px) {
+  #page-messages.active { min-height:calc(100dvh - 160px); }
+  #page-messages .chat-app { height:calc(100dvh - 230px); min-height:420px; }
+}
+
 @keyframes pageAppear { from { opacity:.65; } to { opacity:1; } }
 .wallet-card { position:relative; isolation:isolate; overflow:visible; }
 .wallet-balance { position:relative; z-index:1; display:block; min-height:112px; overflow:visible; }
