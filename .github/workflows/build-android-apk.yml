@@ -48,7 +48,6 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hande-release.jks"
           chmod 600 "$RUNNER_TEMP/hande-release.jks"
           keytool -list -keystore "$RUNNER_TEMP/hande-release.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" >/dev/null
-          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/hande-release.jks" >> "$GITHUB_ENV"
           echo "Permanent signing key verified."
 
       - name: Set up Gradle
@@ -59,7 +58,7 @@ jobs:
       - name: Build APK with permanent signing
         working-directory: android-apk
         env:
-          ANDROID_KEYSTORE_PATH: ${{ env.ANDROID_KEYSTORE_PATH }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/hande-release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -68,8 +67,8 @@ jobs:
       - name: Verify APK signature
         run: |
           APK="android-apk/app/build/outputs/apk/debug/app-debug.apk"
-          apksigner verify --verbose "$APK"
-          apksigner verify --print-certs "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$APK"
 
       - name: Upload APK as a GitHub Release download
         env:
