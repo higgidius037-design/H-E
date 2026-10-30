@@ -554,9 +554,18 @@ textarea { min-height:90px;resize:vertical; }
   .card { padding:14px;margin-top:12px; }
   .card-heading h2,.section-title { font-size:21px; }
   .media-preview { height:120px; }
+  #mediaCollection {
+    max-height:58vh;
+    max-height:58dvh;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    align-content:start;
+  }
   .bottom-nav {
     position:fixed;z-index:20;bottom:0;left:0;right:0;
-    display:grid;grid-template-columns:repeat(4,1fr);
+    display:grid;grid-template-columns:repeat(5,1fr);
     padding:8px 4px calc(8px + env(safe-area-inset-bottom));
     background:linear-gradient(100deg,#2c0812,#4a1221);
     border-top:1px solid var(--gold);
@@ -853,6 +862,7 @@ textarea { min-height:90px;resize:vertical; }
   <button data-page="gallery"><span>▧</span>Gallery</button>
   <button data-page="messages"><span>♡</span>Messages</button>
   <button data-page="calendar"><span>▦</span>Calendar</button>
+  <button data-page="settings"><span>⚙</span>Settings</button>
 </nav>
 
 <div id="toast" role="status" aria-live="polite"></div>
@@ -1721,5 +1731,11 @@ $("loginForm").addEventListener("submit",event=>{
   startWelcome();
 });
 </script>
-</body>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("/H-E/sw.js").catch(error => {
+    console.error("Service worker registration failed:", error);
+  });
+}
+</script></body>
 </html>
