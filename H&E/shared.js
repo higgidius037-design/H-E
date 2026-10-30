@@ -41,9 +41,29 @@
   function addSetupUI() {
     const form = document.getElementById("loginForm");
     const email = document.getElementById("loginEmail"), password = document.getElementById("loginPassword");
-    [email, password].forEach(el => { if (el) { el.required = false; el.hidden = true; } });
+    const emailFields = document.getElementById("emailLoginFields");
+    const phone = document.getElementById("loginPhone");
+    const phoneLabel = document.getElementById("loginPhoneLabel");
+    const toggleMethod = document.getElementById("toggleLoginMethod");
+    let loginMode = "phone";
     const note = form.querySelector(".login-note");
-    if (note) note.textContent = "Sign in with a verified phone number. You'll receive a one-time code by SMS.";
+    if (note) note.textContent = "Phone sign-in sends a one-time verification code. Email sign-in works for an existing account with a verified phone number.";
+    toggleMethod.addEventListener("click", () => {
+      loginMode = loginMode === "phone" ? "email" : "phone";
+      const useEmail = loginMode === "email";
+      emailFields.hidden = !useEmail;
+      email.required = useEmail;
+      password.required = useEmail;
+      phone.hidden = useEmail;
+      phone.required = !useEmail;
+      phoneLabel.hidden = useEmail;
+      toggleMethod.textContent = useEmail ? "Use phone number instead" : "Use email and password instead";
+      otp.hidden = true;
+      otp.required = false;
+      if (note) note.textContent = useEmail
+        ? "Enter the email and password for your existing account."
+        : "Enter your phone number to receive a one-time verification code.";
+    });
     const otp = document.createElement("input");
     otp.id = "sharedOtp"; otp.inputMode = "numeric"; otp.autocomplete = "one-time-code";
     otp.placeholder = "6-digit SMS code"; otp.maxLength = 6; otp.hidden = true;
@@ -54,7 +74,12 @@
       const button = form.querySelector("button[type=submit]");
       button.disabled = true;
       try {
-        if (!otp.hidden) {
+        if (loginMode === "email") {
+          const { data, error } = await db.auth.signInWithPassword({ email: email.value.trim(), password: password.value });
+          if (error) throw error;
+          if (!data.session?.user?.phone) throw new Error("This account has no verified phone number yet. Use phone sign-in to continue.");
+          await enterApp(data.session);
+        } else if (!otp.hidden) {
           const { data, error } = await db.auth.verifyOtp({ phone: pendingPhone, token: otp.value.trim(), type: "sms" });
           if (error) throw error;
           await enterApp(data.session);
