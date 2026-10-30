@@ -371,9 +371,14 @@
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Mute":"Unmute";}});$("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.textContent=t.enabled?"Turn camera off":"Turn camera on";}});
   async function boot() {
     addSetupUI();
-    const { data } = await db.auth.getSession();
-    if (data.session) { session = data.session; await enterApp(session); }
-    db.auth.onAuthStateChange((_event, newSession) => { if (newSession && !session) enterApp(newSession).catch(e => { const box=document.getElementById("loginFeedback"); if(box){box.textContent=e.message||"Sign-in setup failed. Please retry.";box.hidden=false;} toast(e.message||"Sign-in setup failed.",true); }); });
+    const { data, error } = await db.auth.getSession();
+    if (error) throw error;
+    // Require a deliberate sign-in every time the app is opened. Remove an older
+    // persisted session locally so a previously used phone cannot silently reopen it.
+    if (data.session) {
+      const { error: signOutError } = await db.auth.signOut({ scope: "local" });
+      if (signOutError) console.warn("Previous local sign-in could not be cleared", signOutError);
+    }
   }
   boot().catch(error => { console.error(error); const box=document.getElementById("loginFeedback"); if(box){box.textContent="Secure sign-in could not start. Refresh the page and try again.";box.hidden=false;} toast("Shared app setup failed: " + (error.message || "unknown error"), true); });
 })();
