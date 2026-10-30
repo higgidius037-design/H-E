@@ -9,6 +9,7 @@ on:
       - 'android-apk/**'
       - '.github/workflows/build-android-apk.yml'
       - 'approved-icon.svg'
+      - 'hande-approved-artwork.jpg'
 
 permissions:
   contents: write
