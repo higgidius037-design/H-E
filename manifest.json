@@ -1,7 +1,7 @@
 {
   "name": "H&E - Our Little World",
   "short_name": "H&E",
-  "start_url": "/H-E/H%26E/index.html",
+  "start_url": "/H-E/",
   "scope": "/H-E/",
   "display": "standalone",
   "background_color": "#f8f1ef",
