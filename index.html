@@ -669,11 +669,10 @@ textarea { min-height:90px;resize:vertical; }
         <button class="quick" data-go="messages"><div class="icon">♡</div><strong>Messages</strong><span class="arrow">→</span></button>
         <button class="quick" data-go="calendar"><div class="icon">▦</div><strong>Our Calendar</strong><span class="arrow">→</span></button>
         <button class="quick" data-go="wallet"><div class="icon">▣</div><strong>Wallet</strong><span class="arrow">→</span></button>
-      </div>
+     </div>
 
-     <div class="lower-grid">
-  <div class="card">
-    <div class="card-heading">
+      <div class="card">
+        <div class="card-heading"><h2>Coming Up</h2>
       <h2>Wallet</h2>
       <button class="link-button" data-go="wallet">View →</button>
     </div>
@@ -1162,8 +1161,6 @@ $("mediaCollection").addEventListener("click",async event=>{
 });
 $("closeModal").addEventListener("click",()=>$("mediaModal").classList.remove("open"));
 $("mediaModal").addEventListener("click",event=>{if(event.target.id==="mediaModal")$("mediaModal").classList.remove("open");});
-document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
-document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
 document.addEventListener("keydown",event=>{if(!$("mediaModal").classList.contains("open"))return;if(event.key==="ArrowLeft")moveViewer(-1);if(event.key==="ArrowRight")moveViewer(1);if(event.key==="Escape")$("mediaModal").classList.remove("open");});
 
 /* PROFILE */
