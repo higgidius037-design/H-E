@@ -425,7 +425,7 @@ main { min-width:0;padding:25px clamp(14px,3vw,38px); }
   background:linear-gradient(135deg,var(--rose),var(--gold));
   border:3px solid white;box-shadow:0 0 0 1px var(--line);font-size:25px;
 }
-.page { display:none; }
+.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}\n.settings-folders{display:grid;gap:12px}.settings-folder{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;cursor:pointer;color:inherit}.settings-folder>span:nth-child(2){flex:1;min-width:0}.settings-folder strong{display:block;font-size:16px}.settings-folder small{display:block;margin-top:4px;color:var(--muted);font-size:13px}.settings-folder-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--blush);color:var(--burgundy);font-size:22px;flex-shrink:0}.settings-arrow{font-size:28px;color:var(--muted)}.settings-back{margin:0 0 12px}\n.page { display:none; }
 .page.active { display:block; }
 
 .hero {
@@ -636,7 +636,7 @@ textarea { min-height:90px;resize:vertical; }
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
     <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
-    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. You can also set up a passkey in Settings for fingerprint or face unlock.</p>
+    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. Fingerprint or face unlock is not connected in this version yet.</p>
   </form>
 </section>
 
@@ -673,7 +673,7 @@ textarea { min-height:90px;resize:vertical; }
         <h2>H&amp;E — Our Little World</h2>
         <p>Two hearts. One journey. Our little world. ♡</p>
       </div>
-      <div class="avatar" aria-label="H&E">♡</div>
+      <div class="avatar" aria-label="Profile picture"><img id="dashboardAvatarPhoto" alt="" hidden><span id="dashboardAvatarHeart">♡</span></div>
     </div>
 
     <!-- HOME -->
@@ -854,18 +854,20 @@ textarea { min-height:90px;resize:vertical; }
 
     <!-- SETTINGS -->
     <section class="page" id="page-settings">
-      <div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div>
-      <div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
-        <div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
-        <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
-      </div>
-      <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
-        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on device and browser support.</p></div><span class="pill">Not available here</span></div>
-        <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
-        <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
-      </div>
-      <div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
-    </section>
+<div id="settingsHome" class="settings-folders">
+<button type="button" class="card settings-folder" data-settings-open="profile"><span class="settings-folder-icon">♙</span><span><strong>Profile</strong><small>Your photo and personal details</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="security"><span class="settings-folder-icon">◇</span><span><strong>Security &amp; Privacy</strong><small>Chat lock and Wallet PIN</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="display"><span class="settings-folder-icon">◐</span><span><strong>Display</strong><small>Theme and wallpaper colour</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="account"><span class="settings-folder-icon">⚙</span><span><strong>Account</strong><small>Backup and local app data</small></span><span class="settings-arrow">›</span></button>
+</div>
+<div id="settingsFolder-profile" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
+<div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
+<form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form></div></div>
+<div id="settingsFolder-security" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Security &amp; Privacy</h2><p class="muted">Security controls for this device.</p><div class="security-row"><div><strong>Fingerprint / passkey sign-in</strong><p class="muted">Fingerprint authentication is not connected in this version yet; it needs a real native or passkey implementation and testing.</p></div><span class="pill">Not connected</span></div>
+<form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form><p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p></div></div>
+<div id="settingsFolder-display" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div></div>
+<div id="settingsFolder-account" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div></div>
+</section>
   </main>
 </div>
 
@@ -1044,7 +1046,10 @@ function toast(message,error=false) {
   clearTimeout(toast.timer);
   toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
 }
-function showPage(page) {
+function showSettingsHome(){ $("settingsHome").classList.remove("hidden"); document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden")); }
+document.querySelectorAll("[data-settings-open]").forEach(b=>b.addEventListener("click",()=>{ $("settingsHome").classList.add("hidden"); document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden")); const f=$("settingsFolder-"+b.dataset.settingsOpen); if(f)f.classList.remove("hidden"); }));
+document.querySelectorAll("[data-settings-back]").forEach(b=>b.addEventListener("click",showSettingsHome));
+function showPage(page) {\n  if(page==="settings") showSettingsHome();
   const target = document.getElementById("page-" + page);
   if (!target) return;
   document.querySelectorAll(".page").forEach(section => {
@@ -1198,7 +1203,7 @@ function renderProfile() {
   $("profileEmail").value=state.profile.email||"";
   $("profilePhotoPreview").src=state.profile.photo||"";
   $("profilePhotoPreview").hidden=!state.profile.photo;
-  $("profilePhotoPlaceholder").classList.toggle("hidden",!!state.profile.photo);
+  $("profilePhotoPlaceholder").classList.toggle("hidden",!!state.profile.photo);\n  const dp=$("dashboardAvatarPhoto"), dh=$("dashboardAvatarHeart");\n  if(dp&&dh){dp.src=state.profile.photo||"";dp.hidden=!state.profile.photo;dh.hidden=!!state.profile.photo;}
 }
 $("profileForm").addEventListener("submit",event=>{
   event.preventDefault();
