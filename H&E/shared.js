@@ -709,6 +709,7 @@
   }
   async function createInvite() {
     const button = document.getElementById("makePairInvite");
+    let createdCode = null;
     try {
       if (!session) throw new Error("Sign in first.");
       const contact = document.getElementById("partnerContact").value.trim();
@@ -716,11 +717,16 @@
       if (button) { button.disabled = true; button.textContent = "Sending code…"; }
       const { data: code, error } = await db.rpc("create_pair_invite", { p_recipient: contact });
       if (error) throw error;
+      createdCode = code;
       const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code } });
       if (deliveryError) throw deliveryError;
+      createdCode = null;
       document.getElementById("pairCode").focus();
       toast("A six-digit pairing code has been sent. It expires in 10 minutes.");
     } catch (error) {
+      if (createdCode) {
+        await db.rpc("cancel_pair_invite", { p_code: createdCode }).catch(() => {});
+      }
       const message = error?.message || "Could not send a pairing code.";
       if (/already paired|already connected|existing pair/i.test(message)) {
         try { if (await refreshPairing()) { toast("Your devices are already paired."); return; } }
