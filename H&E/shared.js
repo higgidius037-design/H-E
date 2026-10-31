@@ -175,7 +175,7 @@
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     const notificationStatus=document.getElementById("heNotificationStatus");
     document.getElementById("enableHENotifications").addEventListener("click",async()=>{
-      if(window.HENative?.requestNotificationPermission){window.HENative.requestNotificationPermission();notificationStatus.textContent="Waiting for Android permission…";return;}
+      if(window.HENative?.showNotification){window.HENative.showNotification("H&E notifications","Notifications are being enabled. You can choose the Peak sound in notification settings.");notificationStatus.textContent="Android will ask whether H&E can send notifications.";return;}
       if("Notification" in window){const result=await Notification.requestPermission();notificationStatus.textContent=result==="granted"?"Notifications enabled.":"Notifications were not allowed.";}
       else notificationStatus.textContent="Notifications are unavailable in this browser.";
     });
