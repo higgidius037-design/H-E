@@ -94,9 +94,31 @@ public class MainActivity extends FragmentActivity {
             }
         });
         webView.loadUrl(APP_URL);
+        handleCallIntent(getIntent());
     }
 
-    @Override protected void onNewIntent(Intent intent) {\n        super.onNewIntent(intent);\n        setIntent(intent);\n        handleCallIntent(intent);\n    }\n\n    private void handleCallIntent(Intent intent) {\n        if (intent == null) return;\n        String action = intent.getStringExtra("he_call_action");\n        if (action == null || action.isEmpty()) return;\n        pendingCallAction = action;\n        dispatchPendingCallAction();\n    }\n\n    private void dispatchPendingCallAction() {\n        if (webView == null || pendingCallAction.isEmpty()) return;\n        final String action = pendingCallAction;\n        pendingCallAction = "";\n        webView.post(() -> webView.evaluateJavascript("(()=>{const id=" + org.json.JSONObject.quote(action === "answer" ? "acceptCall" : "rejectCall") + ";const el=document.getElementById(id);if(el)el.click();else window.__hePendingCallAction=" + org.json.JSONObject.quote(action) + ";})()", null));\n    }\n\n    @Override protected void onPause() {
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleCallIntent(intent);
+    }
+
+    private void handleCallIntent(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getStringExtra("he_call_action");
+        if (action == null || action.isEmpty()) return;
+        pendingCallAction = action;
+        dispatchPendingCallAction();
+    }
+
+    private void dispatchPendingCallAction() {
+        if (webView == null || pendingCallAction.isEmpty()) return;
+        final String action = pendingCallAction;
+        pendingCallAction = "";
+        webView.post(() -> webView.evaluateJavascript("(()=>{const id=" + org.json.JSONObject.quote("answer".equals(action) ? "acceptCall" : "rejectCall") + ";const el=document.getElementById(id);if(el)el.click();else window.__hePendingCallAction=" + org.json.JSONObject.quote(action) + ";})()", null));
+    }
+
+    @Override protected void onPause() {
         lastPausedAt = System.currentTimeMillis();
         super.onPause();
     }
@@ -193,7 +215,13 @@ public class MainActivity extends FragmentActivity {
             channel.setDescription("Private message alerts and H&E reminders. Change sound and pop-up behaviour in Android settings.");
             channel.enableVibration(true);
             channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
-            manager.createNotificationChannel(channel);\n            NotificationChannel calls = new NotificationChannel(CALL_CHANNEL_ID, "H&E incoming calls", NotificationManager.IMPORTANCE_HIGH);\n            calls.setDescription("Incoming H&E voice and video calls.");\n            calls.enableVibration(true);\n            calls.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);\n            calls.setSound(android.net.Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.he_signature_ring), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());\n            manager.createNotificationChannel(calls);
+            manager.createNotificationChannel(channel);
+            NotificationChannel calls = new NotificationChannel(CALL_CHANNEL_ID, "H&E incoming calls", NotificationManager.IMPORTANCE_HIGH);
+            calls.setDescription("Incoming H&E voice and video calls.");
+            calls.enableVibration(true);
+            calls.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            calls.setSound(android.net.Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.he_signature_ring), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            manager.createNotificationChannel(calls);
         }
     }
 
