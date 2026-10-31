@@ -1247,14 +1247,7 @@ $("profilePhotoInput").addEventListener("change",()=>{
   };
   reader.readAsDataURL(file);
 });
-$("pinForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;
-  if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);
-  if(pin!==confirmPin)return toast("PINs do not match.",true);
-  state.wallet.pin=pin;
-  if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
-});
+$("pinForm")?.addEventListener("submit",event=>event.preventDefault());
 
 /* MESSAGES — DEVICE ONLY */
 
