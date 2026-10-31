@@ -17,6 +17,8 @@ import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.PermissionRequest;
+import android.content.pm.PackageManager;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -35,6 +37,9 @@ public class MainActivity extends FragmentActivity {
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
     private BiometricPrompt biometricPrompt;
+    private static final int CALL_PERMISSION_REQUEST = 2002;
+    private PermissionRequest pendingWebPermissionRequest;
+    private String[] pendingAndroidPermissions = new String[0];
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,6 +72,12 @@ public class MainActivity extends FragmentActivity {
             @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){if(request.isForMainFrame())showLoadError();}
         });
         webView.setWebChromeClient(new WebChromeClient(){
+            @Override public void onPermissionRequest(PermissionRequest request) {
+                runOnUiThread(() -> handleWebPermissionRequest(request));
+            }
+            @Override public void onPermissionRequestCanceled(PermissionRequest request) {
+                if (pendingWebPermissionRequest == request) pendingWebPermissionRequest = null;
+            }
             @Override public boolean onShowFileChooser(WebView view,ValueCallback<Uri[]> callback,FileChooserParams params){
                 if(fileCallback!=null)fileCallback.onReceiveValue(null); fileCallback=callback;
                 try{startActivityForResult(params.createIntent(),FILE_CHOOSER_REQUEST);}
@@ -75,6 +86,52 @@ public class MainActivity extends FragmentActivity {
             }
         });
         webView.loadUrl(APP_URL);
+    }
+
+    private void handleWebPermissionRequest(PermissionRequest request) {
+        Uri origin = request.getOrigin();
+        String host = origin == null ? null : origin.getHost();
+        if (host == null || !(host.equals("higgidius037-design.github.io"))) {
+            request.deny();
+            return;
+        }
+        java.util.ArrayList<String> needed = new java.util.ArrayList<>();
+        for (String resource : request.getResources()) {
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) &&
+                checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                if (!needed.contains(android.Manifest.permission.RECORD_AUDIO)) needed.add(android.Manifest.permission.RECORD_AUDIO);
+            }
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource) &&
+                checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                if (!needed.contains(android.Manifest.permission.CAMERA)) needed.add(android.Manifest.permission.CAMERA);
+            }
+        }
+        if (pendingWebPermissionRequest != null && pendingWebPermissionRequest != request) {
+            pendingWebPermissionRequest.deny();
+        }
+        pendingWebPermissionRequest = request;
+        if (needed.isEmpty()) {
+            request.grant(request.getResources());
+            pendingWebPermissionRequest = null;
+            return;
+        }
+        pendingAndroidPermissions = needed.toArray(new String[0]);
+        requestPermissions(pendingAndroidPermissions, CALL_PERMISSION_REQUEST);
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != CALL_PERMISSION_REQUEST) return;
+        PermissionRequest webRequest = pendingWebPermissionRequest;
+        pendingWebPermissionRequest = null;
+        boolean allGranted = grantResults.length > 0;
+        for (int result : grantResults) if (result != PackageManager.PERMISSION_GRANTED) allGranted = false;
+        if (webRequest == null) return;
+        if (allGranted) webRequest.grant(webRequest.getResources());
+        else {
+            webRequest.deny();
+            Toast.makeText(this, "Allow microphone and camera access to make H&E calls.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void createNotificationChannel(){
