@@ -896,6 +896,18 @@
     }
   }); }
   async function ensureExistingPairing() { if(coupleId && partner?.publicKey && callChannel) return true; if(!session) throw new Error("Please sign in to your existing H&E account."); const ready=await refreshPairing(); if(!ready || !coupleId || !partner?.publicKey || !callChannel) throw new Error("Could not restore your saved connection. Check your internet and try again; you do not need to pair again."); return true; }
+  async function waitForCallChannelReady() {
+    // Pair restoration creates the realtime channel asynchronously. Wait for its
+    // first subscription before sending the first call signal, so the first tap works.
+    const started = Date.now();
+    while (callChannel && callChannel.state !== "joined" && Date.now() - started < 7000) {
+      if (callChannel.state === "closed" || callChannel.state === "errored") break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (!callChannel || callChannel.state !== "joined") {
+      throw new Error("Your secure call connection is still starting. Please check your internet and try once more.");
+    }
+  }
   let callAttemptBusy = false;
   async function startCall(video) {
     if (callAttemptBusy || peerConnection) return;
@@ -905,6 +917,7 @@
       // Restore and verify the saved partner before opening the call screen or camera.
       await ensureExistingPairing();
       if (!partner?.id || !partner?.name || !callChannel) throw new Error("Your connected partner is not ready for calls. Open Settings → Connect Phones and confirm the connection on both phones.");
+      await waitForCallChannelReady();
       showCall();
       setCallStatus("Preparing secure call with " + partner.name + "…");
       await getCallMedia(video);
