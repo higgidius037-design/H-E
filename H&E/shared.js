@@ -137,6 +137,8 @@
       const code = String(error?.code || "").toLowerCase(); const message = String(error?.message || "");
       if (code === "invalid_credentials") return "The email/phone number or password did not match. Check the details and try again.";
       if (code === "email_not_confirmed") return "Confirm your email using the link we sent, then sign in again.";
+      if (code === "over_email_send_rate_limit") return "Email verification is temporarily rate-limited by the email service. Please wait before requesting another code. The app administrator must configure a dedicated SMTP email provider for reliable delivery.";
+      if (code === "sms_send_failed") return "SMS verification could not be sent because the SMS provider rejected its credentials. Phone-number registration is temporarily unavailable; use email registration until SMS service is repaired.";
       if (code === "user_banned") return "This account is temporarily unavailable. Contact the app owner for help.";
       if (code === "passkey_disabled") return "Passkey sign-in is not enabled for this account yet. Sign in with your password first.";
       if (code === "webauthn_credential_not_found") return "No passkey is enrolled for this account yet. Sign in with your email and password, then enable fingerprint unlock in Settings.";
