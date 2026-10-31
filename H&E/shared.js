@@ -146,6 +146,7 @@
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
+    document.getElementById("securitySetFingerprint")?.addEventListener("click",()=>document.getElementById("registerPasskey")?.click());
     document.getElementById("registerPasskey").addEventListener("click", async event => {
       const button = event.currentTarget; button.disabled = true;
       try {
@@ -163,6 +164,7 @@
         if (error) throw error;
         toast("Biometric passkey saved on this device.");
         button.textContent = "Fingerprint / face unlock saved";
+        const fingerprintStatus=document.getElementById("fingerprintStatus");if(fingerprintStatus)fingerprintStatus.textContent="Set up";
         setStatus("Fingerprint / face unlock is registered for this account on this device.");
       } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
