@@ -139,16 +139,17 @@
     const settings = document.getElementById("page-settings");
     const card = document.createElement("div");
     card.className = "card"; card.id = "sharedSetupCard";
-    card.innerHTML = `<h2 class="section-title">Connect our phones</h2>
-      <p class="muted" id="sharedStatus">Sign in with your email to start a private shared space.</p>
+    card.innerHTML = `<h2 class="section-title">Add Partner</h2>
+      <p class="muted" id="sharedStatus" hidden></p>
       <div id="pairingControls">
-        <label for="partnerEmail">Your partner's email</label>
-        <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
-        <button class="secondary" id="makePairInvite" type="button">Create pairing code</button>
-        <p id="pairCodeText" class="muted" hidden></p>
-        <label for="pairCode">Pairing code from your partner</label>
-        <input id="pairCode" autocomplete="one-time-code" inputmode="numeric" placeholder="Enter pairing code">
-        <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
+        <label for="partnerContact">Partner's email address or phone number</label>
+        <input id="partnerContact" type="text" inputmode="email" autocomplete="email" placeholder="Email or +2547XXXXXXXX">
+        <p class="muted">We'll send a private six-digit pairing code to this contact. It expires in 10 minutes.</p>
+        <button class="primary" id="makePairInvite" type="button">Send pairing code</button>
+        <div class="divider" style="margin:18px 0"></div>
+        <label for="pairCode">Enter the six-digit code your partner received</label>
+        <input id="pairCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
+        <button class="secondary" id="acceptPairInvite" type="button">Connect Partner</button>
       </div>
       <style>
         #pairedConfirmation.pair-success{position:relative;display:flex;align-items:center;gap:14px;margin:18px 0;padding:17px 18px;overflow:hidden;border:1px solid rgba(167,73,105,.24);border-radius:16px;background:linear-gradient(110deg,rgba(255,239,244,.98),rgba(255,250,246,.96));box-shadow:0 7px 22px rgba(91,34,53,.08);color:#3c202b}
@@ -173,9 +174,19 @@
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
       <button class="secondary" id="sharedDisconnect" type="button">Disconnect Partner</button>`;
+    let connectFolderButton = null;
+    function updateConnectEntry(paired) {
+      if (!connectFolderButton) return;
+      const title = connectFolderButton.querySelector("[data-connect-title]");
+      const subtitle = connectFolderButton.querySelector("[data-connect-subtitle]");
+      if (title) title.textContent = paired ? "Paired" : "Add Partner";
+      if (subtitle) subtitle.textContent = paired ? "Your partner is connected" : "Connect with your partner";
+      connectFolderButton.setAttribute("aria-label", paired ? "Paired. Manage partner connection" : "Add Partner");
+    }
     const connectFolder=document.createElement("button");
+    connectFolderButton = connectFolder;
     connectFolder.type="button";connectFolder.className="card settings-folder";
-    connectFolder.innerHTML='<span class="settings-folder-icon">⌁</span><span><strong>Connect Phones</strong><small>Pair devices and manage your shared space</small></span><span class="settings-arrow">›</span>';
+    connectFolder.innerHTML='<span class="settings-folder-icon">⌁</span><span><strong data-connect-title>Add Partner</strong><small data-connect-subtitle>Connect with your partner</small></span><span class="settings-arrow">›</span>';
     const connectPage=document.createElement("div");connectPage.id="settingsFolder-connect";connectPage.className="settings-subfolder hidden";
     const back=document.createElement("button");back.type="button";back.className="secondary settings-back";back.textContent="← Settings";
     back.addEventListener("click",()=>{connectPage.classList.add("hidden");document.getElementById("settingsHome").classList.remove("hidden");history.pushState({hePage:"settings",heFolder:null},"","#settings");});
@@ -443,7 +454,7 @@
     });
   }
 
-  function setStatus(message) { document.getElementById("sharedStatus").textContent = message; }
+  function setStatus(message) { const status=document.getElementById("sharedStatus"); if(!status)return; status.textContent=message||""; status.hidden=!message; }
   async function ensureKeys() {
     ownKeyPair = await getKeyPair();
     if (!ownKeyPair) {
@@ -535,11 +546,10 @@
       if (confirmation) confirmation.hidden = true;
       if (codeText) { codeText.hidden = true; codeText.textContent = ""; }
       document.getElementById("safetyCode").hidden = true;
-      document.getElementById("partnerEmail").value = "";
+      document.getElementById("partnerContact").value = "";
       document.getElementById("pairCode").value = "";
-      setStatus(data
-        ? "Partner disconnected. Your H&E account is still signed in. You can now connect a new partner."
-        : "No active partner was found. Your H&E account is still signed in and ready to connect.");
+      updateConnectEntry(false);
+      setStatus("");
       toast(data ? "Partner disconnected. Shared messages and chat media were deleted." : "You are already disconnected.");
     } catch (error) {
       toast(error?.message || "Could not disconnect this partner. Your current connection has been kept.", true);
@@ -585,6 +595,8 @@
     if (confirmation) confirmation.hidden = true;
     if (controls) controls.hidden = false;
     if (codeText) { codeText.hidden = true; codeText.textContent = ""; }
+    updateConnectEntry(false);
+    setStatus("");
 
     // Check every membership instead of trusting an arbitrary first row.
     const { data: memberships, error } = await db.from("couple_members")
@@ -603,7 +615,8 @@
       saveState();
       renderChats();
       renderWallet();
-      setStatus("Your account is ready. Connect your partner's phone to begin.");
+      updateConnectEntry(false);
+      setStatus("");
       return false;
     }
 
@@ -690,47 +703,46 @@
     }
     if (controls) controls.hidden = true;
     if (confirmation) confirmation.hidden = false;
-    setStatus("Connected securely with " + partner.name + "." + walletNotice);
+    updateConnectEntry(true);
+    setStatus("");
     return true;
   }
   async function createInvite() {
+    const button = document.getElementById("makePairInvite");
     try {
       if (!session) throw new Error("Sign in first.");
-      const email = normalEmail(document.getElementById("partnerEmail").value);
-      const { data, error } = await db.rpc("create_pair_invite", { p_recipient: email });
+      const contact = document.getElementById("partnerContact").value.trim();
+      if (!contact) throw new Error("Enter your partner's email address or phone number.");
+      if (button) { button.disabled = true; button.textContent = "Sending code…"; }
+      const { data: code, error } = await db.rpc("create_pair_invite", { p_recipient: contact });
       if (error) throw error;
-      const target = document.getElementById("pairCodeText"); target.hidden = false;
-      target.textContent = "Share this one-time code privately with " + email + ": " + data;
-      document.getElementById("partnerEmail").value = email;
-      toast("Pairing code created. It expires in 24 hours.");
+      const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code } });
+      if (deliveryError) throw deliveryError;
+      document.getElementById("pairCode").focus();
+      toast("A six-digit pairing code has been sent. It expires in 10 minutes.");
     } catch (error) {
-      const message = error?.message || "Could not create a pairing code.";
+      const message = error?.message || "Could not send a pairing code.";
       if (/already paired|already connected|existing pair/i.test(message)) {
-        try {
-          const ready = await refreshPairing();
-          if (ready) {
-            toast("Your devices are already paired. Secure messaging is ready.");
-            return;
-          }
-          setStatus("The server says this account is already paired, but H&E cannot verify the shared connection yet.");
-        } catch (checkError) {
-          setStatus("The server says this account is already paired, but H&E could not verify the connection: " + (checkError?.message || "Check shared-space access."));
-        }
+        try { if (await refreshPairing()) { toast("Your devices are already paired."); return; } }
+        catch (checkError) { console.warn("Could not verify pairing status:", checkError); }
       }
       toast(message, true);
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "Send pairing code"; }
     }
   }
   async function acceptInvite() {
     try {
       if (!session) throw new Error("Sign in first.");
       const code = document.getElementById("pairCode").value.trim();
-      if (!code) throw new Error("Enter your partner's pairing code.");
+      if (!/^[0-9]{6}$/.test(code)) throw new Error("Enter the six-digit code your partner received.");
       const { error } = await db.rpc("accept_pair_invite", { p_code: code });
       if (error) throw error;
       const ready = await refreshPairing();
       if (!ready) throw new Error("The invitation was accepted, but both devices are not ready for messaging yet. Ask your partner to open H&E and try again.");
       document.getElementById("pairCode").value = "";
-      toast("Devices paired. Build your love story ♡");
+      updateConnectEntry(true);
+      toast("Partner paired successfully. ♡");
     } catch (error) { toast(error.message || "Could not join this shared space.", true); }
   }
   async function cryptoKey() {
