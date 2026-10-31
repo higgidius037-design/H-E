@@ -737,6 +737,16 @@ textarea { min-height:90px;resize:vertical; }
 .call-stage.video-mode.local-video-promoted.remote-video-ready>.remote-profile-mini{display:none}
 .call-stage.video-mode:not(.local-video-promoted)>.remote-profile-mini{display:none}
 .call-stage.video-mode #localCallVideo{object-fit:cover!important;image-rendering:auto}
+/* Keep the small self-view crisp; it uses the same camera stream as full-screen. */
+.call-stage.video-mode:not(.local-video-promoted)>#localCallVideo{
+  filter:none!important;
+  opacity:1!important;
+  image-rendering:auto!important;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  will-change:transform;
+  object-position:center center;
+}
 
 </style>
 </head>
