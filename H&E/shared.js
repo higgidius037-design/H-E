@@ -488,7 +488,15 @@
     } catch (error) { session = previousSession; throw error; }
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
-  async function refreshPairing() {
+  let pairingRefreshPromise = null;
+  function refreshPairing() {
+    // Prevent overlapping startup/auth refreshes from clearing coupleId while
+    // another refresh is creating the private call channel.
+    if (pairingRefreshPromise) return pairingRefreshPromise;
+    pairingRefreshPromise = refreshPairingInternal().finally(() => { pairingRefreshPromise = null; });
+    return pairingRefreshPromise;
+  }
+  async function refreshPairingInternal() {
     // Clear stale connection state before checking the server again.
     coupleId = null;
     partner = null;
@@ -549,7 +557,8 @@
     }
 
     const selected = validPairs[0];
-    coupleId = selected.coupleId;
+    const activeCoupleId = selected.coupleId;
+    coupleId = activeCoupleId;
     partner = {
       id: selected.other.user_id,
       name: selected.profile.display_name || "Your partner",
@@ -559,7 +568,7 @@
     await showSafetyCode();
     await refreshMessages();
 
-    callChannel = db.channel("he-call-" + coupleId, { config: { private: true, broadcast: { ack: true }, presence: { key: session.user.id } } })
+    callChannel = db.channel("he-call-" + activeCoupleId, { config: { private: true, broadcast: { ack: true }, presence: { key: session.user.id } } })
       .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload))
       .on("presence", { event: "sync" }, () => { const peers = callChannel?.presenceState?.() || {}; window.heCallPartnerOnline = !!(partner?.id && peers[partner.id]?.length); })
       .subscribe(async status => {
@@ -567,9 +576,9 @@
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("H&E call channel status:", status);
       });
 
-    channel = db.channel("he-chat-" + coupleId, { config: { private: false } })
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + coupleId }, () => refreshMessages())
-      .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + coupleId }, () => refreshWallet())
+    channel = db.channel("he-chat-" + activeCoupleId, { config: { private: false } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + activeCoupleId }, () => refreshMessages())
+      .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + activeCoupleId }, () => refreshWallet())
       .subscribe(status => {
         if (status === "SUBSCRIBED") {
           console.info("H&E message updates connected.");
