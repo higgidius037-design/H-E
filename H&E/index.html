@@ -633,6 +633,13 @@ textarea { min-height:90px;resize:vertical; }
 
 /* Video call focus: both video tiles are tappable and the controls float above the full-screen picture. */
 .call-overlay.open .call-card{position:relative;isolation:isolate}
+.call-overlay.minimised{display:none!important}
+.call-mini-dock{position:fixed;z-index:1250;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));display:none;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gold);border-radius:16px;background:linear-gradient(120deg,#310b14,#70263b);color:#fff;box-shadow:0 8px 28px #0005}
+.call-mini-dock.visible{display:flex}
+.call-mini-restore{flex:1;min-width:0;text-align:left;border:0;background:transparent;color:#fff;padding:4px}
+.call-mini-restore strong,.call-mini-restore small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-mini-restore small{margin-top:3px;color:#f0d8dc}
+.call-mini-end{width:42px;height:42px;border:0;border-radius:50%;background:#e74452;color:#fff;font-size:19px}
 .call-overlay.open .call-topbar{position:absolute;z-index:20;top:0;left:0;right:0;width:100%;box-sizing:border-box;background:linear-gradient(180deg,rgba(8,4,8,.62),transparent);pointer-events:none}
 .call-overlay.open .call-topbar button{pointer-events:auto}
 .call-overlay.open .call-stage{position:absolute;inset:0;width:100%;height:100%;flex:none;min-height:100%;padding:0;margin:0}
@@ -681,7 +688,7 @@ textarea { min-height:90px;resize:vertical; }
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
     <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
-    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. Fingerprint or face unlock is not connected in this version yet.</p>
+    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. Use your email and password, or enable fingerprint / face unlock after signing in.</p>
   </form>
 </section>
 
@@ -938,6 +945,7 @@ textarea { min-height:90px;resize:vertical; }
   <div class="modal-content" id="modalContent"></div>
 </div>
 <div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-label="Call"><div class="call-card"><div class="call-topbar"><button class="call-icon-btn" id="minimiseCall" type="button" aria-label="Minimise call" title="Minimise call">⌄</button><span id="callTitle">Private call</span><span class="call-top-spacer"></span></div><div class="call-stage" id="callVideos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video><button class="video-hit-area remote-hit-area" id="tapRemoteVideo" type="button" aria-label="Make other caller video full screen"></button><button class="video-hit-area local-hit-area" id="tapLocalVideo" type="button" aria-label="Make my video full screen"></button><div class="call-person-backdrop" id="callPersonBackdrop"><div class="call-avatar" id="callAvatarInitials">H</div><h2 id="callPartnerName">Private contact</h2><p id="callStatus">Calling…</p></div><div class="call-mini-name" id="callMiniName"></div></div><div id="incomingCallControls" class="call-controls incoming-controls"><button class="call-control accept-control" id="acceptCall" type="button" aria-label="Answer call" title="Answer call"><span>☎</span></button><button class="call-control decline-control" id="rejectCall" type="button" aria-label="Decline call" title="Decline call"><span>✕</span></button></div><div id="activeCallControls" class="call-controls"><button class="call-control" id="muteCall" type="button" aria-label="Mute microphone" title="Mute microphone"><span>🎙</span></button><button class="call-control" id="callSpeaker" type="button" aria-label="Turn sound off" title="Speaker"><span>🔊</span></button><button class="call-control" id="switchCameraCall" type="button" aria-label="Switch camera" title="Switch camera"><span>🔄</span></button><button class="call-control" id="cameraCall" type="button" aria-label="Turn camera off" title="Turn camera off"><span>▣</span></button><button class="call-control decline-control end-control" id="endCall" type="button" aria-label="End call" title="End call"><span>☎</span></button></div></div></div>
+<div class="call-mini-dock" id="callMiniDock" aria-live="polite"><button class="call-mini-restore" id="restoreCall" type="button"><strong id="miniCallName">H&E call</strong><small id="miniCallStatus">Call continues in the background</small></button><button class="call-mini-end" id="endMiniCall" type="button" aria-label="End call">☎</button></div>
 
 <script>
 "use strict";
