@@ -793,6 +793,12 @@
       const { data: profile, error: profileError } = await db.from("profiles")
         .select("display_name,encryption_public_key").eq("user_id", other.user_id).maybeSingle();
       if (profileError) throw profileError;
+      // A membership alone is not proof that a pairing code was redeemed.
+      // Ignore stale/manual memberships with no successfully redeemed invite.
+      const { data: redeemedInvites, error: inviteError } = await db.from("pair_invites")
+        .select("id").eq("couple_id", membership.couple_id).not("redeemed_at", "is", null).limit(1);
+      if (inviteError) throw inviteError;
+      if (!redeemedInvites?.length) continue;
       if (!profile?.encryption_public_key) continue;
       try {
         await crypto.subtle.importKey("raw", b64ToBytes(profile.encryption_public_key),
