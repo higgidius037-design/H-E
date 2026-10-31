@@ -153,36 +153,55 @@
     const passkeySupported = () => !!(window.isSecureContext && window.PublicKeyCredential &&
       navigator.credentials && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function");
     let platformPasskeyAvailable = false;
+    let passkeyCheckReason = "The browser has not completed its passkey capability check.";
+    const passkeyHelp = () => {
+      const reason = passkeyCheckReason;
+      alert("Your phone may have fingerprint or face unlock, but this browser view is not exposing its passkey authenticator.\\n\\nReason: " + reason +
+        "\\n\\nTry these steps:\\n1. Open H&E in the latest Chrome browser tab, not only from the installed app icon.\\n2. In Android Settings, check Google Password Manager / Passkeys is enabled.\\n3. Update Chrome and Google Play services.\\n4. Return to H&E Settings and try again.\\n\\nYour account password and Wallet PIN remain available.");
+    };
     (async () => {
-      if (!passkeySupported()) {
-        if (passkeyAvailability) passkeyAvailability.textContent = "Biometrics are not available in this browser. You can still use your account password and Wallet PIN.";
+      if (!window.isSecureContext) {
+        passkeyCheckReason = "H&E needs a secure HTTPS context.";
+      } else if (!window.PublicKeyCredential || !navigator.credentials) {
+        passkeyCheckReason = "WebAuthn credentials are not exposed by this browser.";
+      } else if (typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== "function") {
+        passkeyCheckReason = "This browser does not provide the platform-authenticator availability check.";
       } else {
         try {
           platformPasskeyAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-          if (passkeyAvailability) passkeyAvailability.textContent = platformPasskeyAvailable
-            ? "This browser can use your device screen lock, fingerprint or face verification for passkeys."
-            : "A device passkey authenticator is not available here. You can still use your account password and Wallet PIN.";
-        } catch (_) {
-          if (passkeyAvailability) passkeyAvailability.textContent = "Passkey availability could not be checked. You can still use your account password and Wallet PIN.";
+          passkeyCheckReason = platformPasskeyAvailable ? "Platform authenticator is available." : "The platform authenticator is not exposed in this browser or PWA context.";
+          if (typeof window.PublicKeyCredential.isConditionalMediationAvailable === "function") {
+            try { console.info("H&E passkey capability:", { platform: platformPasskeyAvailable, conditional: await window.PublicKeyCredential.isConditionalMediationAvailable() }); }
+            catch (error) { console.info("H&E conditional mediation check unavailable:", error); }
+          }
+        } catch (error) {
+          passkeyCheckReason = error?.message || "The browser could not check passkey availability.";
         }
       }
-      if (securityButton) {
-        securityButton.disabled = !platformPasskeyAvailable;
-        securityButton.textContent = platformPasskeyAvailable ? "Enable fingerprint / face sign-in (WebAuthn)" : "Biometric sign-in unavailable";
-      }
-      if (passkeySetupButton) passkeySetupButton.disabled = !platformPasskeyAvailable;
+      const label = platformPasskeyAvailable ? "Enable fingerprint / face sign-in" : "Set up fingerprint";
+      if (passkeyAvailability) passkeyAvailability.textContent = platformPasskeyAvailable
+        ? "This browser reports a platform passkey authenticator. Your phone may ask for fingerprint, face or screen-lock verification."
+        : "Biometric sign-in is not currently detected in this browser view. Tap Set up fingerprint for troubleshooting. You can still use your account password and Wallet PIN.";
+      [securityButton, passkeySetupButton].filter(Boolean).forEach(button => {
+        button.disabled = false;
+        button.textContent = label;
+      });
     })();
     if (securityButton) securityButton.addEventListener("click", () => {
       if (platformPasskeyAvailable) passkeySetupButton?.click();
+      else passkeyHelp();
     });
     if (passkeySetupButton) {
-      passkeySetupButton.textContent = "Enable fingerprint / face sign-in (WebAuthn)";
+      passkeySetupButton.textContent = "Set up fingerprint";
       passkeySetupButton.addEventListener("click", async event => {
         const button = event.currentTarget;
+        if (!passkeySupported() || !platformPasskeyAvailable) {
+          passkeyHelp();
+          return;
+        }
         button.disabled = true;
         try {
           if (!session) throw new Error("Sign in first with your account email and password.");
-          if (!passkeySupported()) throw new Error("Your device doesn't support biometric sign-in in this browser. Use your account password instead.");
           const emailAddress = session.user.email;
           const passwordEntry = await requestHESecurePassword();
           if (passwordEntry === null) return;
@@ -204,21 +223,20 @@
           toast("Fingerprint / face sign-in enabled.");
         } catch (error) {
           if (!passkeySupported() || !platformPasskeyAvailable) {
-            const hint = "Biometric sign-in is unavailable in this browser. Use your account password and Wallet PIN instead.";
-            if (passkeyAvailability) passkeyAvailability.textContent = hint;
-            if (securityButton) {
-              securityButton.disabled = true;
-              securityButton.textContent = "Biometric sign-in unavailable";
-            }
-            setStatus(hint);
-            // Unsupported biometrics are explained inline; never create a bottom toast/banner.
+            passkeyCheckReason = error?.message || passkeyCheckReason;
+            if (passkeyAvailability) passkeyAvailability.textContent = "Biometric sign-in could not start in this browser view. Tap Set up fingerprint for troubleshooting. Your password and Wallet PIN remain available.";
+            [securityButton, passkeySetupButton].filter(Boolean).forEach(item => {
+              item.disabled = false;
+              item.textContent = "Set up fingerprint";
+            });
+            setStatus("Passkey setup is not available in this browser view. Your account password remains available.");
           } else {
             const message = friendlyAuthError(error);
             setStatus(message);
             toast(message, true);
           }
         } finally {
-          button.disabled = !platformPasskeyAvailable;
+          button.disabled = false;
         }
       });
     }
