@@ -1228,6 +1228,26 @@ async function saveMedia() {
     return false;
   }
 }
+
+async function clearLocalGalleryMedia() {
+  try {
+    const db = await openMediaDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("items", "readwrite");
+      tx.objectStore("items").clear();
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } catch (error) { console.warn("Could not clear Gallery storage:", error); }
+  mediaItems = [];
+  for (const url of mediaURLCache.values()) { try { URL.revokeObjectURL(url); } catch {} }
+  mediaURLCache.clear();
+  try { localStorage.removeItem(MEDIA_KEY); } catch {}
+  selectedMedia.clear();
+  renderMedia();
+}
+window.clearLocalGalleryMedia = clearLocalGalleryMedia;
 function saveEvents() {
   try {
     localStorage.setItem(EVENT_KEY,JSON.stringify(events));
