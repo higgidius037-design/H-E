@@ -798,15 +798,41 @@
   function showCall(incoming=false) { $("callOverlay").classList.add("open"); $("callTitle").textContent=(callKind==="video"?"Video":"Voice")+" call"; $("callStatus").textContent=incoming?partner.name+" is calling you":"Calling "+partner.name+"…"; $("incomingCallControls").style.display=incoming?"flex":"none"; $("activeCallControls").style.display=incoming?"none":"flex"; }
   async function getCallMedia(video) {
     if (!navigator.mediaDevices?.getUserMedia) throw new Error("Calls need a secure connection. Open H&E in the installed app or an updated browser.");
+    // Release any leftover tracks before opening the devices again.
+    if (localStream) localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+    const explainMediaError = (error, kind) => {
+      if (error?.name === "NotAllowedError" || error?.name === "PermissionDeniedError" || error?.name === "SecurityError")
+        return kind + " permission was denied. Allow it in Android Settings → Apps → H&E → Permissions, then try again.";
+      if (error?.name === "NotFoundError" || error?.name === "DevicesNotFoundError")
+        return "This phone could not find a " + kind.toLowerCase() + " device.";
+      if (error?.name === "NotReadableError" || error?.name === "TrackStartError")
+        return "Android could not open the " + kind.toLowerCase() + ". Restart H&E and try again. If it still fails, restart the phone to release a stuck camera/microphone session.";
+      if (error?.name === "OverconstrainedError")
+        return "The phone could not use the requested " + kind.toLowerCase() + " setting. Check the device and try again.";
+      return "Could not start the " + kind.toLowerCase() + ": " + (error?.message || error?.name || "unknown error");
+    };
     try {
-      localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video?{facingMode:"user"}:false});
-    } catch(error) {
-      if(error?.name==="NotAllowedError"||error?.name==="PermissionDeniedError") throw new Error("Microphone"+(video?" and camera":"")+" permission was denied. Choose Allow when Android asks, or enable it in Settings → Apps → H&E → Permissions.");
-      if(error?.name==="NotFoundError") throw new Error(video?"This phone could not find a microphone or camera.":"This phone could not find a microphone.");
-      if(error?.name==="NotReadableError") throw new Error("Your microphone or camera is being used by another app. Close that app and try again.");
-      throw error;
+      // Open audio independently so a camera problem cannot be mistaken for a microphone problem.
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      if (video) {
+        try {
+          const cameraStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "user" } });
+          cameraStream.getVideoTracks().forEach(track => localStream.addTrack(track));
+        } catch (cameraError) {
+          localStream.getTracks().forEach(track => track.stop());
+          localStream = null;
+          throw new Error(explainMediaError(cameraError, "Camera"));
+        }
+      }
+    } catch (error) {
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+      if (error instanceof Error && error.message.startsWith("Camera ")) throw error;
+      throw new Error(explainMediaError(error, "Microphone"));
     }
-    $("localCallVideo").srcObject=localStream; $("localCallVideo").style.display=video?"block":"none";
+    $("localCallVideo").srcObject = localStream;
+    $("localCallVideo").style.display = video ? "block" : "none";
   }
   function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{$("remoteCallVideo").srcObject=e.streams[0];}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected")$("callStatus").textContent="Connected securely with "+partner.name;if(["failed","disconnected"].includes(peerConnection?.connectionState))$("callStatus").textContent="Connection interrupted. Try again on another network.";}; localStream.getTracks().forEach(t=>peerConnection.addTrack(t,localStream)); }
   async function startCall(video) { try { if(!coupleId||!partner)throw new Error("Pair your phones first in Settings.");if(!callChannel)throw new Error("Private calling is not ready. Reload after the security update.");callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind}); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
