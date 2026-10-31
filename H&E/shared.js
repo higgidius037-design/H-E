@@ -74,6 +74,13 @@
     const submitButton = document.getElementById("loginSubmit");
     const passkeyButton = document.getElementById("loginPasskey");
     let isSignUp = false;
+    let otpPending = false;
+    let pendingSignupPhone = "";
+    const nameLabel = document.getElementById("loginNameLabel");
+    const contactLabel = document.getElementById("loginContactLabel");
+    const otpPanel = document.getElementById("signupOtpPanel");
+    const otpInput = document.getElementById("signupOtp");
+    const resendOtpButton = document.getElementById("resendSignupOtp");
     const note = form.querySelector(".login-note");
     const feedback = document.getElementById("loginFeedback");
     const reportLogin = (message, kind = "error") => { if (feedback) { feedback.textContent = message; feedback.dataset.kind = kind; feedback.hidden = false; } };
@@ -89,16 +96,58 @@
       if (error?.name === "NotAllowedError" || error?.name === "AbortError") return "The phone cancelled the biometric prompt. Tap again and approve it on your device.";
       return message || "Sign-in did not complete. Please try again.";
     };
+    function resetSignupOtpStep() {
+      otpPending = false;
+      otpPanel.hidden = true;
+      email.hidden = false;
+      document.querySelector('label[for="loginEmail"]').hidden = false;
+      password.hidden = false;
+      document.querySelector('label[for="loginPassword"]').hidden = false;
+      toggleMethod.hidden = false;
+      passkeyButton.hidden = false;
+    }
+    function showSignupOtpStep() {
+      otpPending = true;
+      otpPanel.hidden = false;
+      email.hidden = true;
+      document.querySelector('label[for="loginEmail"]').hidden = true;
+      password.hidden = true;
+      document.querySelector('label[for="loginPassword"]').hidden = true;
+      document.getElementById("loginName").hidden = true;
+      nameLabel.hidden = true;
+      toggleMethod.hidden = true;
+      passkeyButton.hidden = true;
+      submitButton.textContent = "Verify phone →";
+      if (note) note.textContent = "Your account will be ready after your phone number is verified.";
+      otpInput.focus();
+    }
     toggleMethod.addEventListener("click", () => {
       isSignUp = !isSignUp;
       if (feedback) feedback.hidden = true;
+      resetSignupOtpStep();
       document.getElementById("loginName").required = isSignUp;
+      document.getElementById("loginName").hidden = !isSignUp;
+      nameLabel.hidden = !isSignUp;
+      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
+      email.type = "text";
+      email.inputMode = isSignUp ? "tel" : "email";
+      email.autocomplete = isSignUp ? "tel" : "username";
+      email.placeholder = isSignUp ? "+2547XXXXXXXX" : "Email or +2547XXXXXXXX";
       submitButton.textContent = isSignUp ? "Create account →" : "Log in →";
       toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
       password.autocomplete = isSignUp ? "new-password" : "current-password";
       if (note) note.textContent = isSignUp
-        ? "Create your account with an email and password. Check your email if confirmation is required."
-        : "Sign in securely with your email and password. Phone verification is not required.";
+        ? "Create an account with your name, phone number and a password you choose. We'll text you a code to verify your number."
+        : "Sign in securely with your email or phone number and password.";
+    });
+    resendOtpButton?.addEventListener("click", async () => {
+      resendOtpButton.disabled = true;
+      try {
+        const { error } = await db.auth.resend({ type: "sms", phone: pendingSignupPhone });
+        if (error) throw error;
+        reportLogin("A new verification code has been sent.", "ok");
+      } catch (error) { reportLogin(friendlyAuthError(error)); }
+      finally { resendOtpButton.disabled = false; }
     });
     passkeyButton.addEventListener("click", async () => {
       passkeyButton.disabled = true;
@@ -114,37 +163,51 @@
     form.addEventListener("submit", async event => {
       event.preventDefault(); event.stopImmediatePropagation();
       submitButton.disabled = true;
-      submitButton.textContent = isSignUp ? "Creating account…" : "Signing in…";
-      reportLogin(isSignUp ? "Creating your secure account…" : "Checking your sign-in…", "wait");
+      submitButton.textContent = otpPending ? "Verifying code…" : (isSignUp ? "Sending code…" : "Signing in…");
+      reportLogin(otpPending ? "Verifying your phone number…" : (isSignUp ? "Creating your account and sending a verification code…" : "Checking your sign-in…"), "wait");
       try {
-        const address = normalEmail(email.value);
+        if (otpPending) {
+          const token = otpInput.value.replace(/\D/g, "");
+          if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit SMS verification code.");
+          const { data, error } = await db.auth.verifyOtp({ phone: pendingSignupPhone, token, type: "sms" });
+          if (error) throw error;
+          if (!data.session) throw new Error("Your phone was verified, but sign-in could not be completed. Please log in with your phone and password.");
+          await enterApp(data.session);
+          return;
+        }
+        const contact = email.value.trim();
         const displayName = document.getElementById("loginName").value.trim();
+        const passwordValue = password.value;
         if (isSignUp) {
+          const phone = contact.replace(/[\s()-]/g, "");
+          if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error("Enter your phone number in international format, for example +2547XXXXXXXX.");
+          if (!displayName) throw new Error("Enter your name.");
+          if (passwordValue.length < 6) throw new Error("Choose a password with at least 6 characters.");
           const { data, error } = await db.auth.signUp({
-            email: address,
-            password: password.value,
+            phone,
+            password: passwordValue,
             options: { data: { display_name: displayName } }
           });
           if (error) throw error;
-          if (data.session) {
-            await enterApp(data.session);
-          } else {
-            if (note) note.textContent = "Account created. Check your email to confirm it, then return here to log in.";
-            reportLogin("Account created. Confirm your email from the link we sent, then log in.", "ok");
-            toast("Account created. Check your email to confirm it.");
-            isSignUp = false;
-            document.getElementById("loginName").required = false;
-            submitButton.textContent = "Log in →";
-            toggleMethod.textContent = "New here? Create an account";
-          }
+          if (data.session) throw new Error("Phone confirmation is not enabled on the H&E sign-in service yet. Please try again later.");
+          pendingSignupPhone = phone;
+          showSignupOtpStep();
+          reportLogin("Verification code sent. Enter the six digits from your SMS to finish registration.", "ok");
         } else {
-          const { data, error } = await db.auth.signInWithPassword({ email: address, password: password.value });
+          const contactValue = contact.trim();
+          const credentials = contactValue.includes("@")
+            ? { email: normalEmail(contactValue), password: passwordValue }
+            : { phone: contactValue.replace(/[\s()-]/g, ""), password: passwordValue };
+          const { data, error } = await db.auth.signInWithPassword(credentials);
           if (error) throw error;
-          if (!data.session) throw new Error("Sign-in did not return a session. Check your email confirmation and try again.");
+          if (!data.session) throw new Error("Sign-in did not return a session. Confirm your account and try again.");
           await enterApp(data.session);
         }
       } catch (error) { const message = friendlyAuthError(error); reportLogin(message); toast(message, true); }
-      finally { submitButton.disabled = false; submitButton.textContent = isSignUp ? "Create account →" : "Log in →"; }
+      finally {
+        submitButton.disabled = false;
+        if (!otpPending) submitButton.textContent = isSignUp ? "Create account →" : "Log in →";
+      }
     }, true);
 
     const settings = document.getElementById("page-settings");
