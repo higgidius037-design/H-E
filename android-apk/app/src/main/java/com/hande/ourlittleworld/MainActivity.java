@@ -28,12 +28,16 @@ import android.widget.Toast;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.media.RingtoneManager;
+import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
     private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
-    private static final String CHANNEL_ID = "he_messages";
+    private static final String CHANNEL_ID = "he_messages_v2";
+    private static final int APP_PERMISSION_REQUEST = 2003;
+    private String pendingAppPermission = "";
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
     private BiometricPrompt biometricPrompt;
@@ -121,7 +125,7 @@ public class MainActivity extends FragmentActivity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != CALL_PERMISSION_REQUEST) return;
+        if (requestCode == APP_PERMISSION_REQUEST) {\n            String key=pendingAppPermission; pendingAppPermission="";\n            boolean granted=grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED;\n            String safe=org.json.JSONObject.quote(key);\n            if(webView!=null) webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+","+granted+")",null);\n            return;\n        }\n        if (requestCode != CALL_PERMISSION_REQUEST) return;
         PermissionRequest webRequest = pendingWebPermissionRequest;
         pendingWebPermissionRequest = null;
         boolean allGranted = grantResults.length > 0;
@@ -140,6 +144,7 @@ public class MainActivity extends FragmentActivity {
             NotificationChannel channel=new NotificationChannel(CHANNEL_ID,"H&E messages and reminders",NotificationManager.IMPORTANCE_HIGH);
             channel.setDescription("Private message alerts and H&E reminders. Change sound and pop-up behaviour in Android settings.");
             channel.enableVibration(true);
+            channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
             manager.createNotificationChannel(channel);
         }
     }
@@ -184,7 +189,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private class HENativeBridge {
-        @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
+        @JavascriptInterface public void requestAppPermission(String permission){\n            runOnUiThread(()->{\n                String androidPermission;\n                if("notifications".equals(permission)){androidPermission="android.permission.POST_NOTIFICATIONS";}\n                else if("microphone".equals(permission)){androidPermission=android.Manifest.permission.RECORD_AUDIO;}\n                else if("camera".equals(permission)){androidPermission=android.Manifest.permission.CAMERA;}\n                else return;\n                if(Build.VERSION.SDK_INT<23 || checkSelfPermission(androidPermission)==PackageManager.PERMISSION_GRANTED){\n                    String safe=org.json.JSONObject.quote(permission); if(webView!=null)webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+",true)",null); return;\n                }\n                pendingAppPermission=permission; requestPermissions(new String[]{androidPermission},APP_PERMISSION_REQUEST);\n            });\n        }\n        @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
         @JavascriptInterface public void openBiometricSettings(){
             runOnUiThread(()->{
                 Intent intent;
