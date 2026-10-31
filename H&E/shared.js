@@ -124,13 +124,6 @@
     card.className = "card"; card.id = "sharedSetupCard";
     card.innerHTML = `<h2 class="section-title">Connect our phones</h2>
       <p class="muted" id="sharedStatus">Sign in with your email to start a private shared space.</p>
-      <div class="card" style="margin:14px 0;padding:14px;border:1px solid #e8cbd5;border-radius:14px;background:#fff7f9">
-        <strong>Stay in touch</strong>
-        <p class="muted">Allow H&E notifications for messages and reminders.</p>
-        <button class="secondary" id="enableHENotifications" type="button">Enable notifications</button>
-        <button class="secondary" id="chooseHENotificationSound" type="button">Choose notification sound</button>
-        <p class="muted" id="heNotificationStatus">Notifications have not been enabled yet.</p>
-      </div>
       <div id="pairingControls">
         <label for="partnerEmail">Your partner's email</label>
         <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
@@ -173,16 +166,6 @@
     connectFolder.addEventListener("click",()=>{document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");history.pushState({hePage:"settings",heFolder:"connect"},"","#settings-connect");});
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
-    const notificationStatus=document.getElementById("heNotificationStatus");
-    document.getElementById("enableHENotifications").addEventListener("click",async()=>{
-      if(window.HENative?.showNotification){window.HENative.showNotification("H&E notifications","Notifications are being enabled. You can choose the Peak sound in notification settings.");notificationStatus.textContent="Android will ask whether H&E can send notifications.";return;}
-      if("Notification" in window){const result=await Notification.requestPermission();notificationStatus.textContent=result==="granted"?"Notifications enabled.":"Notifications were not allowed.";}
-      else notificationStatus.textContent="Notifications are unavailable in this browser.";
-    });
-    document.getElementById("chooseHENotificationSound").addEventListener("click",()=>{
-      if(window.HENative?.openNotificationSettings)window.HENative.openNotificationSettings();
-      else notificationStatus.textContent="Open H&E notification settings on your phone to choose a sound.";
-    });
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
     const refreshPairingButton = document.getElementById("refreshPairingStatus");
     refreshPairingButton.addEventListener("click", async () => {
@@ -458,6 +441,40 @@
     });
     if (error) throw error;
   }
+  const permissionSteps = [
+    { key:"notifications", title:"Notifications", detail:"Allow H&E to alert you about new messages and reminders.", native:"notifications" },
+    { key:"microphone", title:"Microphone", detail:"Allow microphone access when you make or answer voice and video calls.", native:"microphone" },
+    { key:"camera", title:"Camera", detail:"Allow camera access for video calls. You can still use H&E without it.", native:"camera" }
+  ];
+  function showPermissionOnboarding() {
+    if (localStorage.getItem("he-permission-onboarding-v1")==="complete") return;
+    let index=0;
+    const overlay=document.createElement("div");
+    overlay.id="hePermissionOnboarding";
+    overlay.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(28,13,19,.72);display:grid;place-items:center;padding:22px";
+    const panel=document.createElement("section");
+    panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","hePermissionTitle");
+    panel.style.cssText="width:min(100%,420px);background:var(--card,#fffaf6);color:var(--ink,#32131e);border-radius:22px;padding:26px;box-shadow:0 20px 70px #0005";
+    panel.innerHTML='<p class="eyebrow">BEFORE YOU CONTINUE</p><h2 id="hePermissionTitle" style="margin:8px 0 10px"></h2><p id="hePermissionDetail" class="muted" style="line-height:1.6"></p><p id="hePermissionCount" class="muted" style="font-size:12px"></p><div style="display:flex;gap:10px;margin-top:22px"><button class="primary" id="hePermissionAllow" type="button" style="flex:1">Agree &amp; continue</button><button class="secondary" id="hePermissionDecline" type="button" style="flex:1">Not now</button></div>';
+    overlay.append(panel);document.body.append(overlay);
+    const title=panel.querySelector("#hePermissionTitle"),detail=panel.querySelector("#hePermissionDetail"),count=panel.querySelector("#hePermissionCount"),allow=panel.querySelector("#hePermissionAllow"),decline=panel.querySelector("#hePermissionDecline");
+    const finish=()=>{localStorage.setItem("he-permission-onboarding-v1","complete");overlay.remove();};
+    const next=()=>{index++;if(index>=permissionSteps.length){finish();return;}render();};
+    const render=()=>{const step=permissionSteps[index];title.textContent=step.title;detail.textContent=step.detail;count.textContent="Permission "+(index+1)+" of "+permissionSteps.length;};
+    const decide=async accepted=>{
+      allow.disabled=true;decline.disabled=true;
+      try {
+        if(accepted){
+          if(window.HENative?.requestAppPermission){window.onHEPermissionResult=(key,granted)=>{if(key!==permissionSteps[index]?.key)return;next();};window.HENative.requestAppPermission(permissionSteps[index].native);}
+          else if(permissionSteps[index].key==="notifications"&&"Notification" in window){await Notification.requestPermission();next();}
+          else next();
+        } else next();
+      } catch(error){console.warn("Permission step was not completed",error);next();}
+      finally {allow.disabled=false;decline.disabled=false;}
+    };
+    allow.addEventListener("click",()=>decide(true));decline.addEventListener("click",()=>decide(false));render();
+  }
+
   async function enterApp(nextSession, showIntro = true) {
     const activeSession = nextSession || (await db.auth.getSession()).data.session;
     if (!activeSession || (session && session.user.id === activeSession.user.id && !document.getElementById("loginScreen"))) return;
@@ -467,7 +484,7 @@
       const name = document.getElementById("loginName")?.value.trim() || state.profile.you || session.user.user_metadata?.display_name || "H&E";
       state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
       saveState(); renderProfile(); await ensureKeys();
-      const login = document.getElementById("loginScreen"); if (login) login.remove(); if (showIntro) startWelcome();
+      const login = document.getElementById("loginScreen"); if (login) login.remove(); if (showIntro) startWelcome(); showPermissionOnboarding();
     } catch (error) { session = previousSession; throw error; }
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
