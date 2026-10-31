@@ -38,6 +38,7 @@ public class MainActivity extends FragmentActivity {
     private static final String CHANNEL_ID = "he_messages_v2";
     private static final String CALL_CHANNEL_ID = "he_calls_v1";
     private String pendingCallAction = "";
+    private boolean pageReady = false;
     private static final int APP_PERMISSION_REQUEST = 2003;
     private String pendingAppPermission = "";
     private WebView webView;
@@ -76,7 +77,8 @@ public class MainActivity extends FragmentActivity {
                 catch(ActivityNotFoundException e){Toast.makeText(MainActivity.this,"No app can open this link.",Toast.LENGTH_SHORT).show();}
                 return true;
             }
-            @Override public void onPageStarted(WebView view,String url,Bitmap favicon){view.setBackgroundColor(0xFFFFF9F1);}
+            @Override public void onPageStarted(WebView view,String url,Bitmap favicon){pageReady=false;view.setBackgroundColor(0xFFFFF9F1);}
+            @Override public void onPageFinished(WebView view,String url){pageReady=true;dispatchPendingCallAction();}
             @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){if(request.isForMainFrame())showLoadError();}
         });
         webView.setWebChromeClient(new WebChromeClient(){
@@ -112,7 +114,7 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void dispatchPendingCallAction() {
-        if (webView == null || pendingCallAction.isEmpty()) return;
+        if (webView == null || !pageReady || pendingCallAction.isEmpty()) return;
         final String action = pendingCallAction;
         pendingCallAction = "";
         webView.post(() -> webView.evaluateJavascript("(()=>{const id=" + org.json.JSONObject.quote("answer".equals(action) ? "acceptCall" : "rejectCall") + ";const el=document.getElementById(id);if(el)el.click();else window.__hePendingCallAction=" + org.json.JSONObject.quote(action) + ";})()", null));
