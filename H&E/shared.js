@@ -840,8 +840,8 @@
             audio: false,
             video: {
               facingMode: { ideal: "user" },
-              width: { ideal: 1920, max: 1920 },
-              height: { ideal: 1080, max: 1080 },
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 },
               frameRate: { ideal: 30, max: 30 }
             }
           });
@@ -868,9 +868,11 @@
       if(sender?.getParameters && sender?.setParameters){
         const params=sender.getParameters();
         params.encodings=params.encodings?.length?params.encodings:[{}];
+        // Favor stable 720p/30fps over forcing 1080p on limited connections.
         params.encodings[0].maxBitrate=2500000;
         params.encodings[0].maxFramerate=30;
-        params.degradationPreference="maintain-resolution";
+        params.encodings[0].priority="high";
+        params.degradationPreference="balanced";
         sender.setParameters(params).catch(err=>console.debug("Video quality adaptation unavailable",err));
       }
     }
