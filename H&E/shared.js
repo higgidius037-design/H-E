@@ -744,32 +744,43 @@
       messageRefreshBusy = false;
     }
   }
+  let messageSendBusy = false;
   async function sendMessage(event) {
     event.preventDefault(); event.stopImmediatePropagation();
+    if (messageSendBusy) return;
+    const form = document.getElementById("chatForm");
+    const submitButton = form.querySelector('[type="submit"]');
+    const messageInput = document.getElementById("chatMessage");
+    const attachmentInput = document.getElementById("chatAttachment");
+    const preview = document.getElementById("chatAttachmentPreview");
+    messageSendBusy = true;
+    if (submitButton) submitButton.disabled = true;
     try {
       if (!coupleId || !partner?.publicKey || !session) {
         const ready = session ? await refreshPairing() : false;
         if (!ready || !coupleId || !partner?.publicKey) throw new Error("Your phones are not fully connected yet. Open Settings → Connect Phones on both devices and wait for “Devices paired”.");
       }
-      const message = document.getElementById("chatMessage").value.trim();
+      const message = messageInput.value.trim();
       const attachment = pendingChatFile;
       if (!message && !attachment) return;
       const once = document.getElementById("viewOnceToggle")?.checked || false;
       await sendEncrypted({ message, attachment: attachment || null, voice: null }, attachment?.type === "video" ? "video" : attachment ? "image" : "text", once);
-      document.getElementById("chatMessage").value = ""; document.getElementById("chatAttachment").value = "";
-      document.getElementById("chatPreviewContent").innerHTML = ""; document.getElementById("chatAttachmentPreview").classList.add("hidden");
+      messageInput.value = ""; attachmentInput.value = "";
+      document.getElementById("chatPreviewContent").innerHTML = ""; preview.classList.add("hidden");
       document.getElementById("viewOnceToggle").checked = false; pendingChatFile = null;
       await refreshMessages();
     } catch (error) { toast(error.message || "Message could not be sent.", true); }
+    finally {
+      messageSendBusy = false;
+      if (submitButton) submitButton.disabled = false;
+    }
   }
   async function sendEncrypted(payload, type = "text", once = false) {
     if (session && (!coupleId || !partner?.publicKey || !callChannel)) await ensureExistingPairing();
     if (!coupleId || !partner?.publicKey || !session) throw new Error("Your saved pairing could not be restored. Check your internet connection and try again; you do not need to pair again.");
-    const serialized = JSON.stringify(payload);
     const encrypted = await encryptPayload(payload);
     const { error } = await db.from("messages").insert({ couple_id: coupleId, sender_id: session.user.id, recipient_id: partner.id, ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, message_type: type, view_once: once });
     if (error) throw error;
-    await refreshMessages();
   }
   window.heSharedSend = async (payload, type = "voice", once = false) => {
     try { await sendEncrypted(payload, type, once); }
@@ -838,7 +849,9 @@
         if (item.voice) content += `<div class="voice-tile"><audio class="chat-audio" preload="metadata" src="${item.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
         if (chat.viewOnce && openedOnce.has(chat.id)) content += `<button class="link-button" type="button" data-close-once="${chat.id}">Close view</button>`;
       }
-      return `<article class="chat-bubble ${isMine ? "mine" : "theirs"}">${!isMine ? `<div class="chat-sender">${escapeHTML(chat.name || partner?.name || "Partner")}</div>` : ""}${content}<div class="chat-time"><span>${escapeHTML(chat.date || "")}</span>${isMine ? '<span class="chat-tick">✓</span>' : ""}</div></article>`;
+      const tickClass = chat.readAt ? "is-read" : chat.deliveredAt ? "is-delivered" : "";
+      const tickLabel = chat.readAt || chat.deliveredAt ? "✓✓" : "✓";
+      return `<article class="chat-bubble ${isMine ? "mine" : "theirs"}">${!isMine ? `<div class="chat-sender">${escapeHTML(chat.name || partner?.name || "Partner")}</div>` : ""}${content}<div class="chat-time"><span>${escapeHTML(chat.date || "")}</span>${isMine ? `<span class="chat-tick ${tickClass}" title="${chat.readAt ? "Read" : chat.deliveredAt ? "Delivered" : "Sent"}">${tickLabel}</span>` : ""}</div></article>`;
     }).join("");
     list.querySelectorAll("[data-close-once]").forEach(btn => btn.addEventListener("click", () => { openedOnce.delete(btn.dataset.closeOnce); refreshMessages(); }));
     list.querySelectorAll("[data-voice-play]").forEach(btn=>btn.addEventListener("click",event=>{event.stopPropagation();const audio=btn.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();btn.textContent="Ⅱ";}else{audio.pause();btn.textContent="▶";}audio.onended=()=>btn.textContent="▶";}));
