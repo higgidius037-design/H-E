@@ -2,6 +2,8 @@ plugins {
     id 'com.android.application'
 }
 
+dependencies { implementation 'androidx.biometric:biometric:1.1.0' }
+
 android {
     namespace 'com.hande.ourlittleworld'
     compileSdk 35
@@ -10,8 +12,8 @@ android {
         applicationId 'com.hande.ourlittleworld'
         minSdk 23
         targetSdk 35
-        versionCode 10
-        versionName '1.0.9'
+        versionCode 11
+        versionName '1.1.0'
     }
 
     signingConfigs {
