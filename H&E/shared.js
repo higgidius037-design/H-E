@@ -133,7 +133,22 @@
         <input id="pairCode" autocomplete="one-time-code" inputmode="numeric" placeholder="Enter pairing code">
         <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       </div>
-      <p id="pairedConfirmation" class="muted" hidden><strong>Devices paired ✓</strong><br>Build your love story ♡</p>
+      <style>
+        #pairedConfirmation.pair-success{display:flex;align-items:center;gap:12px;margin:14px 0;padding:13px 15px;border:1px solid rgba(207,91,139,.28);border-radius:14px;background:rgba(207,91,139,.06);color:inherit}
+        #pairedConfirmation.pair-success[hidden]{display:none}
+        .pair-success-tick{flex:0 0 30px;width:30px;height:30px;border:1.5px solid #55b985;border-radius:50%;display:grid;place-items:center;animation:pairTickIn .45s cubic-bezier(.2,.8,.2,1) both}
+        .pair-success-tick:after{content:"";width:7px;height:12px;border-right:2px solid #55b985;border-bottom:2px solid #55b985;transform:rotate(45deg) translate(-1px,-1px);animation:pairTickDraw .35s .18s ease-out both}
+        .pair-success-copy{display:flex;flex-direction:column;gap:3px;text-align:left}
+        .pair-success-copy strong{font-size:15px;font-weight:650}
+        .pair-success-copy small{font-size:13px;opacity:.76}
+        @keyframes pairTickIn{from{transform:scale(.65);opacity:0}to{transform:scale(1);opacity:1}}
+        @keyframes pairTickDraw{from{opacity:0;transform:rotate(45deg) translate(-1px,-1px) scale(.4)}to{opacity:1;transform:rotate(45deg) translate(-1px,-1px) scale(1)}}
+        @media(prefers-reduced-motion:reduce){.pair-success-tick,.pair-success-tick:after{animation:none}}
+      </style>
+      <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden>
+        <span class="pair-success-tick" aria-hidden="true"></span>
+        <span class="pair-success-copy"><strong>You're connected</strong><small>Together, closer than ever. ♡</small></span>
+      </div>
       <button class="secondary" id="refreshPairingStatus" type="button">Refresh pairing status</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
@@ -156,7 +171,7 @@
       refreshPairingButton.textContent = "Checking connection…";
       try {
         const ready = await refreshPairing();
-        if (ready) toast("Devices paired. Build your love story ♡");
+        if (ready) toast("You’re connected. Together, closer than ever. ♡");
         else toast("Pairing is not ready yet. Check both phones in Settings → Connect Phones.", true);
       } catch (error) {
         setStatus("Could not refresh pairing: " + (error.message || "Check your internet connection and try again."));
@@ -545,7 +560,7 @@
     }
     if (controls) controls.hidden = true;
     if (confirmation) confirmation.hidden = false;
-    setStatus("Devices paired. Secure messaging is ready with " + partner.name + "." + walletNotice);
+    setStatus("Connected securely with " + partner.name + "." + walletNotice);
     return true;
   }
   async function createInvite() {
