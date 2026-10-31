@@ -235,7 +235,7 @@
         if (otpPending) {
           const token = otpInput.value.replace(/\D/g, "");
           if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit email verification code.");
-          const { data, error } = await db.auth.verifyOtp({ email: pendingSignupEmail, token, type: "email" });
+          const { data, error } = await db.auth.verifyOtp({ email: pendingSignupEmail, token, type: "signup" });
           if (error) throw error;
           if (!data.session) throw new Error("Your phone was verified, but sign-in could not be completed. Please log in with your phone and password.");
           await enterApp(data.session);
@@ -254,7 +254,7 @@
           const { data, error } = await db.auth.signUp({
             email: emailAddress,
             password: passwordValue,
-            options: { data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: emailAddress } }
+            options: { emailRedirectTo: window.location.origin + window.location.pathname, data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: emailAddress } }
           });
           if (error) throw error;
           if (data.session) {
