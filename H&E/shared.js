@@ -804,7 +804,7 @@
     const overlay=$("callOverlay"); overlay.classList.add("open"); document.body.classList.add("in-call");
     $("callTitle").textContent=(callKind==="video"?"Video call":"Voice call");
     $("callPartnerName").textContent=partner?.name||"Private contact";
-    $("callAvatarInitials").textContent=String(partner?.name||"H").trim().split(/\\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase();
+    $("callAvatarInitials").textContent=String(partner?.name||"H").trim().split(/\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase();
     overlay.classList.toggle("voice-mode",callKind!=="video");
     overlay.classList.toggle("incoming-call",incoming);
     $("callStatus").textContent=incoming?(partner.name+" is calling…"):"Calling "+partner.name+"…";
