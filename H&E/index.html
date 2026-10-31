@@ -1336,7 +1336,7 @@ async function addGalleryFiles(input, expectedType) {
   const files=[...input.files];
   input.value="";
   if(!files.length) return;
-  const valid=files.filter(file=>expectedType==="image"?file.type.startsWith("image/"):file.type.startsWith("video/"));
+  const valid=files.filter(file=>detectMediaKind(file)===expectedType);
   if(!valid.length) return toast(`Choose ${expectedType==="image"?"photo":"video"} files only.`,true);
   const previous=[...mediaItems];
   const added=valid.map(file=>{
@@ -1352,7 +1352,7 @@ async function addGalleryFiles(input, expectedType) {
       data:"",
       createdAt:file.lastModified||Date.now(),
       size:file.size,
-      mimeType:file.type
+      mimeType:file.type || (expectedType==="image"?"image/*":"video/*")
     };
   });
   mediaItems.push(...added);
@@ -1454,6 +1454,13 @@ function saveChatFile(file) {
     reader.readAsDataURL(file);
   });
 }
+function detectMediaKind(file) {
+  const mime=String(file?.type||"").toLowerCase();
+  const name=String(file?.name||"").toLowerCase();
+  if(mime.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/i.test(name)) return "image";
+  if(mime.startsWith("video/") || /\.(mp4|m4v|mov|webm|3gp|mkv|avi)$/i.test(name)) return "video";
+  return "";
+}
 
 function renderChats() {
   const list = $("chatList");
@@ -1513,9 +1520,9 @@ $("chatAttachment").addEventListener("change", async event => {
   const file = event.target.files[0];
   if (!file) return;
 
-  if (!file.type.startsWith("image/") &&
-      !file.type.startsWith("video/")) {
-    toast("Choose a photo or video.", true);
+  const mediaKind=detectMediaKind(file);
+  if (!mediaKind) {
+    toast("Choose a supported photo or video file.", true);
     event.target.value = "";
     return;
   }
@@ -1523,7 +1530,7 @@ $("chatAttachment").addEventListener("change", async event => {
   try {
     pendingChatFile = {
       name: file.name,
-      type: file.type.startsWith("video/") ? "video" : "image",
+      type: mediaKind,
       data: await saveChatFile(file)
     };
 
@@ -1993,7 +2000,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=55"></script>
+<script src="/H-E/H%26E/shared.js?v=56"></script>
 
 </body>
 </html>
