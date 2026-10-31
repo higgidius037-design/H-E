@@ -860,6 +860,7 @@
     }
     $("localCallVideo").srcObject = localStream;
     $("localCallVideo").style.display = video ? "block" : "none";
+    if(video) $("localCallVideo").play?.().catch(()=>{});
   }
   function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");const remoteStream=e.streams?.[0]||new MediaStream([e.track]);rv.srcObject=remoteStream;rv.onloadedmetadata=()=>rv.play?.().catch(()=>{});rv.onplaying=()=>$("callVideos").classList.add("remote-video-ready");rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:remoteStream.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=()=>{};videoTrack.onended=()=> $("callVideos").classList.remove("remote-video-ready");$("callVideos").classList.add("remote-video-ready");syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
     const sender=peerConnection.addTrack(t,localStream);
@@ -899,23 +900,23 @@
     stopCall();
   });
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
-  const swapCallVideoFocus=()=>{
+  const swapCallVideoFocus=(showSelf)=>{
     if(callKind!=="video") return;
-    $("callVideos").classList.toggle("local-video-promoted");
+    const stage=$("callVideos");
+    const next=typeof showSelf==="boolean"?showSelf:!stage.classList.contains("local-video-promoted");
+    stage.classList.toggle("local-video-promoted",next);
+    $("tapLocalVideo").setAttribute("aria-label",next?"Return to other caller video":"Make my video full screen");
+    $("tapRemoteVideo").setAttribute("aria-label",next?"Return to other caller video":"Make other caller video full screen");
   };
-  // Use explicit touch targets so Android WebView can reliably switch video focus.
-  ["tapRemoteVideo","tapLocalVideo"].forEach(id=>{
-    $(id).addEventListener("click",event=>{
-      event.preventDefault();
-      event.stopPropagation();
-      if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus();
-    });
+  // Each visible preview is an explicit switch target. Do not attach a second
+  // toggle to the underlying video, which can cause double-switches on WebView.
+  $("tapLocalVideo").addEventListener("click",event=>{
+    event.preventDefault();event.stopPropagation();
+    if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus(true);
   });
-  ["remoteCallVideo","localCallVideo"].forEach(id=>{
-    $(id).addEventListener("click",event=>{
-      event.preventDefault();
-      if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus();
-    });
+  $("tapRemoteVideo").addEventListener("click",event=>{
+    event.preventDefault();event.stopPropagation();
+    if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus(false);
   });
 
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
