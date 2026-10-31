@@ -733,7 +733,44 @@ textarea { min-height:90px;resize:vertical; }
   object-position:center center;
 }
 
-.chat-tick{color:#999;font-size:12px;letter-spacing:-3px;padding-left:4px}.chat-tick.is-delivered{color:#999}.chat-tick.is-read{color:#2296f3}</style>
+.chat-tick{color:#999;font-size:12px;letter-spacing:-3px;padding-left:4px}.chat-tick.is-delivered{color:#999}.chat-tick.is-read{color:#2296f3}
+/* Consistent edge-to-edge page sizing across desktop and mobile. */
+html,body { width:100%; min-width:0; overflow-x:hidden; }
+main { width:100%; min-width:0; }
+.page,.page.active { width:100%; min-width:0; max-width:none; }
+.page > *, .card, .lower-grid, .stat-grid, .media-grid, .folder-grid { min-width:0; max-width:100%; }
+img,video,canvas,svg { max-width:100%; }
+table { max-width:100%; }
+pre, code { overflow-wrap:anywhere; }
+.chat-app { width:100%; min-width:0; }
+.chat-messages { min-width:0; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.chat-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+.chat-composer textarea { min-width:0; }
+.chat-tick { white-space:nowrap; letter-spacing:-2px; }
+button:disabled { opacity:.65; cursor:wait; }
+@media(max-width:650px) {
+  main { padding:0 8px calc(90px + env(safe-area-inset-bottom)); }
+  .topbar { margin:0 -8px 10px; padding:15px 12px; }
+  .page.active { overflow:visible; }
+  .card { width:100%; margin-left:0; margin-right:0; }
+  #page-messages.active { width:calc(100% + 16px); margin:0 -8px; min-height:calc(100dvh - 90px); }
+  #page-messages .card { width:100%; }
+  #page-messages .chat-app { width:100%; height:calc(100dvh - 150px); min-height:360px; max-height:none; border-radius:0; }
+  .chat-header { padding:12px; }
+  .chat-messages { padding:10px; }
+  .chat-composer { padding:8px; gap:6px; }
+  .chat-attach-btn,.chat-mic-btn,.chat-send-btn { width:40px; height:40px; }
+  .media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .media-preview { width:100%; }
+  .calendar-grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
+  .bottom-nav { padding-bottom:calc(8px + env(safe-area-inset-bottom)); }
+}
+@media(min-width:651px) {
+  .page.active { width:100%; }
+  main { overflow-x:clip; }
+}
+
+</style>
 </head>
 <body>
 
@@ -1924,7 +1961,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=53"></script>
+<script src="/H-E/H%26E/shared.js?v=54"></script>
 
 </body>
 </html>
