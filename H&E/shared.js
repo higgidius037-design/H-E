@@ -133,19 +133,37 @@
       <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
-      <button class="secondary" id="registerPasskey" type="button">Enable fingerprint / face unlock on this device</button>
+      <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
       <button class="secondary" id="sharedSignOut" type="button">Sign out</button>`;
-    settings.prepend(card);
+    const connectFolder=document.createElement("button");
+    connectFolder.type="button";connectFolder.className="card settings-folder";
+    connectFolder.innerHTML='<span class="settings-folder-icon">⌁</span><span><strong>Connect Phones</strong><small>Pair devices and manage your shared space</small></span><span class="settings-arrow">›</span>';
+    const connectPage=document.createElement("div");connectPage.id="settingsFolder-connect";connectPage.className="settings-subfolder hidden";
+    const back=document.createElement("button");back.type="button";back.className="secondary settings-back";back.textContent="← Settings";
+    back.addEventListener("click",()=>{connectPage.classList.add("hidden");document.getElementById("settingsHome").classList.remove("hidden");history.pushState({hePage:"settings",heFolder:null},"","#settings");});
+    connectPage.append(back,card);settings.append(connectFolder,connectPage);
+    connectFolder.addEventListener("click",()=>{document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");history.pushState({hePage:"settings",heFolder:"connect"},"","#settings-connect");});
+    window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
     document.getElementById("registerPasskey").addEventListener("click", async event => {
       const button = event.currentTarget; button.disabled = true;
       try {
-        if (!session) throw new Error("Sign in with your email and password first, then enable biometrics here.");
+        if (!session) throw new Error("Sign in first with your account email and password.");
+        const emailAddress=session.user.email;
+        const passwordEntry=window.prompt("Confirm your H&E account password to continue:");
+        if(passwordEntry===null) return;
+        if(!passwordEntry) throw new Error("Password is required before setting up fingerprint sign-in.");
+        const verified=await db.auth.signInWithPassword({email:emailAddress,password:passwordEntry});
+        if(verified.error) throw new Error("That password is incorrect. Please try again.");
+        if(!verified.data.session) throw new Error("Password verification could not be completed.");
+        session=verified.data.session;
+        setStatus("Password confirmed. Follow the secure fingerprint or face prompt shown by your phone.");
         const { data, error } = await db.auth.registerPasskey();
         if (error) throw error;
-        toast("Fingerprint / face unlock is ready on this device.");
-        button.textContent = "Biometric passkey ready";
+        toast("Biometric passkey saved on this device.");
+        button.textContent = "Fingerprint / face unlock saved";
+        setStatus("Fingerprint / face unlock is registered for this account on this device.");
       } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
     });
