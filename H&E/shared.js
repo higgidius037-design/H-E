@@ -134,16 +134,18 @@
         <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       </div>
       <style>
-        #pairedConfirmation.pair-success{display:flex;align-items:center;gap:12px;margin:14px 0;padding:13px 15px;border:1px solid rgba(207,91,139,.28);border-radius:14px;background:rgba(207,91,139,.06);color:inherit}
+        #pairedConfirmation.pair-success{position:relative;display:flex;align-items:center;gap:14px;margin:18px 0;padding:17px 18px;overflow:hidden;border:1px solid rgba(167,73,105,.24);border-radius:16px;background:linear-gradient(110deg,rgba(255,239,244,.98),rgba(255,250,246,.96));box-shadow:0 7px 22px rgba(91,34,53,.08);color:#3c202b}
         #pairedConfirmation.pair-success[hidden]{display:none}
-        .pair-success-tick{flex:0 0 30px;width:30px;height:30px;border:1.5px solid #55b985;border-radius:50%;display:grid;place-items:center;animation:pairTickIn .45s cubic-bezier(.2,.8,.2,1) both}
-        .pair-success-tick:after{content:"";width:7px;height:12px;border-right:2px solid #55b985;border-bottom:2px solid #55b985;transform:rotate(45deg) translate(-1px,-1px);animation:pairTickDraw .35s .18s ease-out both}
-        .pair-success-copy{display:flex;flex-direction:column;gap:3px;text-align:left}
-        .pair-success-copy strong{font-size:15px;font-weight:650}
-        .pair-success-copy small{font-size:13px;opacity:.76}
+        #pairedConfirmation.pair-success:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#c36b8b,#e0a1b4)}
+        .pair-success-tick{position:relative;flex:0 0 38px;width:38px;height:38px;border:1.5px solid #4caa79;border-radius:50%;display:grid;place-items:center;background:rgba(76,170,121,.09);animation:pairTickIn .5s cubic-bezier(.2,.8,.2,1) both}
+        .pair-success-tick:after{content:"";width:9px;height:15px;border-right:2.5px solid #329864;border-bottom:2.5px solid #329864;transform:rotate(45deg) translate(-1px,-1px);animation:pairTickDraw .4s .18s ease-out both}
+        .pair-success-copy{display:flex;flex-direction:column;gap:4px;text-align:left}
+        .pair-success-copy strong{font-size:16px;letter-spacing:.01em;font-weight:700;color:#472433}
+        .pair-success-copy small{font-size:13px;line-height:1.4;color:#795463}
         @keyframes pairTickIn{from{transform:scale(.65);opacity:0}to{transform:scale(1);opacity:1}}
         @keyframes pairTickDraw{from{opacity:0;transform:rotate(45deg) translate(-1px,-1px) scale(.4)}to{opacity:1;transform:rotate(45deg) translate(-1px,-1px) scale(1)}}
         @media(prefers-reduced-motion:reduce){.pair-success-tick,.pair-success-tick:after{animation:none}}
+        @media(prefers-color-scheme:dark){#pairedConfirmation.pair-success{background:linear-gradient(110deg,rgba(74,37,53,.9),rgba(50,36,43,.96));border-color:rgba(220,143,169,.28);color:#fff}#pairedConfirmation.pair-success .pair-success-copy strong{color:#fff}#pairedConfirmation.pair-success .pair-success-copy small{color:#e3c5d0}}
       </style>
       <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden>
         <span class="pair-success-tick" aria-hidden="true"></span>
@@ -760,7 +762,18 @@
   };
   async function callSignal(type, data = {}) { if (!callChannel || !partner) throw new Error("Pair your phones first in Settings."); const result = await callChannel.send({ type: "broadcast", event: "signal", payload: { from: session.user.id, to: partner.id, type, ...data } }); if (result !== "ok") throw new Error("Could not reach your paired phone."); }
   function showCall(incoming=false) { $("callOverlay").classList.add("open"); $("callTitle").textContent=(callKind==="video"?"Video":"Voice")+" call"; $("callStatus").textContent=incoming?partner.name+" is calling you":"Calling "+partner.name+"…"; $("incomingCallControls").style.display=incoming?"flex":"none"; $("activeCallControls").style.display=incoming?"none":"flex"; }
-  async function getCallMedia(video) { if (!navigator.mediaDevices?.getUserMedia) throw new Error("Calls need a secure browser connection and microphone permission."); localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video?{facingMode:"user"}:false}); $("localCallVideo").srcObject=localStream; $("localCallVideo").style.display=video?"block":"none"; }
+  async function getCallMedia(video) {
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error("Calls need a secure connection. Open H&E in the installed app or an updated browser.");
+    try {
+      localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:video?{facingMode:"user"}:false});
+    } catch(error) {
+      if(error?.name==="NotAllowedError"||error?.name==="PermissionDeniedError") throw new Error("Microphone"+(video?" and camera":"")+" permission was denied. Choose Allow when Android asks, or enable it in Settings → Apps → H&E → Permissions.");
+      if(error?.name==="NotFoundError") throw new Error(video?"This phone could not find a microphone or camera.":"This phone could not find a microphone.");
+      if(error?.name==="NotReadableError") throw new Error("Your microphone or camera is being used by another app. Close that app and try again.");
+      throw error;
+    }
+    $("localCallVideo").srcObject=localStream; $("localCallVideo").style.display=video?"block":"none";
+  }
   function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{$("remoteCallVideo").srcObject=e.streams[0];}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected")$("callStatus").textContent="Connected securely with "+partner.name;if(["failed","disconnected"].includes(peerConnection?.connectionState))$("callStatus").textContent="Connection interrupted. Try again on another network.";}; localStream.getTracks().forEach(t=>peerConnection.addTrack(t,localStream)); }
   async function startCall(video) { try { if(!coupleId||!partner)throw new Error("Pair your phones first in Settings.");if(!callChannel)throw new Error("Private calling is not ready. Reload after the security update.");callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind}); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
   async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
