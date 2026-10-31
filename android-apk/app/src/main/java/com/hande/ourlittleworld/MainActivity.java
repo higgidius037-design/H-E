@@ -33,7 +33,7 @@ import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.4";
+    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.5";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages_v2";
     private static final int APP_PERMISSION_REQUEST = 2003;
@@ -112,30 +112,39 @@ public class MainActivity extends FragmentActivity {
     private void handleWebPermissionRequest(PermissionRequest request) {
         Uri origin = request.getOrigin();
         String host = origin == null ? null : origin.getHost();
-        if (host == null || !(host.equals("higgidius037-design.github.io"))) {
+        if (origin == null || !"https".equalsIgnoreCase(origin.getScheme())
+                || host == null || !host.equals("higgidius037-design.github.io")) {
             request.deny();
             return;
         }
+
         java.util.ArrayList<String> needed = new java.util.ArrayList<>();
         for (String resource : request.getResources()) {
-            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource) &&
-                checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                if (!needed.contains(android.Manifest.permission.RECORD_AUDIO)) needed.add(android.Manifest.permission.RECORD_AUDIO);
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
+                    && ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED
+                    && !needed.contains(android.Manifest.permission.RECORD_AUDIO)) {
+                needed.add(android.Manifest.permission.RECORD_AUDIO);
             }
-            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource) &&
-                checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                if (!needed.contains(android.Manifest.permission.CAMERA)) needed.add(android.Manifest.permission.CAMERA);
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
+                    && ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED
+                    && !needed.contains(android.Manifest.permission.CAMERA)) {
+                needed.add(android.Manifest.permission.CAMERA);
             }
         }
+
         if (pendingWebPermissionRequest != null && pendingWebPermissionRequest != request) {
             pendingWebPermissionRequest.deny();
         }
         pendingWebPermissionRequest = request;
+
         if (needed.isEmpty()) {
             request.grant(request.getResources());
             pendingWebPermissionRequest = null;
             return;
         }
+
         pendingAndroidPermissions = needed.toArray(new String[0]);
         requestPermissions(pendingAndroidPermissions, CALL_PERMISSION_REQUEST);
     }
@@ -152,13 +161,26 @@ public class MainActivity extends FragmentActivity {
         if (requestCode != CALL_PERMISSION_REQUEST) return;
         PermissionRequest webRequest = pendingWebPermissionRequest;
         pendingWebPermissionRequest = null;
-        boolean allGranted = grantResults.length > 0;
-        for (int result : grantResults) if (result != PackageManager.PERMISSION_GRANTED) allGranted = false;
         if (webRequest == null) return;
-        if (allGranted) webRequest.grant(webRequest.getResources());
-        else {
+        boolean audioNeeded = false;
+        boolean videoNeeded = false;
+        for (String resource : webRequest.getResources()) {
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)) audioNeeded = true;
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)) videoNeeded = true;
+        }
+        boolean audioGranted = !audioNeeded || ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        boolean cameraGranted = !videoNeeded || ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+
+        if (audioGranted && cameraGranted) {
+            webRequest.grant(webRequest.getResources());
+        } else {
             webRequest.deny();
-            Toast.makeText(this, "Allow microphone and camera access to make H&E calls.", Toast.LENGTH_LONG).show();
+            String message = !audioGranted
+                    ? "Allow H&E microphone access in Android Settings → Apps → H&E → Permissions."
+                    : "Allow H&E camera access in Android Settings → Apps → H&E → Permissions.";
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         }
     }
 
