@@ -125,7 +125,14 @@ public class MainActivity extends FragmentActivity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == APP_PERMISSION_REQUEST) {\n            String key=pendingAppPermission; pendingAppPermission="";\n            boolean granted=grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED;\n            String safe=org.json.JSONObject.quote(key);\n            if(webView!=null) webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+","+granted+")",null);\n            return;\n        }\n        if (requestCode != CALL_PERMISSION_REQUEST) return;
+        if (requestCode == APP_PERMISSION_REQUEST) {
+            String key=pendingAppPermission; pendingAppPermission="";
+            boolean granted=grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED;
+            String safe=org.json.JSONObject.quote(key);
+            if(webView!=null) webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+","+granted+")",null);
+            return;
+        }
+        if (requestCode != CALL_PERMISSION_REQUEST) return;
         PermissionRequest webRequest = pendingWebPermissionRequest;
         pendingWebPermissionRequest = null;
         boolean allGranted = grantResults.length > 0;
@@ -189,7 +196,20 @@ public class MainActivity extends FragmentActivity {
     }
 
     private class HENativeBridge {
-        @JavascriptInterface public void requestAppPermission(String permission){\n            runOnUiThread(()->{\n                String androidPermission;\n                if("notifications".equals(permission)){androidPermission="android.permission.POST_NOTIFICATIONS";}\n                else if("microphone".equals(permission)){androidPermission=android.Manifest.permission.RECORD_AUDIO;}\n                else if("camera".equals(permission)){androidPermission=android.Manifest.permission.CAMERA;}\n                else return;\n                if(Build.VERSION.SDK_INT<23 || checkSelfPermission(androidPermission)==PackageManager.PERMISSION_GRANTED){\n                    String safe=org.json.JSONObject.quote(permission); if(webView!=null)webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+",true)",null); return;\n                }\n                pendingAppPermission=permission; requestPermissions(new String[]{androidPermission},APP_PERMISSION_REQUEST);\n            });\n        }\n        @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
+        @JavascriptInterface public void requestAppPermission(String permission){
+            runOnUiThread(()->{
+                String androidPermission;
+                if("notifications".equals(permission)){androidPermission="android.permission.POST_NOTIFICATIONS";}
+                else if("microphone".equals(permission)){androidPermission=android.Manifest.permission.RECORD_AUDIO;}
+                else if("camera".equals(permission)){androidPermission=android.Manifest.permission.CAMERA;}
+                else return;
+                if(Build.VERSION.SDK_INT<23 || checkSelfPermission(androidPermission)==PackageManager.PERMISSION_GRANTED){
+                    String safe=org.json.JSONObject.quote(permission); if(webView!=null)webView.evaluateJavascript("window.onHEPermissionResult && window.onHEPermissionResult("+safe+",true)",null); return;
+                }
+                pendingAppPermission=permission; requestPermissions(new String[]{androidPermission},APP_PERMISSION_REQUEST);
+            });
+        }
+        @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
         @JavascriptInterface public void openBiometricSettings(){
             runOnUiThread(()->{
                 Intent intent;
