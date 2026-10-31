@@ -110,7 +110,7 @@
     const reportLogin = (message, kind = "error") => { if (feedback) { feedback.textContent = message; feedback.dataset.kind = kind; feedback.hidden = false; } };
     const friendlyAuthError = error => {
       const code = String(error?.code || "").toLowerCase(); const message = String(error?.message || "");
-      if (code === "invalid_credentials") return "That email and password did not match. Check them and try again.";
+      if (code === "invalid_credentials") return "The email/phone number or password did not match. Check the details and try again.";
       if (code === "email_not_confirmed") return "Confirm your email using the link we sent, then sign in again.";
       if (code === "user_banned") return "This account is temporarily unavailable. Contact the app owner for help.";
       if (code === "passkey_disabled") return "Passkey sign-in is not enabled for this account yet. Sign in with your password first.";
@@ -232,9 +232,20 @@
           reportLogin("Verification code sent. Enter the six digits from your SMS to finish registration.", "ok");
         } else {
           const contactValue = contact.trim();
-          const credentials = contactValue.includes("@")
-            ? { email: normalEmail(contactValue), password: passwordValue }
-            : { phone: contactValue.replace(/[\s()-]/g, ""), password: passwordValue };
+          let credentials;
+          if (contactValue.includes("@")) {
+            credentials = { email: normalEmail(contactValue), password: passwordValue };
+          } else {
+            let phone = contactValue.replace(/[\s()-]/g, "");
+            // Accept common Kenyan mobile formats as well as international E.164 numbers.
+            if (/^0[17]\d{8}$/.test(phone)) phone = "+254" + phone.slice(1);
+            else if (/^254[17]\d{8}$/.test(phone)) phone = "+" + phone;
+            else if (/^[17]\d{8}$/.test(phone)) phone = "+254" + phone;
+            if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+              throw new Error("Enter your phone number with country code, e.g. +2547XXXXXXXX, or use the email linked to your account.");
+            }
+            credentials = { phone, password: passwordValue };
+          }
           const { data, error } = await db.auth.signInWithPassword(credentials);
           if (error) throw error;
           if (!data.session) throw new Error("Sign-in did not return a session. Confirm your account and try again.");
