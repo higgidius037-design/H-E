@@ -90,7 +90,7 @@
     document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
     dobLabel.insertAdjacentElement("afterend", dobInput);
     const dobButton=document.createElement("button");
-    dobButton.type="button";dobButton.className="secondary";dobButton.style.width="100%";
+    dobButton.type="button";dobButton.className="secondary";dobButton.hidden=true;dobButton.style.width="100%";
     dobButton.textContent="Choose date of birth ▾";dobInput.insertAdjacentElement("afterend",dobButton);
     const dobPicker=document.createElement("div");
     dobPicker.hidden=true;dobPicker.style.cssText="margin-top:8px;padding:12px;border:1px solid #eadbd4;border-radius:12px;background:#fffdfb;color:#342029";
