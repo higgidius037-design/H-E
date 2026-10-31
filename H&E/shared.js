@@ -867,8 +867,7 @@
   };
   localVideoTap.addEventListener("click",swapCallVideoFocus);
   remoteVideoTap.addEventListener("click",swapCallVideoFocus);
-  localVideoTap.addEventListener("touchend",e=>{e.preventDefault();swapCallVideoFocus();},{passive:false});
-  remoteVideoTap.addEventListener("touchend",e=>{e.preventDefault();swapCallVideoFocus();},{passive:false});
+
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
   $("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Turn camera off":"Turn camera on");e.currentTarget.title=t.enabled?"Turn camera off":"Turn camera on";$("callVideos").classList.toggle("camera-disabled",!t.enabled);}});
