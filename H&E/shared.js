@@ -808,6 +808,7 @@
     $("callAvatarInitials").textContent=String(partner?.name||"H").trim().split(/\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase();
     overlay.classList.toggle("voice-mode",callKind!=="video");
     overlay.classList.toggle("incoming-call",incoming);
+    $("callVideos").classList.remove("local-video-promoted");
     $("callStatus").textContent=incoming?(partner.name+" is calling…"):"Calling "+partner.name+"…";
     $("incomingCallControls").style.display=incoming?"flex":"none"; $("activeCallControls").style.display=incoming?"none":"flex";
     $("cameraCall").classList.toggle("control-hidden",callKind!=="video"); $("switchCameraCall").classList.toggle("control-hidden",callKind!=="video");
@@ -860,8 +861,14 @@
   function stopCall() { stopCallTone();document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
   const localVideoTap=$("localCallVideo"), remoteVideoTap=$("remoteCallVideo");
-  localVideoTap.addEventListener("click",()=>{if(callKind==="video" && remoteVideoTap.srcObject) $("callVideos").classList.toggle("local-video-promoted");});
-  remoteVideoTap.addEventListener("click",()=>$("callVideos").classList.toggle("local-video-promoted"));
+  const swapCallVideoFocus=()=>{
+    if(callKind!=="video") return;
+    $("callVideos").classList.toggle("local-video-promoted");
+  };
+  localVideoTap.addEventListener("click",swapCallVideoFocus);
+  remoteVideoTap.addEventListener("click",swapCallVideoFocus);
+  localVideoTap.addEventListener("touchend",e=>{e.preventDefault();swapCallVideoFocus();},{passive:false});
+  remoteVideoTap.addEventListener("touchend",e=>{e.preventDefault();swapCallVideoFocus();},{passive:false});
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
   $("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Turn camera off":"Turn camera on");e.currentTarget.title=t.enabled?"Turn camera off":"Turn camera on";$("callVideos").classList.toggle("camera-disabled",!t.enabled);}});
