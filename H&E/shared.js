@@ -59,10 +59,10 @@
     const title = connectFolderButton.querySelector("[data-connect-title]");
     const subtitle = connectFolderButton.querySelector("[data-connect-subtitle]");
     const folderTitle = document.getElementById("pairingFolderTitle");
-    if (folderTitle) folderTitle.textContent = paired ? "Paired" : "Add Partner";
-    if (title) title.textContent = paired ? "Paired" : "Add Partner";
+    if (folderTitle) folderTitle.textContent = paired ? "Connected" : "Add Partner";
+    if (title) title.textContent = paired ? "Connected" : "Add Partner";
     if (subtitle) subtitle.textContent = paired ? "Your partner is connected" : "Connect with your partner";
-    connectFolderButton.setAttribute("aria-label", paired ? "Paired. Manage partner connection" : "Add Partner");
+    connectFolderButton.setAttribute("aria-label", paired ? "Connected. Manage partner connection" : "Add Partner");
   }
   let session = null, coupleId = null, ownKeyPair = null, partner = null;
   let remoteChats = [], openedOnce = new Map(), channel = null, callChannel = null, peerConnection = null, localStream = null, pendingOffer = null, queuedIce = [], callKind = "voice";
@@ -77,6 +77,18 @@
     let otpPending = false;
     let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
+    const dobLabel = document.createElement("label");
+    dobLabel.htmlFor = "loginDateOfBirth";
+    dobLabel.textContent = "Date of birth";
+    dobLabel.hidden = true;
+    const dobInput = document.createElement("input");
+    dobInput.id = "loginDateOfBirth";
+    dobInput.type = "date";
+    dobInput.autocomplete = "bday";
+    dobInput.max = new Date().toISOString().slice(0,10);
+    dobInput.hidden = true;
+    document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
+    dobLabel.insertAdjacentElement("afterend", dobInput);
     const contactLabel = document.getElementById("loginContactLabel");
     const otpPanel = document.getElementById("signupOtpPanel");
     const otpInput = document.getElementById("signupOtp");
@@ -115,6 +127,8 @@
       document.querySelector('label[for="loginPassword"]').hidden = true;
       document.getElementById("loginName").hidden = true;
       nameLabel.hidden = true;
+      dobLabel.hidden = true;
+      dobInput.hidden = true;
       toggleMethod.hidden = true;
       passkeyButton.hidden = true;
       submitButton.textContent = "Verify phone →";
@@ -128,6 +142,9 @@
       document.getElementById("loginName").required = isSignUp;
       document.getElementById("loginName").hidden = !isSignUp;
       nameLabel.hidden = !isSignUp;
+      dobLabel.hidden = !isSignUp;
+      dobInput.hidden = !isSignUp;
+      dobInput.required = isSignUp;
       contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
       email.type = "text";
       email.inputMode = isSignUp ? "tel" : "email";
@@ -182,11 +199,14 @@
           const phone = contact.replace(/[\s()-]/g, "");
           if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error("Enter your phone number in international format, for example +2547XXXXXXXX.");
           if (!displayName) throw new Error("Enter your name.");
+          const dateOfBirth = dobInput.value;
+          if (!dateOfBirth) throw new Error("Enter your date of birth.");
+          if (dateOfBirth > new Date().toISOString().slice(0,10)) throw new Error("Date of birth cannot be in the future.");
           if (passwordValue.length < 6) throw new Error("Choose a password with at least 6 characters.");
           const { data, error } = await db.auth.signUp({
             phone,
             password: passwordValue,
-            options: { data: { display_name: displayName } }
+            options: { data: { display_name: displayName, date_of_birth: dateOfBirth } }
           });
           if (error) throw error;
           if (data.session) throw new Error("Phone confirmation is not enabled on the H&E sign-in service yet. Please try again later.");
@@ -239,15 +259,24 @@
         @media(prefers-reduced-motion:reduce){.pair-success-tick,.pair-success-tick:after{animation:none}}
         @media(prefers-color-scheme:dark){#pairedConfirmation.pair-success{background:linear-gradient(110deg,rgba(74,37,53,.9),rgba(50,36,43,.96));border-color:rgba(220,143,169,.28);color:#fff}#pairedConfirmation.pair-success .pair-success-copy strong{color:#fff}#pairedConfirmation.pair-success .pair-success-copy small{color:#e3c5d0}}
       </style>
-      <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden style="display:flex;align-items:center;gap:13px;margin:18px 0;padding:16px 18px;border:1px solid #e8cbd5;border-radius:15px;background:#fff4f7;box-shadow:0 5px 18px rgba(80,35,52,.09);color:#482936">
-        <span class="pair-success-tick" aria-hidden="true" style="flex:0 0 34px;width:34px;height:34px;border:1.5px solid #48a978;border-radius:50%;display:grid;place-items:center;background:#edf8f1"></span>
-        <span class="pair-success-copy" style="display:flex;flex-direction:column;gap:4px;text-align:left"><strong style="font-size:16px;font-weight:700;color:#482936">You're connected</strong><small style="font-size:13px;line-height:1.4;color:#795463">Together, closer than ever. ♡</small></span>
+      <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden style="display:block;margin:18px 0;padding:18px;border:1px solid #cfe8d7;border-radius:15px;background:#f4fbf6;box-shadow:0 5px 18px rgba(40,100,65,.07);color:#263d30">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span aria-hidden="true" style="width:10px;height:10px;border-radius:50%;background:#269b59;box-shadow:0 0 0 4px #269b5920"></span>
+          <strong style="font-size:17px;color:#21834c">Connected</strong>
+        </div>
+        <div style="display:grid;gap:12px">
+          <div><small style="display:block;color:#718078">Partner name</small><strong id="partnerDetailName">—</strong></div>
+          <div><small style="display:block;color:#718078">Phone number</small><strong id="partnerDetailPhone">—</strong></div>
+          <div><small style="display:block;color:#718078">Date of birth</small><strong id="partnerDetailDob">—</strong></div>
+          <div><small style="display:block;color:#718078">Email</small><strong id="partnerDetailEmail">—</strong></div>
+          <div><small style="display:block;color:#718078">Paired on</small><strong id="partnerDetailPairedOn">—</strong></div>
+        </div>
       </div>
       <button class="secondary" id="refreshPairingStatus" type="button">Refresh pairing status</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
-      <button class="secondary" id="sharedDisconnect" type="button">Disconnect Partner</button>`;
+      <button class="secondary" id="sharedDisconnect" type="button">Remove Partner</button>`;
     const connectFolder=document.createElement("button");
     connectFolderButton = connectFolder;
     connectFolder.type="button";connectFolder.className="card settings-folder";
@@ -527,9 +556,10 @@
       await putKeyPair(ownKeyPair);
     }
     const publicKey = bytesToB64(await crypto.subtle.exportKey("raw", ownKeyPair.publicKey));
-    const { data: existingProfile } = await db.from("profiles").select("display_name").eq("user_id", session.user.id).maybeSingle();
+    const { data: existingProfile } = await db.from("profiles").select("display_name,date_of_birth").eq("user_id", session.user.id).maybeSingle();
     const { error } = await db.from("profiles").upsert({
       user_id: session.user.id, display_name: document.getElementById("loginName").value.trim() || state.profile.you || session.user.user_metadata?.display_name || existingProfile?.display_name || "H&E",
+      date_of_birth: session.user.user_metadata?.date_of_birth || existingProfile?.date_of_birth || null,
       encryption_public_key: publicKey, encryption_key_version: 1, updated_at: new Date().toISOString()
     });
     if (error) throw error;
@@ -568,13 +598,55 @@
     allow.addEventListener("click",()=>decide(true));decline.addEventListener("click",()=>decide(false));render();
   }
 
+
+  function renderPartnerDetails(details) {
+    const panel = document.getElementById("pairedConfirmation");
+    if (!panel) return;
+    const set = (id, value) => { const node = document.getElementById(id); if (node) node.textContent = value || "Not provided"; };
+    set("partnerDetailName", details?.partner_name || partner?.name);
+    set("partnerDetailPhone", details?.partner_phone);
+    set("partnerDetailEmail", details?.partner_email);
+    set("partnerDetailDob", details?.partner_date_of_birth
+      ? new Date(details.partner_date_of_birth + "T12:00:00").toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})
+      : "");
+    set("partnerDetailPairedOn", details?.paired_at
+      ? new Date(details.paired_at).toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})
+      : "");
+  }
+  function syncPairingCalendarEvent(activeCoupleId, pairedAt) {
+    if (!activeCoupleId || !pairedAt) return;
+    const date = new Date(pairedAt);
+    if (!Number.isFinite(date.getTime())) return;
+    const id = "pairing-anniversary-" + activeCoupleId;
+    const dateValue = dateString(date);
+    const existing = events.find(item => item.id === id);
+    if (existing) {
+      existing.date = dateValue;
+      existing.recurring = "yearly";
+    } else {
+      events.push({ id, title: "Our Pairing Day ♡", date: dateValue,
+        note: "The day we connected on H&E.", time: "", reminder: 0,
+        reminded: false, recurring: "yearly", systemEvent: true });
+    }
+    saveEvents();
+    if (typeof renderCalendar === "function") renderCalendar();
+  }
+  function removePairingCalendarEvent(activeCoupleId) {
+    const prefix = activeCoupleId ? "pairing-anniversary-" + activeCoupleId : "pairing-anniversary-";
+    const before = events.length;
+    events = events.filter(item => !(item.systemEvent && item.id.startsWith(prefix)));
+    if (events.length !== before) {
+      saveEvents();
+      if (typeof renderCalendar === "function") renderCalendar();
+    }
+  }
   async function disconnectPartner() {
     const button = document.getElementById("sharedDisconnect");
     if (!session) {
       toast("Sign in to manage your partner connection.", true);
       return;
     }
-    if (!confirm("Disconnect this partner on both devices? This permanently deletes the shared conversation, including all messages and chat photos/videos, and resets this pair's demo wallet history. Your H&E account and personal Gallery files will remain. This cannot be undone.")) return;
+    if (!confirm("Remove this partner on both devices? This permanently deletes shared chat messages and their attached photos/videos, and resets this pair's demo wallet history. Your personal Gallery photos and videos and your H&E account will remain. This cannot be undone.")) return;
     if (button) { button.disabled = true; button.textContent = "Disconnecting…"; }
     try {
       const { data, error } = await db.rpc("disconnect_current_partner");
@@ -591,6 +663,7 @@
         stopCall();
       }
 
+      removePairingCalendarEvent(coupleId);
       coupleId = null;
       partner = null;
       remoteChats = [];
@@ -619,7 +692,7 @@
     } catch (error) {
       toast(error?.message || "Could not disconnect this partner. Your current connection has been kept.", true);
     } finally {
-      if (button) { button.disabled = false; button.textContent = "Disconnect Partner"; }
+      if (button) { button.disabled = false; button.textContent = "Remove Partner"; }
     }
   }
 
@@ -668,6 +741,9 @@
       .select("couple_id,user_id").eq("user_id", session.user.id);
     if (error) throw error;
     if (!memberships?.length) {
+      removePairingCalendarEvent();
+      const detailPanel = document.getElementById("pairedConfirmation");
+      if (detailPanel) detailPanel.hidden = true;
       // A previous partner may have disconnected from their device. Remove
       // any locally cached conversation so this account starts clean too.
       remoteChats = [];
@@ -727,6 +803,11 @@
       name: selected.profile.display_name || "Your partner",
       publicKey: selected.profile.encryption_public_key
     };
+    const { data: detailRows, error: detailError } = await db.rpc("get_current_partner_details");
+    if (detailError) throw detailError;
+    const partnerDetails = Array.isArray(detailRows) ? detailRows[0] : detailRows;
+    renderPartnerDetails(partnerDetails);
+    syncPairingCalendarEvent(activeCoupleId, partnerDetails?.paired_at);
 
     await showSafetyCode();
     await refreshMessages();
