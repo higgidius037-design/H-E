@@ -159,13 +159,20 @@
         if(verified.error) throw new Error("That password is incorrect. Please try again.");
         if(!verified.data.session) throw new Error("Password verification could not be completed.");
         session=verified.data.session;
-        setStatus("Password confirmed. Follow the secure fingerprint or face prompt shown by your phone.");
-        const { data, error } = await db.auth.registerPasskey();
-        if (error) throw error;
-        toast("Biometric passkey saved on this device.");
-        button.textContent = "Fingerprint / face unlock saved";
-        const fingerprintStatus=document.getElementById("fingerprintStatus");if(fingerprintStatus)fingerprintStatus.textContent="Set up";
-        setStatus("Fingerprint / face unlock is registered for this account on this device.");
+        setStatus("Password confirmed. Confirm your identity using Android biometrics.");
+        if (!window.HENative?.authenticateBiometric) throw new Error("Native fingerprint / face verification is available only in the installed H&E Android app.");
+        const biometricResult = await new Promise(resolve => {
+          window.onHENativeBiometricResult = (success, message) => {
+            delete window.onHENativeBiometricResult;
+            resolve({ success, message });
+          };
+          window.HENative.authenticateBiometric();
+        });
+        if (!biometricResult.success) throw new Error(biometricResult.message || "Biometric verification was not completed.");
+        toast("Your device biometric check was successful.");
+        button.textContent = "Biometric check successful";
+        const fingerprintStatus=document.getElementById("fingerprintStatus");if(fingerprintStatus)fingerprintStatus.textContent="Verified on this device";
+        setStatus("Your identity was confirmed by Android biometrics. This is a device verification, not a registered cloud passkey.");
       } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
     });
