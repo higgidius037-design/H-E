@@ -152,9 +152,9 @@
       try {
         if (!session) throw new Error("Sign in first with your account email and password.");
         const emailAddress=session.user.email;
-        const passwordEntry=window.prompt("Confirm your H&E account password to continue:");
+        const passwordEntry=await requestHESecurePassword();
         if(passwordEntry===null) return;
-        if(!passwordEntry) throw new Error("Password is required before setting up fingerprint sign-in.");
+        if(!passwordEntry) throw new Error("Enter your password to continue.");
         const verified=await db.auth.signInWithPassword({email:emailAddress,password:passwordEntry});
         if(verified.error) throw new Error("That password is incorrect. Please try again.");
         if(!verified.data.session) throw new Error("Password verification could not be completed.");
@@ -193,6 +193,26 @@
     document.getElementById("chatForm").addEventListener("submit", sendMessage, true);
     document.getElementById("chatList").addEventListener("click", openViewOnce, true);
     document.getElementById("walletForm").addEventListener("submit", sharedWallet, true);
+  }
+
+  function requestHESecurePassword() {
+    return new Promise(resolve => {
+      const overlay=document.createElement("div");
+      overlay.className="he-auth-overlay";
+      overlay.innerHTML=`<section class="he-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="heAuthTitle">
+        <div class="he-auth-mark">H&amp;E</div><h2 id="heAuthTitle">Confirm it’s you</h2>
+        <p>Enter your H&amp;E account password to set up secure sign-in on this device.</p>
+        <form class="he-auth-form"><label for="heAuthPassword">Account password</label><input id="heAuthPassword" type="password" autocomplete="current-password" required>
+        <div class="he-auth-actions"><button type="button" class="secondary" data-auth-cancel>Cancel</button><button type="submit" class="primary">Continue</button></div></form>
+      </section>`;
+      document.body.appendChild(overlay);
+      const input=overlay.querySelector("#heAuthPassword");
+      const finish=value=>{overlay.remove();resolve(value);};
+      overlay.querySelector("[data-auth-cancel]").addEventListener("click",()=>finish(null));
+      overlay.addEventListener("click",event=>{if(event.target===overlay)finish(null);});
+      overlay.querySelector("form").addEventListener("submit",event=>{event.preventDefault();finish(input.value);});
+      input.focus();
+    });
   }
 
   function setStatus(message) { document.getElementById("sharedStatus").textContent = message; }
