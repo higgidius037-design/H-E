@@ -713,7 +713,8 @@
     } catch (error) { toast(error.message || "Message could not be sent.", true); }
   }
   async function sendEncrypted(payload, type = "text", once = false) {
-    if (!coupleId || !partner?.publicKey || !session) throw new Error("Your phones are not fully connected yet. Open Settings → Connect Phones on both devices and wait for “Devices paired”.");
+    if (session && (!coupleId || !partner?.publicKey || !callChannel)) await ensureExistingPairing();
+    if (!coupleId || !partner?.publicKey || !session) throw new Error("Your saved pairing could not be restored. Check your internet connection and try again; you do not need to pair again.");
     const serialized = JSON.stringify(payload);
     if (serialized.length > 700000) throw new Error("This attachment is too large to share securely. Choose a smaller file.");
     const encrypted = await encryptPayload(payload);
@@ -859,8 +860,8 @@
   function stopCall() { stopCallTone();document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
   const localVideoTap=$("localCallVideo"), remoteVideoTap=$("remoteCallVideo");
-  localVideoTap.addEventListener("click",()=>{if(callKind==="video" && $("callVideos").classList.contains("remote-video-ready")) $("callVideos").classList.toggle("local-video-promoted");});
-  remoteVideoTap.addEventListener("click",()=>$("callVideos").classList.remove("local-video-promoted"));
+  localVideoTap.addEventListener("click",()=>{if(callKind==="video" && remoteVideoTap.srcObject) $("callVideos").classList.toggle("local-video-promoted");});
+  remoteVideoTap.addEventListener("click",()=>$("callVideos").classList.toggle("local-video-promoted"));
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
   $("cameraCall").addEventListener("click",e=>{const t=localStream?.getVideoTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Turn camera off":"Turn camera on");e.currentTarget.title=t.enabled?"Turn camera off":"Turn camera on";$("callVideos").classList.toggle("camera-disabled",!t.enabled);}});
