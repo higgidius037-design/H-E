@@ -806,6 +806,8 @@
     $("callTitle").textContent=(callKind==="video"?"Video call":"Voice call");
     $("callPartnerName").textContent=partner?.name||"Private contact";
     $("callAvatarInitials").textContent=String(partner?.name||"H").trim().split(/\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase();
+    $("remoteMiniInitials").textContent=$("callAvatarInitials").textContent;
+    $("remoteMiniName").textContent=partner?.name||"Private contact";
     overlay.classList.toggle("voice-mode",callKind!=="video");
     overlay.classList.toggle("incoming-call",incoming);
     $("callVideos").classList.remove("local-video-promoted");
