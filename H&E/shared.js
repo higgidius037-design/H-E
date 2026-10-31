@@ -861,7 +861,7 @@
     $("localCallVideo").srcObject = localStream;
     $("localCallVideo").style.display = video ? "block" : "none";
   }
-  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");rv.srcObject=e.streams[0];rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:e.streams[0]?.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=syncVideo;syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
+  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");const remoteStream=e.streams?.[0]||new MediaStream([e.track]);rv.srcObject=remoteStream;rv.onloadedmetadata=()=>rv.play?.().catch(()=>{});rv.onplaying=()=>$("callVideos").classList.add("remote-video-ready");rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:remoteStream.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=syncVideo;videoTrack.onended=()=> $("callVideos").classList.remove("remote-video-ready");syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
     const sender=peerConnection.addTrack(t,localStream);
     if(t.kind==="video"){
       try{t.contentHint="detail";}catch(e){}
@@ -902,13 +902,12 @@
     if(callKind!=="video") return;
     $("callVideos").classList.toggle("local-video-promoted");
   };
-  // Pointer events are reliable on Android video surfaces.
-  ["tapLocalVideo","tapRemoteVideo"].forEach(id=>{
-    $(id).addEventListener("pointerup",event=>{
-      event.preventDefault();
-      event.stopPropagation();
-      swapCallVideoFocus();
-    });
+  // Handle taps on the stage itself; Android may route video-surface taps
+  // differently from taps on transparent overlay buttons.
+  $("callVideos").addEventListener("pointerup",event=>{
+    if(callKind!=="video"||!$("callOverlay").classList.contains("open")) return;
+    event.preventDefault();
+    swapCallVideoFocus();
   });
 
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
