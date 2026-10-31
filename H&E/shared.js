@@ -567,7 +567,7 @@
         }
       });
 
-    channel = db.channel("he-chat-" + coupleId)
+    channel = db.channel("he-chat-" + coupleId, { config: { private: false } })
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + coupleId }, () => refreshMessages())
       .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + coupleId }, () => refreshWallet())
       .subscribe(status => {
@@ -804,10 +804,10 @@
   function showCall(incoming=false) {
     const overlay=$("callOverlay"); overlay.classList.add("open"); document.body.classList.add("in-call");
     $("callTitle").textContent=(callKind==="video"?"Video call":"Voice call");
-    $("callPartnerName").textContent=partner?.name||"Private contact";
+    $("callPartnerName").textContent=partner?.name||"Connected partner";
     $("callAvatarInitials").textContent=String(partner?.name||"H").trim().split(/\s+/).slice(0,2).map(s=>s[0]||"").join("").toUpperCase();
     $("remoteMiniInitials").textContent=$("callAvatarInitials").textContent;
-    $("remoteMiniName").textContent=partner?.name||"Private contact";
+    $("remoteMiniName").textContent=partner?.name||"Connected partner";
     overlay.classList.toggle("voice-mode",callKind!=="video");
     overlay.classList.toggle("incoming-call",incoming);
     $("callVideos").classList.remove("local-video-promoted");
@@ -902,9 +902,11 @@
     callAttemptBusy = true;
     callKind = video ? "video" : "voice";
     try {
-      showCall();
-      setCallStatus("Preparing secure call…");
+      // Restore and verify the saved partner before opening the call screen or camera.
       await ensureExistingPairing();
+      if (!partner?.id || !partner?.name || !callChannel) throw new Error("Your connected partner is not ready for calls. Open Settings → Connect Phones and confirm the connection on both phones.");
+      showCall();
+      setCallStatus("Preparing secure call with " + partner.name + "…");
       await getCallMedia(video);
       makePeer();
       setCallStatus("Connecting securely…");
