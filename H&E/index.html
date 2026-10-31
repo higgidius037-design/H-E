@@ -915,7 +915,7 @@ button:disabled { opacity:.65; cursor:wait; }
           </div>
         </div>
         <input id="photoFiles" type="file" accept="image/*" multiple hidden>
-        <input id="videoFiles" type="file" accept="video/*" multiple hidden>
+        <input id="videoFiles" type="file" accept="video/*,.mp4,.m4v,.mov,.webm,.3gp,.mkv,.avi" multiple hidden>
         <div class="toolbar hidden" id="sortTools"><label style="margin:0;flex:1">Sort by <select id="mediaSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name (A–Z)</option></select></label></div>
         <div class="toolbar hidden" id="selectTools"><button class="secondary" id="toggleSelect" type="button">Cancel selection</button><button class="secondary hidden" id="deleteSelected" type="button">Delete selected</button></div>
         <div class="card-heading"><span id="mediaTotal" class="muted">0 files</span></div>
@@ -1102,6 +1102,7 @@ let selectMode = false;
 let selectedMedia = new Set();
 let mediaFilter = "image";
 let mediaDBPromise = null;
+let mediaReady = Promise.resolve();
 const mediaURLCache = new Map();
 
 const now = new Date();
@@ -1333,34 +1334,53 @@ $("toggleSelect").addEventListener("click",()=>{selectMode=false;selectedMedia.c
 $("deleteSelected").addEventListener("click",async()=>{if(!selectedMedia.size)return toast("Select at least one file first.",true);if(!confirm(`Delete ${selectedMedia.size} selected file(s) from this device?`))return;for(const item of mediaItems)if(selectedMedia.has(item.id)&&mediaURLCache.has(item.id)){URL.revokeObjectURL(mediaURLCache.get(item.id));mediaURLCache.delete(item.id);}mediaItems=mediaItems.filter(item=>!selectedMedia.has(item.id));selectedMedia.clear();if(await saveMedia()){renderMedia();toast("Selected files deleted.");}});
 document.addEventListener("click",event=>{if(event.target.id==="emptyAdd")(mediaFilter==="image"?$("photoFiles"):$("videoFiles")).click();if(!event.target.closest(".menu-wrap"))$("galleryMenu")?.classList.add("hidden");});
 async function addGalleryFiles(input, expectedType) {
-  const files=[...input.files];
-  input.value="";
-  if(!files.length) return;
-  const valid=files.filter(file=>detectMediaKind(file)===expectedType);
-  if(!valid.length) return toast(`Choose ${expectedType==="image"?"photo":"video"} files only.`,true);
-  const previous=[...mediaItems];
-  const added=valid.map(file=>{
-    const fileDate=new Date(file.lastModified||Date.now());
-    return {
-      id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),
-      title:file.name,
-      name:file.name,
-      date:dateString(fileDate),
-      note:"",
-      type:expectedType,
-      blob:file,
-      data:"",
-      createdAt:file.lastModified||Date.now(),
-      size:file.size,
-      mimeType:file.type || (expectedType==="image"?"image/*":"video/*")
-    };
-  });
-  mediaItems.push(...added);
-  if(await saveMedia()) {
-    mediaFilter=expectedType;
+  const files = Array.from(input.files || []);
+  input.value = "";
+  if (!files.length) return;
+  try { await mediaReady; } catch (error) { console.warn(error); }
+  const valid = files.filter(file => detectMediaKind(file) === expectedType && file.size > 0);
+  if (!valid.length) {
+    toast("No supported " + (expectedType === "image" ? "photo" : "video") + " files found.", true);
+    return;
+  }
+  const previous = mediaItems.slice();
+  toast("Adding " + valid.length + " file(s)…");
+  try {
+    const added = [];
+    for (const file of valid) {
+      const buffer = await file.arrayBuffer();
+      const mime = file.type || (expectedType === "image" ? "image/jpeg" : "video/mp4");
+      const blob = new Blob([buffer], { type: mime });
+      const stamp = file.lastModified || Date.now();
+      added.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        title: file.name || "Media",
+        name: file.name || "Media",
+        date: dateString(new Date(stamp)),
+        note: "",
+        type: expectedType,
+        blob: blob,
+        data: "",
+        createdAt: stamp,
+        size: blob.size,
+        mimeType: mime
+      });
+    }
+    mediaItems.push(...added);
+    if (await saveMedia()) {
+      mediaFilter = expectedType;
+      renderMedia();
+      toast(added.length + " file(s) saved. ♡");
+    } else {
+      mediaItems = previous;
+      renderMedia();
+    }
+  } catch (error) {
+    console.error("Gallery import error:", error);
+    mediaItems = previous;
     renderMedia();
-    toast(`${added.length} ${expectedType==="image"?"photo":"video"}${added.length===1?"":"s"} saved. ♡`);
-  } else mediaItems=previous;
+    toast("Could not save this media. Check available device storage.", true);
+  }
 }
 $("photoFiles").addEventListener("change",()=>addGalleryFiles($("photoFiles"),"image"));
 $("videoFiles").addEventListener("change",()=>addGalleryFiles($("videoFiles"),"video"));
@@ -1966,7 +1986,7 @@ renderHomeEvents();
 renderWallet();
 renderCalendar();
 renderChats();
-loadMediaFromDB();
+mediaReady = loadMediaFromDB();
 function showLoginFeedback(message,kind="error") {
   const box = $("loginFeedback");
   if (!box) return;
@@ -2000,7 +2020,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=56"></script>
+<script src="/H-E/H%26E/shared.js?v=57"></script>
 
 </body>
 </html>
