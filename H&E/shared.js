@@ -656,7 +656,7 @@
   let messageRefreshBusy = false;
   let lastIncomingNoticeIds = new Set();
   function showIncomingNotice(title, body, tag) {
-    if (document.visibilityState === "visible" && document.hasFocus()) return;
+    if (document.visibilityState === "visible" && document.hasFocus() && document.getElementById("page-chat")?.classList.contains("active")) return;
     try {
       if (window.HENative && window.HENative.showNotification) { window.HENative.showNotification(title, body); return; }
       if ("Notification" in window && Notification.permission === "granted") {
