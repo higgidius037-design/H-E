@@ -749,7 +749,6 @@
     if (session && (!coupleId || !partner?.publicKey || !callChannel)) await ensureExistingPairing();
     if (!coupleId || !partner?.publicKey || !session) throw new Error("Your saved pairing could not be restored. Check your internet connection and try again; you do not need to pair again.");
     const serialized = JSON.stringify(payload);
-    if (serialized.length > 700000) throw new Error("This attachment is too large to share securely. Choose a smaller file.");
     const encrypted = await encryptPayload(payload);
     const { error } = await db.from("messages").insert({ couple_id: coupleId, sender_id: session.user.id, recipient_id: partner.id, ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, message_type: type, view_once: once });
     if (error) throw error;
