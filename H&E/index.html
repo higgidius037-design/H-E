@@ -420,12 +420,12 @@ main { min-width:0;padding:25px clamp(14px,3vw,38px); }
 .topbar h2 { font-size:clamp(23px,3vw,33px);font-weight:normal;color:#401521;margin:0 0 7px; }
 .topbar p { color:var(--muted);margin:0; }
 .avatar {
-  width:46px;height:46px;flex-shrink:0;border-radius:50%;
+  width:46px;height:46px;flex-shrink:0;border-radius:50%;overflow:hidden;position:relative;
   display:grid;place-items:center;color:var(--wine);
   background:linear-gradient(135deg,var(--rose),var(--gold));
   border:3px solid white;box-shadow:0 0 0 1px var(--line);font-size:25px;
 }
-.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%;display:block;max-width:none;max-height:none}.avatar img[hidden]{display:none}
 .settings-folders{display:grid;gap:12px}.settings-folder{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;cursor:pointer;color:inherit}.settings-folder>span:nth-child(2){flex:1;min-width:0}.settings-folder strong{display:block;font-size:16px}.settings-folder small{display:block;margin-top:4px;color:var(--muted);font-size:13px}.settings-folder-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--blush);color:var(--burgundy);font-size:22px;flex-shrink:0}.settings-arrow{font-size:28px;color:var(--muted)}.settings-back{margin:0 0 12px}
 .page { display:none; }
 .page.active { display:block; }
@@ -1049,10 +1049,14 @@ function toast(message,error=false) {
   toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
 }
 function showSettingsHome(){ $("settingsHome").classList.remove("hidden"); document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden")); }
-document.querySelectorAll("[data-settings-open]").forEach(b=>b.addEventListener("click",()=>{ $("settingsHome").classList.add("hidden"); document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden")); const f=$("settingsFolder-"+b.dataset.settingsOpen); if(f)f.classList.remove("hidden"); }));
-document.querySelectorAll("[data-settings-back]").forEach(b=>b.addEventListener("click",showSettingsHome));
-function showPage(page) {
+function openSettingsFolder(name,fromPop=false){$("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden"));const f=$("settingsFolder-"+name);if(f)f.classList.remove("hidden");if(!fromPop)history.pushState({hePage:"settings",heFolder:name},"","#settings-"+name);}
+document.querySelectorAll("[data-settings-open]").forEach(b=>b.addEventListener("click",()=>openSettingsFolder(b.dataset.settingsOpen)));
+document.querySelectorAll("[data-settings-back]").forEach(b=>b.addEventListener("click",()=>{showSettingsHome();history.pushState({hePage:"settings",heFolder:null},"","#settings");}));
+history.replaceState({hePage:"home",heFolder:null},"","#home");
+window.addEventListener("popstate",event=>{const target=event.state||{hePage:"home",heFolder:null};showPage(target.hePage||"home",true);if(target.hePage==="settings"&&target.heFolder)openSettingsFolder(target.heFolder,true);});
+function showPage(page,fromPop=false) {
   if(page==="settings") showSettingsHome();
+  if(!fromPop){const current=history.state||{};if(current.hePage!==page||current.heFolder)history.pushState({hePage:page,heFolder:null},"","#"+page);else history.replaceState({hePage:page,heFolder:null},"","#"+page);}
   const target = document.getElementById("page-" + page);
   if (!target) return;
   document.querySelectorAll(".page").forEach(section => {
@@ -1744,7 +1748,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=10"></script>
+<script src="/H-E/H%26E/shared.js?v=11"></script>
 
 </body>
 </html>
