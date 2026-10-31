@@ -811,9 +811,15 @@ button:disabled { opacity:.65; cursor:wait; }
   <form id="loginForm" class="login-card">
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2><p class="muted">Sign in to open your little world on this device.</p>
-    <label for="loginName">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Enter your name">
-    <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" required autocomplete="email" placeholder="you@example.com">
+    <label for="loginName" id="loginNameLabel" hidden>Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Enter your name" hidden>
+    <label for="loginEmail" id="loginContactLabel">Email or phone number</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or +2547XXXXXXXX">
     <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Enter your password">
+    <div id="signupOtpPanel" hidden>
+      <label for="signupOtp">SMS verification code</label>
+      <input id="signupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter the 6-digit code">
+      <p class="muted">We sent a verification code to your phone. Enter it to finish creating your account.</p>
+      <button class="secondary" id="resendSignupOtp" type="button">Resend code</button>
+    </div>
     <button class="primary" id="loginSubmit" type="submit">Log in →</button>
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
@@ -2020,7 +2026,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=63"></script>
+<script src="/H-E/H%26E/shared.js?v=64"></script>
 
 </body>
 </html>
