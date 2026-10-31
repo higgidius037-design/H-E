@@ -87,8 +87,20 @@
     dobInput.autocomplete = "bday";
     dobInput.max = new Date().toISOString().slice(0,10);
     dobInput.hidden = true;
+    const signupEmailLabel = document.createElement("label");
+    signupEmailLabel.htmlFor = "loginSignupEmail";
+    signupEmailLabel.textContent = "Email address (optional)";
+    signupEmailLabel.hidden = true;
+    const signupEmailInput = document.createElement("input");
+    signupEmailInput.id = "loginSignupEmail";
+    signupEmailInput.type = "email";
+    signupEmailInput.autocomplete = "email";
+    signupEmailInput.placeholder = "name@example.com";
+    signupEmailInput.hidden = true;
     document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
     dobLabel.insertAdjacentElement("afterend", dobInput);
+    dobInput.insertAdjacentElement("afterend", signupEmailLabel);
+    signupEmailLabel.insertAdjacentElement("afterend", signupEmailInput);
     const contactLabel = document.getElementById("loginContactLabel");
     const otpPanel = document.getElementById("signupOtpPanel");
     const otpInput = document.getElementById("signupOtp");
@@ -129,6 +141,8 @@
       nameLabel.hidden = true;
       dobLabel.hidden = true;
       dobInput.hidden = true;
+      signupEmailLabel.hidden = true;
+      signupEmailInput.hidden = true;
       toggleMethod.hidden = true;
       passkeyButton.hidden = true;
       submitButton.textContent = "Verify phone →";
@@ -145,6 +159,8 @@
       dobLabel.hidden = !isSignUp;
       dobInput.hidden = !isSignUp;
       dobInput.required = isSignUp;
+      signupEmailLabel.hidden = !isSignUp;
+      signupEmailInput.hidden = !isSignUp;
       contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
       email.type = "text";
       email.inputMode = isSignUp ? "tel" : "email";
@@ -200,13 +216,14 @@
           if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error("Enter your phone number in international format, for example +2547XXXXXXXX.");
           if (!displayName) throw new Error("Enter your name.");
           const dateOfBirth = dobInput.value;
+          const contactEmail = signupEmailInput.value.trim() ? normalEmail(signupEmailInput.value) : "";
           if (!dateOfBirth) throw new Error("Enter your date of birth.");
           if (dateOfBirth > new Date().toISOString().slice(0,10)) throw new Error("Date of birth cannot be in the future.");
           if (passwordValue.length < 6) throw new Error("Choose a password with at least 6 characters.");
           const { data, error } = await db.auth.signUp({
             phone,
             password: passwordValue,
-            options: { data: { display_name: displayName, date_of_birth: dateOfBirth } }
+            options: { data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: contactEmail } }
           });
           if (error) throw error;
           if (data.session) throw new Error("Phone confirmation is not enabled on the H&E sign-in service yet. Please try again later.");
@@ -556,10 +573,11 @@
       await putKeyPair(ownKeyPair);
     }
     const publicKey = bytesToB64(await crypto.subtle.exportKey("raw", ownKeyPair.publicKey));
-    const { data: existingProfile } = await db.from("profiles").select("display_name,date_of_birth").eq("user_id", session.user.id).maybeSingle();
+    const { data: existingProfile } = await db.from("profiles").select("display_name,date_of_birth,contact_email").eq("user_id", session.user.id).maybeSingle();
     const { error } = await db.from("profiles").upsert({
       user_id: session.user.id, display_name: document.getElementById("loginName").value.trim() || state.profile.you || session.user.user_metadata?.display_name || existingProfile?.display_name || "H&E",
       date_of_birth: session.user.user_metadata?.date_of_birth || existingProfile?.date_of_birth || null,
+      contact_email: session.user.user_metadata?.contact_email || existingProfile?.contact_email || session.user.email || null,
       encryption_public_key: publicKey, encryption_key_version: 1, updated_at: new Date().toISOString()
     });
     if (error) throw error;
