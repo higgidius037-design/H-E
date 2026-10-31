@@ -134,6 +134,7 @@
         <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
       </div>
       <p id="pairedConfirmation" class="muted" hidden><strong>Devices paired ✓</strong><br>Build your love story ♡</p>
+      <button class="secondary" id="refreshPairingStatus" type="button">Refresh pairing status</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
@@ -149,6 +150,22 @@
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
+    const refreshPairingButton = document.getElementById("refreshPairingStatus");
+    refreshPairingButton.addEventListener("click", async () => {
+      refreshPairingButton.disabled = true;
+      refreshPairingButton.textContent = "Checking connection…";
+      try {
+        const ready = await refreshPairing();
+        if (ready) toast("Devices paired. Build your love story ♡");
+        else toast("Pairing is not ready yet. Check both phones in Settings → Connect Phones.", true);
+      } catch (error) {
+        setStatus("Could not refresh pairing: " + (error.message || "Check your internet connection and try again."));
+        toast(error.message || "Could not refresh pairing status.", true);
+      } finally {
+        refreshPairingButton.disabled = false;
+        refreshPairingButton.textContent = "Refresh pairing status";
+      }
+    });
     const nativeBiometricButton = document.getElementById("nativeBiometricTest");
     const nativeBiometricStatus = document.getElementById("nativeBiometricStatus");
     window.onHENativeBiometricResult = (success, message) => {
