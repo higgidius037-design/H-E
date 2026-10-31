@@ -770,6 +770,38 @@ button:disabled { opacity:.65; cursor:wait; }
   main { overflow-x:clip; }
 }
 
+
+/* MOBILE SAFE-AREA: keep page controls above the fixed bottom navigation */
+@media (max-width:650px) {
+  .app {
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  main {
+    padding-bottom:calc(100px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav {
+    min-height:64px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    z-index:30;
+  }
+  #page-home {
+    padding-bottom:12px;
+  }
+  #page-messages.active {
+    min-height:0;
+    height:auto;
+  }
+  #page-messages .chat-app {
+    height:calc(100dvh - 190px - env(safe-area-inset-bottom));
+    min-height:0;
+    max-height:calc(100dvh - 190px - env(safe-area-inset-bottom));
+    flex:0 1 auto;
+  }
+  #page-messages .chat-messages {
+    min-height:0;
+    overscroll-behavior:contain;
+  }
+}
 </style>
 </head>
 <body>
