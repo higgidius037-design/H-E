@@ -902,10 +902,14 @@
     if(callKind!=="video") return;
     $("callVideos").classList.toggle("local-video-promoted");
   };
-  // Transparent HTML hit areas sit above Android's native video surface,
-  // because taps on a hardware-decoded <video> are not consistently bubbled.
-  $("tapLocalVideo").addEventListener("click",swapCallVideoFocus);
-  $("tapRemoteVideo").addEventListener("click",swapCallVideoFocus);
+  // Pointer events are reliable on Android video surfaces.
+  ["tapLocalVideo","tapRemoteVideo"].forEach(id=>{
+    $(id).addEventListener("pointerup",event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      swapCallVideoFocus();
+    });
+  });
 
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
