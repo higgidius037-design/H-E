@@ -1797,7 +1797,15 @@ function renderGoal(){renderWallet();}
 
 /* CALENDAR AND IN-APP REMINDERS */
 function eventsOnDate(date) {
-  return events.filter(item=>item.date===date);
+  return events.filter(item=>item.date===date ||
+    (item.recurring==="yearly" && item.date.slice(5)===date.slice(5)))
+    .map(item=>item.recurring==="yearly" ? {...item,date} : item);
+}
+function nextAnnualDate(item, fromDate=new Date()) {
+  const today = new Date(fromDate.getFullYear(),fromDate.getMonth(),fromDate.getDate());
+  let next = new Date(today.getFullYear(),Number(item.date.slice(5,7))-1,Number(item.date.slice(8,10)));
+  if(next<today) next = new Date(today.getFullYear()+1,Number(item.date.slice(5,7))-1,Number(item.date.slice(8,10)));
+  return dateString(next);
 }
 function renderCalendar() {
   const first=new Date(calendarYear,calendarMonth,1);
@@ -1896,7 +1904,7 @@ function eventMarkup(item) {
     <h3>${escapeHTML(item.title)}</h3>
     ${item.note?`<p class="muted">${escapeHTML(item.note)}</p>`:""}
     ${item.reminder?`<small class="muted" style="display:block">Reminder set</small>`:""}
-    <button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>
+    ${item.systemEvent?"":`<button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>`}
   </div>`;
 }
 function renderSelectedEvents() {
@@ -1907,7 +1915,9 @@ function renderSelectedEvents() {
 }
 function renderAllEvents() {
   const todayValue=dateString(new Date());
-  const list=events.filter(item=>item.date>=todayValue)
+  const list=events
+    .filter(item=>item.recurring==="yearly" || item.date>=todayValue)
+    .map(item=>item.recurring==="yearly" ? {...item,date:nextAnnualDate(item)} : item)
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
   $("allEvents").innerHTML=list.length
     ?list.map(eventMarkup).join("")
@@ -1915,7 +1925,9 @@ function renderAllEvents() {
 }
 function renderHomeEvents() {
   const todayValue=dateString(new Date());
-  const list=events.filter(item=>item.date>=todayValue)
+  const list=events
+    .filter(item=>item.recurring==="yearly" || item.date>=todayValue)
+    .map(item=>item.recurring==="yearly" ? {...item,date:nextAnnualDate(item)} : item)
     .sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
   $("homeEvents").innerHTML=list.length
     ?list.map(item=>`<div class="item"><span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span><strong>${escapeHTML(item.title)}</strong></div>`).join("")
