@@ -692,6 +692,7 @@
       state.wallet.balance = 0;
       state.wallet.transactions = [];
       saveState();
+      await window.clearLocalGalleryMedia?.();
       renderChats();
       renderWallet();
 
@@ -759,6 +760,7 @@
       .select("couple_id,user_id").eq("user_id", session.user.id);
     if (error) throw error;
     if (!memberships?.length) {
+      await window.clearLocalGalleryMedia?.();
       removePairingCalendarEvent();
       const detailPanel = document.getElementById("pairedConfirmation");
       if (detailPanel) detailPanel.hidden = true;
