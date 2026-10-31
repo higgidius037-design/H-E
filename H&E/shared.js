@@ -840,8 +840,8 @@
             audio: false,
             video: {
               facingMode: { ideal: "user" },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
               frameRate: { ideal: 30, max: 30 }
             }
           });
@@ -861,7 +861,7 @@
     $("localCallVideo").srcObject = localStream;
     $("localCallVideo").style.display = video ? "block" : "none";
   }
-  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");const remoteStream=e.streams?.[0]||new MediaStream([e.track]);rv.srcObject=remoteStream;rv.onloadedmetadata=()=>rv.play?.().catch(()=>{});rv.onplaying=()=>$("callVideos").classList.add("remote-video-ready");rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:remoteStream.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=syncVideo;videoTrack.onended=()=> $("callVideos").classList.remove("remote-video-ready");syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
+  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");const remoteStream=e.streams?.[0]||new MediaStream([e.track]);rv.srcObject=remoteStream;rv.onloadedmetadata=()=>rv.play?.().catch(()=>{});rv.onplaying=()=>$("callVideos").classList.add("remote-video-ready");rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:remoteStream.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=()=>{};videoTrack.onended=()=> $("callVideos").classList.remove("remote-video-ready");$("callVideos").classList.add("remote-video-ready");syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
     const sender=peerConnection.addTrack(t,localStream);
     if(t.kind==="video"){
       try{t.contentHint="detail";}catch(e){}
@@ -870,7 +870,7 @@
         params.encodings=params.encodings?.length?params.encodings:[{}];
         // Allow high-quality 720p/1080p when the connection supports it.
         // Prefer preserving image resolution; the browser can reduce frame rate first.
-        params.encodings[0].maxBitrate=1800000;
+        params.encodings[0].maxBitrate=3500000;
         params.encodings[0].maxFramerate=30;
         params.encodings[0].priority="high";
         params.degradationPreference="balanced";
