@@ -547,7 +547,22 @@
       target.textContent = "Share this one-time code privately with " + email + ": " + data;
       document.getElementById("partnerEmail").value = email;
       toast("Pairing code created. It expires in 24 hours.");
-    } catch (error) { toast(error.message || "Could not create a pairing code.", true); }
+    } catch (error) {
+      const message = error?.message || "Could not create a pairing code.";
+      if (/already paired|already connected|existing pair/i.test(message)) {
+        try {
+          const ready = await refreshPairing();
+          if (ready) {
+            toast("Your devices are already paired. Secure messaging is ready.");
+            return;
+          }
+          setStatus("The server says this account is already paired, but H&E cannot verify the shared connection yet.");
+        } catch (checkError) {
+          setStatus("The server says this account is already paired, but H&E could not verify the connection: " + (checkError?.message || "Check shared-space access."));
+        }
+      }
+      toast(message, true);
+    }
   }
   async function acceptInvite() {
     try {
