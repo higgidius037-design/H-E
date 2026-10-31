@@ -263,7 +263,17 @@
           }
           pendingSignupEmail = emailAddress;
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-            throw new Error("An account with this email already exists. No new code was sent. Please log in, or use Resend code if that account is still awaiting email verification.");
+            // Supabase deliberately returns a generic signup response for an existing
+            // account. If that account is still unverified, explicitly request a fresh OTP.
+            const { error: resendError } = await db.auth.resend({
+              type: "signup",
+              email: emailAddress
+            });
+            if (resendError) throw resendError;
+            pendingSignupEmail = emailAddress;
+            showSignupOtpStep();
+            reportLogin("This email already has an account awaiting verification. A fresh verification code has been requested. Check your inbox and spam folder.", "ok");
+            return;
           }
           showSignupOtpStep();
           reportLogin("Your verification request was accepted. Check your inbox and spam folder for the code.", "ok");
