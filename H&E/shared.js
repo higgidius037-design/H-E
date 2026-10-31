@@ -83,12 +83,39 @@
     dobLabel.hidden = true;
     const dobInput = document.createElement("input");
     dobInput.id = "loginDateOfBirth";
-    dobInput.type = "date";
+    dobInput.type = "hidden";
     dobInput.autocomplete = "bday";
     dobInput.max = new Date().toISOString().slice(0,10);
     dobInput.hidden = true;
     document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
     dobLabel.insertAdjacentElement("afterend", dobInput);
+    const dobButton=document.createElement("button");
+    dobButton.type="button";dobButton.className="secondary";dobButton.style.width="100%";
+    dobButton.textContent="Choose date of birth ▾";dobInput.insertAdjacentElement("afterend",dobButton);
+    const dobPicker=document.createElement("div");
+    dobPicker.hidden=true;dobPicker.style.cssText="margin-top:8px;padding:12px;border:1px solid #eadbd4;border-radius:12px;background:#fffdfb;color:#342029";
+    dobPicker.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><button type="button" data-prev>‹</button><div><span data-month></span> <button type="button" data-year></button></div><button type="button" data-next>›</button></div><div data-years hidden style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:160px;overflow-y:auto;margin:10px 0"></div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;margin-top:10px" data-days></div>';
+    dobButton.insertAdjacentElement("afterend",dobPicker);
+    let dobView=new Date(new Date().getFullYear()-18,new Date().getMonth(),1);
+    const today=new Date();today.setHours(0,0,0,0);
+    const monthNode=dobPicker.querySelector("[data-month]"),yearNode=dobPicker.querySelector("[data-year]"),yearsNode=dobPicker.querySelector("[data-years]"),daysNode=dobPicker.querySelector("[data-days]");
+    const pad=n=>String(n).padStart(2,"0");
+    function renderDob(){
+      const y=dobView.getFullYear(),m=dobView.getMonth();
+      monthNode.textContent=dobView.toLocaleDateString("en",{month:"long"});
+      yearNode.textContent=y+" ⌄";
+      yearsNode.innerHTML="";
+      for(let n=today.getFullYear();n>=1900;n--){const b=document.createElement("button");b.type="button";b.textContent=n;b.style.cssText="padding:7px;border:1px solid #eadbd4;border-radius:7px;background:"+(n===y?"#70263b;color:white":"#fff;color:#342029");b.addEventListener("click",()=>{dobView=new Date(n,m,1);yearsNode.hidden=true;renderDob();});yearsNode.appendChild(b);}
+      daysNode.innerHTML="";
+      ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(d=>{const e=document.createElement("span");e.textContent=d;e.style.cssText="font-size:11px;color:#806d70";daysNode.appendChild(e);});
+      for(let i=0;i<new Date(y,m,1).getDay();i++)daysNode.appendChild(document.createElement("span"));
+      for(let d=1;d<=new Date(y,m+1,0).getDate();d++){const date=new Date(y,m,d),b=document.createElement("button");b.type="button";b.textContent=d;b.disabled=date>today;b.style.cssText="padding:8px 1px;border:1px solid #eadbd4;border-radius:7px;background:#fff;color:#342029";b.addEventListener("click",()=>{dobInput.value=y+"-"+pad(m+1)+"-"+pad(d);dobButton.textContent=date.toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"});dobPicker.hidden=true;});daysNode.appendChild(b);}
+    }
+    yearNode.addEventListener("click",()=>{yearsNode.hidden=!yearsNode.hidden;});
+    dobPicker.querySelector("[data-prev]").addEventListener("click",()=>{dobView=new Date(dobView.getFullYear(),dobView.getMonth()-1,1);renderDob();});
+    dobPicker.querySelector("[data-next]").addEventListener("click",()=>{const n=new Date(dobView.getFullYear(),dobView.getMonth()+1,1);if(n<=new Date(today.getFullYear(),today.getMonth(),1)){dobView=n;renderDob();}});
+    dobButton.addEventListener("click",()=>{dobPicker.hidden=!dobPicker.hidden;if(!dobPicker.hidden){if(dobInput.value){const p=dobInput.value.split("-").map(Number);dobView=new Date(p[0],p[1]-1,1);}renderDob();}});
+    renderDob();
     const contactLabel = document.getElementById("loginContactLabel");
     let otpPanel = document.getElementById("signupOtpPanel");
     let otpInput = document.getElementById("signupOtp");
@@ -146,6 +173,8 @@
       dobLabel.hidden = true;
       dobInput.hidden = true;
       dobInput.required = false;
+      dobButton.hidden = true;
+      dobPicker.hidden = true;
       toggleMethod.hidden = true;
       passkeyButton.hidden = true;
       submitButton.textContent = "Verify email";
@@ -161,7 +190,8 @@
       nameLabel.hidden = !isSignUp;
       dobLabel.hidden = !isSignUp;
       dobInput.hidden = !isSignUp;
-      dobInput.required = isSignUp;
+      dobButton.hidden = !isSignUp;
+      dobInput.required = false;
       contactLabel.textContent = "Email";
       email.type = isSignUp ? "email" : "text";
       email.inputMode = isSignUp ? "email" : "text";
