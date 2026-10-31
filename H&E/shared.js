@@ -146,30 +146,50 @@
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
-    document.getElementById("securitySetFingerprint")?.addEventListener("click",()=>document.getElementById("registerPasskey")?.click());
-    document.getElementById("registerPasskey").addEventListener("click", async event => {
-      const button = event.currentTarget; button.disabled = true;
-      try {
-        if (!session) throw new Error("Sign in first with your account email and password.");
-        const emailAddress=session.user.email;
-        const passwordEntry=await requestHESecurePassword();
-        if(passwordEntry===null) return;
-        if(!passwordEntry) throw new Error("Enter your password to continue.");
-        const verified=await db.auth.signInWithPassword({email:emailAddress,password:passwordEntry});
-        if(verified.error) throw new Error("That password is incorrect. Please try again.");
-        if(!verified.data.session) throw new Error("Password verification could not be completed.");
-        session=verified.data.session;
-        setStatus("Password confirmed. Set up fingerprint / face verification in your browser.");
-        if (!window.HEBiometric?.registerOrVerify) throw new Error("Biometric sign-in is unavailable. Update the app and try again.");
-        const result = await window.HEBiometric.registerOrVerify();
-        toast(result.registered ? "Fingerprint / face verification enabled on this device." : "Fingerprint / face verification confirmed.");
-        button.textContent = "Fingerprint / face enabled";
-        const fingerprintStatus=document.getElementById("fingerprintStatus");
-        if(fingerprintStatus) fingerprintStatus.textContent="Enabled ✓";
-        setStatus("Device verification is enabled for this browser on this device. It is not a server-verified account passkey.");
-      } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
-      finally { button.disabled = false; }
-    });
+    const securityButton = document.getElementById("securitySetFingerprint");
+    const passkeySetupButton = document.getElementById("registerPasskey");
+    const passkeyStatus = document.getElementById("fingerprintStatus");
+    const passkeySupported = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+    if (securityButton) {
+      securityButton.textContent = passkeySupported() ? "Enable fingerprint / face sign-in (WebAuthn)" : "Biometric sign-in unavailable";
+      securityButton.addEventListener("click", () => passkeySetupButton?.click());
+    }
+    if (passkeySetupButton) {
+      passkeySetupButton.textContent = "Enable fingerprint / face sign-in (WebAuthn)";
+      passkeySetupButton.addEventListener("click", async event => {
+        const button = event.currentTarget;
+        button.disabled = true;
+        try {
+          if (!session) throw new Error("Sign in first with your account email and password.");
+          if (!passkeySupported()) throw new Error("Your device doesn't support biometric sign-in in this browser. Use your account password instead.");
+          const emailAddress = session.user.email;
+          const passwordEntry = await requestHESecurePassword();
+          if (passwordEntry === null) return;
+          if (!passwordEntry) throw new Error("Enter your password to continue.");
+          const verified = await db.auth.signInWithPassword({ email: emailAddress, password: passwordEntry });
+          if (verified.error) throw new Error("That password is incorrect. Please try again.");
+          if (!verified.data.session) throw new Error("Password verification could not be completed.");
+          session = verified.data.session;
+          setStatus("Password confirmed. Follow your phone's fingerprint / face prompt.");
+          if (typeof db.auth.registerPasskey !== "function") {
+            throw new Error("Secure passkey registration is not available in the current sign-in service configuration. Use your password for now.");
+          }
+          const { error } = await db.auth.registerPasskey();
+          if (error) throw error;
+          button.textContent = "Fingerprint / face enabled";
+          if (passkeyStatus) passkeyStatus.textContent = "Enabled ✓";
+          if (securityButton) securityButton.textContent = "Manage fingerprint / face sign-in";
+          setStatus("A passkey was registered with your H&E sign-in service. You can use your phone's screen lock to verify.");
+          toast("Fingerprint / face sign-in enabled.");
+        } catch (error) {
+          const message = friendlyAuthError(error);
+          setStatus(message);
+          toast(message, true);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
     const signOut = async () => {
       if (!confirm("Log out of H&E on this device? You will need to enter your email and password again.")) return;
       const buttons = [document.getElementById("logoutButton"), document.getElementById("sharedSignOut")].filter(Boolean);
