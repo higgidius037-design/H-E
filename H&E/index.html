@@ -1431,12 +1431,15 @@ function renderChats() {
       media += `<div class="voice-tile"><audio class="chat-audio" preload="metadata"
                   src="${chat.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
     }
+    const isMissedCall = chat.callEvent === "missed";
+    const callLabel = chat.callKind === "video" ? "Missed video call" : "Missed voice call";
 
     return `
       <article class="chat-bubble ${isMine ? "mine" : "theirs"}">
         ${!isMine ? `<div class="chat-sender">${escapeHTML(name)}</div>` : ""}
-        ${chat.message
-          ? `<p class="chat-text">${escapeHTML(chat.message)}</p>` : ""}
+        ${isMissedCall
+          ? `<p class="chat-text" style="font-weight:700;color:#b44b64">↙ ${callLabel}</p>`
+          : chat.message ? `<p class="chat-text">${escapeHTML(chat.message)}</p>` : ""}
         ${media}
         <div class="chat-time">
           <span>${escapeHTML(time)}</span>
@@ -1893,7 +1896,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=51"></script>
+<script src="/H-E/H%26E/shared.js?v=52"></script>
 
 </body>
 </html>
