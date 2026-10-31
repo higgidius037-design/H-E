@@ -149,11 +149,32 @@
     const securityButton = document.getElementById("securitySetFingerprint");
     const passkeySetupButton = document.getElementById("registerPasskey");
     const passkeyStatus = document.getElementById("fingerprintStatus");
-    const passkeySupported = () => !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
-    if (securityButton) {
-      securityButton.textContent = passkeySupported() ? "Enable fingerprint / face sign-in (WebAuthn)" : "Biometric sign-in unavailable";
-      securityButton.addEventListener("click", () => passkeySetupButton?.click());
-    }
+    const passkeyAvailability = document.getElementById("passkeyAvailability");
+    const passkeySupported = () => !!(window.isSecureContext && window.PublicKeyCredential &&
+      navigator.credentials && typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function");
+    let platformPasskeyAvailable = false;
+    (async () => {
+      if (!passkeySupported()) {
+        if (passkeyAvailability) passkeyAvailability.textContent = "Biometrics are not available in this browser. You can still use your account password and Wallet PIN.";
+      } else {
+        try {
+          platformPasskeyAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          if (passkeyAvailability) passkeyAvailability.textContent = platformPasskeyAvailable
+            ? "This browser can use your device screen lock, fingerprint or face verification for passkeys."
+            : "A device passkey authenticator is not available here. You can still use your account password and Wallet PIN.";
+        } catch (_) {
+          if (passkeyAvailability) passkeyAvailability.textContent = "Passkey availability could not be checked. You can still use your account password and Wallet PIN.";
+        }
+      }
+      if (securityButton) {
+        securityButton.disabled = !platformPasskeyAvailable;
+        securityButton.textContent = platformPasskeyAvailable ? "Enable fingerprint / face sign-in (WebAuthn)" : "Biometric sign-in unavailable";
+      }
+      if (passkeySetupButton) passkeySetupButton.disabled = !platformPasskeyAvailable;
+    })();
+    if (securityButton) securityButton.addEventListener("click", () => {
+      if (platformPasskeyAvailable) passkeySetupButton?.click();
+    });
     if (passkeySetupButton) {
       passkeySetupButton.textContent = "Enable fingerprint / face sign-in (WebAuthn)";
       passkeySetupButton.addEventListener("click", async event => {
