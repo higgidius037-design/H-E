@@ -124,13 +124,16 @@
     card.className = "card"; card.id = "sharedSetupCard";
     card.innerHTML = `<h2 class="section-title">Connect our phones</h2>
       <p class="muted" id="sharedStatus">Sign in with your email to start a private shared space.</p>
-      <label for="partnerEmail">Your partner's email</label>
-      <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
-      <button class="secondary" id="makePairInvite" type="button">Create pairing code</button>
-      <p id="pairCodeText" class="muted" hidden></p>
-      <label for="pairCode">Pairing code from your partner</label>
-      <input id="pairCode" autocomplete="one-time-code" placeholder="Paste pairing code">
-      <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
+      <div id="pairingControls">
+        <label for="partnerEmail">Your partner's email</label>
+        <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
+        <button class="secondary" id="makePairInvite" type="button">Create pairing code</button>
+        <p id="pairCodeText" class="muted" hidden></p>
+        <label for="pairCode">Pairing code from your partner</label>
+        <input id="pairCode" autocomplete="one-time-code" inputmode="numeric" placeholder="Enter pairing code">
+        <button class="secondary" id="acceptPairInvite" type="button">Join shared space</button>
+      </div>
+      <p id="pairedConfirmation" class="muted" hidden><strong>Devices paired ✓</strong><br>Build your love story ♡</p>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
@@ -418,28 +421,67 @@
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
   async function refreshPairing() {
-    const { data: members, error } = await db.from("couple_members").select("couple_id,user_id").eq("user_id", session.user.id).limit(1);
+    // Clear stale pairing state first. A membership row alone is not proof that
+    // both phones can exchange encrypted messages.
+    coupleId = null;
+    partner = null;
+    const controls = document.getElementById("pairingControls");
+    const confirmation = document.getElementById("pairedConfirmation");
+    const codeText = document.getElementById("pairCodeText");
+    if (confirmation) confirmation.hidden = true;
+    if (controls) controls.hidden = false;
+    if (codeText) { codeText.hidden = true; codeText.textContent = ""; }
+
+    const { data: members, error } = await db.from("couple_members")
+      .select("couple_id,user_id").eq("user_id", session.user.id).limit(1);
     if (error) throw error;
-    if (!members?.length) { coupleId = null; setStatus("Your account is ready. Enter your partner's email to create a pairing code, or paste theirs to join."); return; }
-    coupleId = members[0].couple_id;
-    const { data: allMembers, error: memberError } = await db.from("couple_members").select("user_id").eq("couple_id", coupleId);
+    if (!members?.length) {
+      setStatus("Your account is ready. Enter your partner's email to create a pairing code, or paste theirs to join.");
+      return false;
+    }
+    const candidateCoupleId = members[0].couple_id;
+    const { data: allMembers, error: memberError } = await db.from("couple_members")
+      .select("user_id").eq("couple_id", candidateCoupleId);
     if (memberError) throw memberError;
+    if (!allMembers || allMembers.length !== 2) {
+      setStatus("Pairing is not complete yet. Waiting for both devices to join.");
+      return false;
+    }
     const other = allMembers.find(row => row.user_id !== session.user.id);
-    if (!other) { setStatus("Waiting for your partner to join."); return; }
-    const { data: profile, error: profileError } = await db.from("profiles").select("display_name,encryption_public_key").eq("user_id", other.user_id).single();
+    if (!other) {
+      setStatus("The other device is not connected yet.");
+      return false;
+    }
+    const { data: profile, error: profileError } = await db.from("profiles")
+      .select("display_name,encryption_public_key").eq("user_id", other.user_id).single();
     if (profileError) throw profileError;
+    if (!profile?.encryption_public_key) {
+      setStatus("Your partner must open H&E and finish secure setup before messaging.");
+      return false;
+    }
+
+    // Confirm the partner's published key can actually be used before enabling chat.
+    await crypto.subtle.importKey("raw", b64ToBytes(profile.encryption_public_key),
+      { name: "ECDH", namedCurve: "P-256" }, false, []);
+    coupleId = candidateCoupleId;
     partner = { id: other.user_id, name: profile.display_name || "Your partner", publicKey: profile.encryption_public_key };
-    if (!partner.publicKey) { setStatus("Your partner needs to sign in again to set up private messaging."); return; }
     await showSafetyCode();
     await refreshMessages();
-    if (channel) db.removeChannel(channel);
-    if (callChannel) db.removeChannel(callChannel);
-    callChannel = db.channel("he-call-" + coupleId, { config: { private: true } }).on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload)).subscribe();
+
+    if (channel) { await db.removeChannel(channel); channel = null; }
+    if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
+    callChannel = db.channel("he-call-" + coupleId, { config: { private: true } })
+      .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload)).subscribe();
     channel = db.channel("he-chat-" + coupleId)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + coupleId }, () => refreshMessages())
       .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + coupleId }, () => refreshWallet())
       .subscribe();
-    await refreshWallet(); setStatus("Connected with " + partner.name + ". Shared encrypted chat and demo balance are ready.");
+
+    await refreshWallet();
+    if (controls) controls.hidden = true;
+    if (confirmation) confirmation.hidden = false;
+    setStatus("Devices paired. Secure messaging is ready with " + partner.name + ".");
+    return true;
   }
   async function createInvite() {
     try {
@@ -450,16 +492,20 @@
       const target = document.getElementById("pairCodeText"); target.hidden = false;
       target.textContent = "Share this one-time code privately with " + email + ": " + data;
       document.getElementById("partnerEmail").value = email;
-      toast("Pairing code created. It expires in 24 hours."); await refreshPairing();
+      toast("Pairing code created. It expires in 24 hours.");
     } catch (error) { toast(error.message || "Could not create a pairing code.", true); }
   }
   async function acceptInvite() {
     try {
       if (!session) throw new Error("Sign in first.");
       const code = document.getElementById("pairCode").value.trim();
+      if (!code) throw new Error("Enter your partner's pairing code.");
       const { error } = await db.rpc("accept_pair_invite", { p_code: code });
       if (error) throw error;
-      toast("Your shared space is connected."); await refreshPairing();
+      const ready = await refreshPairing();
+      if (!ready) throw new Error("The invitation was accepted, but both devices are not ready for messaging yet. Ask your partner to open H&E and try again.");
+      document.getElementById("pairCode").value = "";
+      toast("Devices paired. Build your love story ♡");
     } catch (error) { toast(error.message || "Could not join this shared space.", true); }
   }
   async function cryptoKey() {
@@ -495,7 +541,10 @@
   async function sendMessage(event) {
     event.preventDefault(); event.stopImmediatePropagation();
     try {
-      if (!coupleId || !partner) throw new Error("Pair your phones first in Settings.");
+      if (!coupleId || !partner?.publicKey || !session) {
+        const ready = session ? await refreshPairing() : false;
+        if (!ready || !coupleId || !partner?.publicKey) throw new Error("Your phones are not fully connected yet. Open Settings → Connect Phones on both devices and wait for “Devices paired”.");
+      }
       const message = document.getElementById("chatMessage").value.trim();
       const attachment = pendingChatFile;
       if (!message && !attachment) return;
@@ -508,7 +557,7 @@
     } catch (error) { toast(error.message || "Message could not be sent.", true); }
   }
   async function sendEncrypted(payload, type = "text", once = false) {
-    if (!coupleId || !partner) throw new Error("Pair your phones first in Settings.");
+    if (!coupleId || !partner?.publicKey || !session) throw new Error("Your phones are not fully connected yet. Open Settings → Connect Phones on both devices and wait for “Devices paired”.");
     const serialized = JSON.stringify(payload);
     if (serialized.length > 700000) throw new Error("This attachment is too large to share securely. Choose a smaller file.");
     const encrypted = await encryptPayload(payload);
