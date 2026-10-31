@@ -145,7 +145,7 @@
     const connectPage=document.createElement("div");connectPage.id="settingsFolder-connect";connectPage.className="settings-subfolder hidden";
     const back=document.createElement("button");back.type="button";back.className="secondary settings-back";back.textContent="← Settings";
     back.addEventListener("click",()=>{connectPage.classList.add("hidden");document.getElementById("settingsHome").classList.remove("hidden");history.pushState({hePage:"settings",heFolder:null},"","#settings");});
-    connectPage.append(back,card);settings.append(connectFolder,connectPage);
+    connectPage.append(back,card);document.getElementById("settingsHome").append(connectFolder);settings.append(connectPage);
     connectFolder.addEventListener("click",()=>{document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");history.pushState({hePage:"settings",heFolder:"connect"},"","#settings-connect");});
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
