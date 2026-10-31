@@ -836,7 +836,15 @@
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       if (video) {
         try {
-          const cameraStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: "user" } });
+          const cameraStream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              facingMode: { ideal: "user" },
+              width: { ideal: 1280, max: 1920 },
+              height: { ideal: 720, max: 1080 },
+              frameRate: { ideal: 30, max: 30 }
+            }
+          });
           cameraStream.getVideoTracks().forEach(track => localStream.addTrack(track));
         } catch (cameraError) {
           localStream.getTracks().forEach(track => track.stop());
@@ -853,20 +861,33 @@
     $("localCallVideo").srcObject = localStream;
     $("localCallVideo").style.display = video ? "block" : "none";
   }
-  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");rv.srcObject=e.streams[0];rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:e.streams[0]?.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=syncVideo;syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>peerConnection.addTrack(t,localStream)); }
+  function makePeer() { peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=e=>{if(e.candidate)callSignal("ice",{candidate:e.candidate}).catch(err=>toast(err.message,true));}; peerConnection.ontrack=e=>{const rv=$("remoteCallVideo");rv.srcObject=e.streams[0];rv.play?.().catch(()=>{});const videoTrack=e.track?.kind==="video"?e.track:e.streams[0]?.getVideoTracks?.()[0];if(videoTrack){const syncVideo=()=>$("callVideos").classList.toggle("remote-video-ready",videoTrack.readyState==="live"&&!videoTrack.muted);videoTrack.onunmute=syncVideo;videoTrack.onmute=syncVideo;syncVideo();}}; peerConnection.onconnectionstatechange=()=>{if(peerConnection?.connectionState==="connected"){stopCallTone();setCallStatus("Connected");}if(["failed","disconnected"].includes(peerConnection?.connectionState)){stopCallTone();setCallStatus("Connection interrupted");}}; localStream.getTracks().forEach(t=>{
+    const sender=peerConnection.addTrack(t,localStream);
+    if(t.kind==="video"){
+      try{t.contentHint="detail";}catch(e){}
+      if(sender?.getParameters && sender?.setParameters){
+        const params=sender.getParameters();
+        params.encodings=params.encodings?.length?params.encodings:[{}];
+        params.encodings[0].maxBitrate=1800000;
+        params.encodings[0].maxFramerate=30;
+        sender.setParameters(params).catch(err=>console.debug("Video quality adaptation unavailable",err));
+      }
+    }
+  }); }
   async function ensureExistingPairing() { if(coupleId && partner?.publicKey && callChannel) return true; if(!session) throw new Error("Please sign in to your existing H&E account."); const ready=await refreshPairing(); if(!ready || !coupleId || !partner?.publicKey || !callChannel) throw new Error("Could not restore your saved connection. Check your internet and try again; you do not need to pair again."); return true; }
   async function startCall(video) { try { await ensureExistingPairing();callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind});startCallTone();setCallStatus("Ringing…"); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
   async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
   async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});stopCallTone();showCall(false);setCallStatus("Connecting…"); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
   function stopCall() { stopCallTone();document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
-  const localVideoTap=$("localCallVideo"), remoteVideoTap=$("remoteCallVideo");
   const swapCallVideoFocus=()=>{
     if(callKind!=="video") return;
     $("callVideos").classList.toggle("local-video-promoted");
   };
-  localVideoTap.addEventListener("click",swapCallVideoFocus);
-  remoteVideoTap.addEventListener("click",swapCallVideoFocus);
+  // Transparent HTML hit areas sit above Android's native video surface,
+  // because taps on a hardware-decoded <video> are not consistently bubbled.
+  $("tapLocalVideo").addEventListener("click",swapCallVideoFocus);
+  $("tapRemoteVideo").addEventListener("click",swapCallVideoFocus);
 
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
