@@ -33,9 +33,11 @@ import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.5";
+    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.6";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages_v2";
+    private static final String CALL_CHANNEL_ID = "he_calls_v1";
+    private String pendingCallAction = "";
     private static final int APP_PERMISSION_REQUEST = 2003;
     private String pendingAppPermission = "";
     private WebView webView;
@@ -94,7 +96,7 @@ public class MainActivity extends FragmentActivity {
         webView.loadUrl(APP_URL);
     }
 
-    @Override protected void onPause() {
+    @Override protected void onNewIntent(Intent intent) {\n        super.onNewIntent(intent);\n        setIntent(intent);\n        handleCallIntent(intent);\n    }\n\n    private void handleCallIntent(Intent intent) {\n        if (intent == null) return;\n        String action = intent.getStringExtra("he_call_action");\n        if (action == null || action.isEmpty()) return;\n        pendingCallAction = action;\n        dispatchPendingCallAction();\n    }\n\n    private void dispatchPendingCallAction() {\n        if (webView == null || pendingCallAction.isEmpty()) return;\n        final String action = pendingCallAction;\n        pendingCallAction = "";\n        webView.post(() -> webView.evaluateJavascript("(()=>{const id=" + org.json.JSONObject.quote(action === "answer" ? "acceptCall" : "rejectCall") + ";const el=document.getElementById(id);if(el)el.click();else window.__hePendingCallAction=" + org.json.JSONObject.quote(action) + ";})()", null));\n    }\n\n    @Override protected void onPause() {
         lastPausedAt = System.currentTimeMillis();
         super.onPause();
     }
@@ -191,7 +193,7 @@ public class MainActivity extends FragmentActivity {
             channel.setDescription("Private message alerts and H&E reminders. Change sound and pop-up behaviour in Android settings.");
             channel.enableVibration(true);
             channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION).build());
-            manager.createNotificationChannel(channel);
+            manager.createNotificationChannel(channel);\n            NotificationChannel calls = new NotificationChannel(CALL_CHANNEL_ID, "H&E incoming calls", NotificationManager.IMPORTANCE_HIGH);\n            calls.setDescription("Incoming H&E voice and video calls.");\n            calls.enableVibration(true);\n            calls.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);\n            calls.setSound(android.net.Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.he_signature_ring), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());\n            manager.createNotificationChannel(calls);
         }
     }
 
@@ -278,6 +280,36 @@ public class MainActivity extends FragmentActivity {
                 Notification.Builder builder=Build.VERSION.SDK_INT>=26?new Notification.Builder(MainActivity.this,CHANNEL_ID):new Notification.Builder(MainActivity.this);
                 builder.setSmallIcon(getApplicationInfo().icon).setContentTitle(title==null||title.isEmpty()?"H&E":title).setContentText(body==null?"":body).setAutoCancel(true).setContentIntent(pending).setPriority(Notification.PRIORITY_HIGH);
                 getSystemService(NotificationManager.class).notify((int)(System.currentTimeMillis()%Integer.MAX_VALUE),builder.build());
+            });
+        }
+        @JavascriptInterface public void showIncomingCall(String caller, String callType) {
+            runOnUiThread(() -> {
+                if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 2001);
+                    return;
+                }
+                String name = caller == null || caller.trim().isEmpty() ? "Your H&E contact" : caller.trim();
+                Intent open = new Intent(MainActivity.this, MainActivity.class);
+                open.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                PendingIntent content = PendingIntent.getActivity(MainActivity.this, 3101, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                Intent answerIntent = new Intent(MainActivity.this, MainActivity.class);
+                answerIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                answerIntent.putExtra("he_call_action", "answer");
+                PendingIntent answer = PendingIntent.getActivity(MainActivity.this, 3102, answerIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                Intent declineIntent = new Intent(MainActivity.this, MainActivity.class);
+                declineIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                declineIntent.putExtra("he_call_action", "decline");
+                PendingIntent decline = PendingIntent.getActivity(MainActivity.this, 3103, declineIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                Notification.Builder builder = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(MainActivity.this, CALL_CHANNEL_ID) : new Notification.Builder(MainActivity.this);
+                builder.setSmallIcon(getApplicationInfo().icon).setContentTitle(name + " is calling")
+                    .setContentText("Incoming " + ("video".equals(callType) ? "video" : "voice") + " call")
+                    .setCategory(Notification.CATEGORY_CALL).setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setOngoing(true).setAutoCancel(false).setContentIntent(content)
+                    .addAction(android.R.drawable.sym_action_call, "Answer", answer)
+                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Decline", decline)
+                    .setPriority(Notification.PRIORITY_MAX);
+                if (Build.VERSION.SDK_INT >= 29) builder.setFullScreenIntent(content, true);
+                getSystemService(NotificationManager.class).notify(3101, builder.build());
             });
         }
         @JavascriptInterface public void openNotificationSettings(){
