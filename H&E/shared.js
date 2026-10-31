@@ -58,6 +58,8 @@
     if (!connectFolderButton) return;
     const title = connectFolderButton.querySelector("[data-connect-title]");
     const subtitle = connectFolderButton.querySelector("[data-connect-subtitle]");
+    const folderTitle = document.getElementById("pairingFolderTitle");
+    if (folderTitle) folderTitle.textContent = paired ? "Paired" : "Add Partner";
     if (title) title.textContent = paired ? "Paired" : "Add Partner";
     if (subtitle) subtitle.textContent = paired ? "Your partner is connected" : "Connect with your partner";
     connectFolderButton.setAttribute("aria-label", paired ? "Paired. Manage partner connection" : "Add Partner");
@@ -148,7 +150,7 @@
     const settings = document.getElementById("page-settings");
     const card = document.createElement("div");
     card.className = "card"; card.id = "sharedSetupCard";
-    card.innerHTML = `<h2 class="section-title">Add Partner</h2>
+    card.innerHTML = `<h2 class="section-title" id="pairingFolderTitle">Add Partner</h2>
       <p class="muted" id="sharedStatus" hidden></p>
       <div id="pairingControls">
         <label for="partnerContact">Partner's email address or phone number</label>
