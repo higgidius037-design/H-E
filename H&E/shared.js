@@ -859,7 +859,7 @@
   function stopCall() { stopCallTone();document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
   const localVideoTap=$("localCallVideo"), remoteVideoTap=$("remoteCallVideo");
-  localVideoTap.addEventListener("click",()=>{if(callKind==="video" && $("callVideos").classList.contains("remote-video-ready")) $("callVideos").classList.add("local-video-promoted");});
+  localVideoTap.addEventListener("click",()=>{if(callKind==="video" && $("callVideos").classList.contains("remote-video-ready")) $("callVideos").classList.toggle("local-video-promoted");});
   remoteVideoTap.addEventListener("click",()=>$("callVideos").classList.remove("local-video-promoted"));
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
   $("muteCall").addEventListener("click",e=>{const t=localStream?.getAudioTracks()[0];if(t){t.enabled=!t.enabled;e.currentTarget.classList.toggle("control-active",!t.enabled);e.currentTarget.setAttribute("aria-label",t.enabled?"Mute microphone":"Unmute microphone");e.currentTarget.title=t.enabled?"Mute microphone":"Unmute microphone";}});
