@@ -159,20 +159,14 @@
         if(verified.error) throw new Error("That password is incorrect. Please try again.");
         if(!verified.data.session) throw new Error("Password verification could not be completed.");
         session=verified.data.session;
-        setStatus("Password confirmed. Confirm your identity using Android biometrics.");
-        if (!window.HENative?.authenticateBiometric) throw new Error("Native fingerprint / face verification is available only in the installed H&E Android app.");
-        const biometricResult = await new Promise(resolve => {
-          window.onHENativeBiometricResult = (success, message) => {
-            delete window.onHENativeBiometricResult;
-            resolve({ success, message });
-          };
-          window.HENative.authenticateBiometric();
-        });
-        if (!biometricResult.success) throw new Error(biometricResult.message || "Biometric verification was not completed.");
-        toast("Your device biometric check was successful.");
-        button.textContent = "Biometric check successful";
-        const fingerprintStatus=document.getElementById("fingerprintStatus");if(fingerprintStatus)fingerprintStatus.textContent="Verified on this device";
-        setStatus("Your identity was confirmed by Android biometrics. This is a device verification, not a registered cloud passkey.");
+        setStatus("Password confirmed. Set up fingerprint / face verification in your browser.");
+        if (!window.HEBiometric?.registerOrVerify) throw new Error("Biometric sign-in is unavailable. Update the app and try again.");
+        const result = await window.HEBiometric.registerOrVerify();
+        toast(result.registered ? "Fingerprint / face verification enabled on this device." : "Fingerprint / face verification confirmed.");
+        button.textContent = "Fingerprint / face enabled";
+        const fingerprintStatus=document.getElementById("fingerprintStatus");
+        if(fingerprintStatus) fingerprintStatus.textContent="Enabled ✓";
+        setStatus("Device verification is enabled for this browser on this device. It is not a server-verified account passkey.");
       } catch (error) { const message = friendlyAuthError(error); setStatus(message); toast(message, true); }
       finally { button.disabled = false; }
     });
