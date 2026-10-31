@@ -748,7 +748,7 @@ textarea { min-height:90px;resize:vertical; }
   object-position:center center;
 }
 
-</style>
+.chat-tick{color:#999;font-size:12px;letter-spacing:-3px;padding-left:4px}.chat-tick.is-delivered{color:#999}.chat-tick.is-read{color:#2296f3}</style>
 </head>
 <body>
 
@@ -1440,7 +1440,7 @@ function renderChats() {
         ${media}
         <div class="chat-time">
           <span>${escapeHTML(time)}</span>
-          ${isMine ? '<span class="chat-tick">✓</span>' : ""}
+          ${isMine ? '<span class="chat-tick ${chat.readAt ? "is-read" : chat.deliveredAt ? "is-delivered" : ""}">${chat.readAt || chat.deliveredAt ? "✓✓" : "✓"}</span>' : ""}
         </div>
         <div class="chat-message-actions">
           <button class="chat-delete" type="button"
@@ -1893,7 +1893,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=46"></script>
+<script src="/H-E/H%26E/shared.js?v=47"></script>
 
 </body>
 </html>
