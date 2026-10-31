@@ -622,6 +622,8 @@ textarea { min-height:90px;resize:vertical; }
 #welcomeScreen .welcome-content { display:grid; justify-items:center; gap:14px; padding:24px; }
 #welcomeScreen .welcome-logo { display:block; width:clamp(172px,48vw,230px); height:auto; border:0; border-radius:0; background:transparent; box-shadow:none; animation:welcomeRise .8s ease both; }
 #welcomeScreen .welcome-subtitle { margin:0; color:#e8c58a; font-family:Georgia,serif; font-size:clamp(19px,5vw,25px); font-style:italic; }
+
+.he-auth-overlay{position:fixed;inset:0;z-index:10000;background:rgba(20,5,10,.72);display:grid;place-items:center;padding:22px}.he-auth-dialog{width:min(100%,430px);background:var(--card,#fffaf4);color:var(--ink,#310b14);border:1px solid rgba(173,133,77,.45);border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.3)}.he-auth-mark{font-family:Georgia,serif;font-size:27px;color:#9b7544;letter-spacing:2px}.he-auth-dialog h2{font-family:Georgia,serif;margin:12px 0 8px}.he-auth-dialog p{line-height:1.55;color:var(--muted,#75666a)}.he-auth-dialog input{width:100%;box-sizing:border-box;margin:8px 0 18px}.he-auth-actions{display:flex;justify-content:flex-end;gap:10px}.he-auth-actions button{min-width:104px}
 </style>
 </head>
 <body>
@@ -860,6 +862,7 @@ textarea { min-height:90px;resize:vertical; }
 <button type="button" class="card settings-folder" data-settings-open="profile"><span class="settings-folder-icon">♙</span><span><strong>Profile</strong><small>Your photo and personal details</small></span><span class="settings-arrow">›</span></button>
 <button type="button" class="card settings-folder" data-settings-open="security"><span class="settings-folder-icon">◇</span><span><strong>Security &amp; Privacy</strong><small>Chat lock and Wallet PIN</small></span><span class="settings-arrow">›</span></button>
 <button type="button" class="card settings-folder" data-settings-open="display"><span class="settings-folder-icon">◐</span><span><strong>Display</strong><small>Theme and wallpaper colour</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="notifications"><span class="settings-folder-icon">♬</span><span><strong>Notifications</strong><small>Alerts, sounds and pop-up preferences</small></span><span class="settings-arrow">›</span></button>
 <button type="button" class="card settings-folder" data-settings-open="account"><span class="settings-folder-icon">⚙</span><span><strong>Account</strong><small>Backup and local app data</small></span><span class="settings-arrow">›</span></button>
 </div>
 <div id="settingsFolder-profile" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
@@ -868,6 +871,7 @@ textarea { min-height:90px;resize:vertical; }
 <div id="settingsFolder-security" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Security &amp; Privacy</h2><p class="muted">Security controls for this device.</p><div class="security-row"><div><strong>Fingerprint / face sign-in</strong><p class="muted">Confirm your H&amp;E password, then follow your phone’s secure biometric setup prompt.</p><button class="secondary" id="securitySetFingerprint" type="button">Set fingerprint</button></div><span class="pill" id="fingerprintStatus">Not set up</span></div>
 <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form><p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p></div></div>
 <div id="settingsFolder-display" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div></div>
+<div id="settingsFolder-notifications" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Notifications</h2><p class="muted">Manage H&amp;E alerts on this phone. Android controls the notification sound and pop-up style.</p><button class="primary" id="openAndroidNotifications" type="button">Notification settings &amp; sounds</button><p class="muted">Choose a sound, allow pop-ups, and control lock-screen alerts in Android settings.</p></div></div>
 <div id="settingsFolder-account" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div></div>
 </section>
   </main>
@@ -896,6 +900,7 @@ const STORAGE_KEY = "he-little-world-v1";
 const MEDIA_KEY = "he-little-world-media-v1";
 const EVENT_KEY = "he-little-world-events-v1";
 const DISPLAY_KEY = "he-display-v1";
+document.addEventListener("DOMContentLoaded",()=>{const b=$("openAndroidNotifications");if(b)b.addEventListener("click",()=>{if(window.HENative?.openNotificationSettings)window.HENative.openNotificationSettings();else toast("Notification sound settings are available in your phone’s app settings.");});});
 function applyDisplayPreferences(){const pref=JSON.parse(localStorage.getItem(DISPLAY_KEY)||"{}");const theme=$("themeChoice");const wallpaper=$("wallpaperChoice");if(theme)theme.value=pref.theme||"light";if(wallpaper)wallpaper.value=pref.wallpaper||"#fff9f1";document.documentElement.classList.toggle("theme-dark",pref.theme==="dark");document.documentElement.style.setProperty("--app-wallpaper",pref.wallpaper||"#fff9f1");}
 function saveDisplayPreferences(){const data={theme:$("themeChoice").value,wallpaper:$("wallpaperChoice").value};localStorage.setItem(DISPLAY_KEY,JSON.stringify(data));applyDisplayPreferences();}
 applyDisplayPreferences();$("themeChoice").addEventListener("change",saveDisplayPreferences);$("wallpaperChoice").addEventListener("input",saveDisplayPreferences);
@@ -1671,6 +1676,7 @@ document.addEventListener("click",event=>{
 });
 $("enableNotifications").addEventListener("click",async()=>{
   if(!("Notification" in window)) return toast("This browser does not support notifications.",true);
+  if(window.HENative?.showNotification){window.HENative.showNotification("H&E","Notifications are ready on this device.");toast("H&E notifications requested. You can adjust sounds and pop-ups in Settings.");return;}
   const permission=await Notification.requestPermission();
   toast(permission==="granted"?"Notifications enabled while this app is open.":"Notification permission was not granted.",permission!=="granted");
 });
@@ -1683,7 +1689,7 @@ function checkReminders() {
     if(!item.reminder||!item.time||item.reminded) continue;
     const reminderAt=new Date(item.date+"T"+item.time).getTime()-item.reminder*60000;
     if(now>=reminderAt&&now<reminderAt+60000) {
-      new Notification("H&E reminder",{body:item.title+" is coming up ♡"});
+      if(window.HENative?.showNotification) window.HENative.showNotification("H&E reminder",item.title+" is coming up ♡"); else if("Notification" in window && Notification.permission==="granted") new Notification("H&E reminder",{body:item.title+" is coming up ♡"});
       item.reminded=true;
       changed=true;
     }
