@@ -14,13 +14,22 @@
   const bytesToB64 = bytes => {
     const data = new Uint8Array(bytes);
     let binary = "";
-    const chunkSize = 0x8000;
+    const chunkSize = 0x2000;
     for (let offset = 0; offset < data.length; offset += chunkSize) {
       binary += String.fromCharCode.apply(null, data.subarray(offset, Math.min(offset + chunkSize, data.length)));
     }
     return btoa(binary);
   };
-  const b64ToBytes = value => Uint8Array.from(atob(value), c => c.charCodeAt(0));
+  const b64ToBytes = value => {
+    const binary = atob(value);
+    const bytes = new Uint8Array(binary.length);
+    const chunkSize = 0x2000;
+    for (let offset = 0; offset < binary.length; offset += chunkSize) {
+      const end = Math.min(offset + chunkSize, binary.length);
+      for (let i = offset; i < end; i++) bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  };
   const normalEmail = value => {
     const email = String(value || "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
