@@ -1567,10 +1567,31 @@ $("recordVoice").addEventListener("click", async () => {
   }
 
   try {
-    chatStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    voiceAudioContext=new (window.AudioContext||window.webkitAudioContext)();voiceAnalyser=voiceAudioContext.createAnalyser();voiceAnalyser.fftSize=128;voiceAudioContext.createMediaStreamSource(chatStream).connect(voiceAnalyser);drawVoiceWaveform();
+    // Request the microphone with the simplest constraints for Android WebView.
+    chatStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    // Waveform visuals are optional: an AudioContext failure must never block recording.
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        voiceAudioContext = new AudioContextClass();
+        if (voiceAudioContext.state === "suspended") await voiceAudioContext.resume().catch(() => {});
+        voiceAnalyser = voiceAudioContext.createAnalyser();
+        voiceAnalyser.fftSize = 128;
+        voiceAudioContext.createMediaStreamSource(chatStream).connect(voiceAnalyser);
+        drawVoiceWaveform();
+      }
+    } catch (waveError) {
+      console.warn("Voice waveform unavailable; continuing without it.", waveError);
+      voiceAnalyser = null;
+    }
+
     chatChunks = [];
-    chatRecorder = new MediaRecorder(chatStream);
+    const recorderTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+    const recorderType = recorderTypes.find(type => MediaRecorder.isTypeSupported?.(type));
+    chatRecorder = recorderType
+      ? new MediaRecorder(chatStream, { mimeType: recorderType })
+      : new MediaRecorder(chatStream);
 
     chatRecorder.addEventListener("dataavailable", event => {
       if (event.data.size) chatChunks.push(event.data);
@@ -1627,10 +1648,28 @@ $("recordVoice").addEventListener("click", async () => {
     $("recordingPanel").classList.remove("hidden");
     $("recordingStatus").textContent = "Recording voice note…";
   } catch (error) {
-    console.error(error);
-    toast("Allow microphone access to record a voice note.", true);
+    console.error("H&E voice-note recording failed:", error);
+    const name = error?.name || "Error";
+    let message;
+    if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+      message = "H&E was blocked from opening the microphone. Check the app's microphone access.";
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      message = "No microphone was detected by Android.";
+    } else if (name === "NotReadableError" || name === "TrackStartError") {
+      message = "Android could not start the microphone. It may be busy or unavailable to WebView.";
+    } else if (name === "NotSupportedError") {
+      message = "This Android WebView does not support the available voice-recording format.";
+    } else {
+      message = "Voice recording failed (" + name + "): " + (error?.message || "unknown error");
+    }
+    toast(message, true);
     chatStream?.getTracks().forEach(track => track.stop());
     chatStream = null;
+    chatRecorder = null;
+    if (voiceAudioContext) voiceAudioContext.close().catch(() => {});
+    voiceAudioContext = null;
+    voiceAnalyser = null;
+    cancelAnimationFrame(waveFrame);
   }
 });
 
