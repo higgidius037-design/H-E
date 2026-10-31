@@ -438,8 +438,15 @@
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
   async function refreshPairing() {
+    // Clear stale connection state before checking the server again.
     coupleId = null;
     partner = null;
+    if (channel) { await db.removeChannel(channel); channel = null; }
+    if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
+    if (window.heMessagePollTimer) {
+      clearInterval(window.heMessagePollTimer);
+      window.heMessagePollTimer = null;
+    }
     const controls = document.getElementById("pairingControls");
     const confirmation = document.getElementById("pairedConfirmation");
     const codeText = document.getElementById("pairCodeText");
@@ -501,9 +508,6 @@
     await showSafetyCode();
     await refreshMessages();
 
-    if (channel) { await db.removeChannel(channel); channel = null; }
-    if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
-
     callChannel = db.channel("he-call-" + coupleId, { config: { private: true } })
       .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload))
       .subscribe(status => {
@@ -531,10 +535,17 @@
       if (session && coupleId && partner) refreshMessages();
     }, 10000);
 
-    await refreshWallet();
+    // Wallet availability must not prevent a valid phone pairing from completing.
+    let walletNotice = "";
+    try {
+      await refreshWallet();
+    } catch (walletError) {
+      console.warn("H&E shared wallet is temporarily unavailable:", walletError);
+      walletNotice = " The shared wallet is temporarily unavailable, but chat can still work.";
+    }
     if (controls) controls.hidden = true;
     if (confirmation) confirmation.hidden = false;
-    setStatus("Devices paired. Secure messaging is ready with " + partner.name + ".");
+    setStatus("Devices paired. Secure messaging is ready with " + partner.name + "." + walletNotice);
     return true;
   }
   async function createInvite() {
