@@ -11,7 +11,15 @@
   });
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  const bytesToB64 = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  const bytesToB64 = bytes => {
+    const data = new Uint8Array(bytes);
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let offset = 0; offset < data.length; offset += chunkSize) {
+      binary += String.fromCharCode.apply(null, data.subarray(offset, Math.min(offset + chunkSize, data.length)));
+    }
+    return btoa(binary);
+  };
   const b64ToBytes = value => Uint8Array.from(atob(value), c => c.charCodeAt(0));
   const normalEmail = value => {
     const email = String(value || "").trim().toLowerCase();
