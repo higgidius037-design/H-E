@@ -676,6 +676,41 @@ textarea { min-height:90px;resize:vertical; }
 .call-stage.video-mode.local-video-promoted .remote-hit-area{z-index:12!important}
 .call-stage.video-mode.local-video-promoted .local-hit-area{z-index:9!important}
 
+
+/* Partner-first focus: when self-view is tapped, show the other caller (or their profile) as the main screen. */
+.call-stage.video-mode.local-video-promoted>#localCallVideo{
+  inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;
+  height:clamp(130px,22vh,190px)!important;
+  max-width:none!important;
+  border:1px solid #ffffffaa!important;
+  border-radius:18px!important;
+  object-fit:cover!important;
+  z-index:6!important;
+  box-shadow:0 8px 30px #0008!important;
+}
+.call-stage.video-mode.local-video-promoted>#remoteCallVideo{
+  inset:0!important;width:100%!important;height:100%!important;
+  max-width:none!important;max-height:none!important;
+  border:0!important;border-radius:0!important;object-fit:cover!important;
+  z-index:1!important;
+}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{display:block!important}
+.call-stage.video-mode.local-video-promoted:not(.remote-video-ready)>#remoteCallVideo{display:none!important}
+.call-stage.video-mode.local-video-promoted>#callPersonBackdrop{
+  inset:0!important;position:absolute!important;z-index:2!important;
+  opacity:1!important;visibility:visible!important;pointer-events:none!important;
+  background:radial-gradient(ellipse at 50% 38%,rgba(117,70,91,.78) 0%,rgba(40,18,31,.91) 54%,rgba(9,6,10,.97) 100%)!important;
+  backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;
+}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#callPersonBackdrop{opacity:0!important;visibility:hidden!important}
+.call-stage.video-mode.local-video-promoted .remote-hit-area{inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important}
+.call-stage.video-mode.local-video-promoted .local-hit-area{
+  inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border-radius:18px!important;z-index:12!important;
+}
+
 </style>
 </head>
 <body>
