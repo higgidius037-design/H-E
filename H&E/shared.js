@@ -258,6 +258,91 @@
         }
       });
     }
+    document.getElementById("registerPasskey")?.remove();
+    document.querySelectorAll("[data-security-open]").forEach(button => button.addEventListener("click", () => {
+      document.getElementById("settingsFolder-security").classList.add("hidden");
+      document.getElementById("securityMicro-" + button.dataset.securityOpen).classList.remove("hidden");
+    }));
+    document.querySelectorAll("[data-security-back]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll('[id^="securityMicro-"]').forEach(el => el.classList.add("hidden"));
+      document.getElementById("settingsFolder-security").classList.remove("hidden");
+      document.getElementById("myPinDisplay").hidden = true;
+    }));
+    ["addFingerprint", "deleteFingerprint"].forEach(id => document.getElementById(id)?.addEventListener("click", () => {
+      const status = document.getElementById("fingerprintManageStatus");
+      status.textContent = "Android manages saved fingerprints. Use the system screen to add or remove them.";
+      if (window.HENative?.openBiometricSettings) window.HENative.openBiometricSettings();
+      else toast("Fingerprint management is available in Android Settings → Security & privacy → Fingerprint.");
+    }));
+    function verifyForPin(action) {
+      if (window.HENative?.authenticateBiometric) {
+        window.hePendingPinAction = action;
+        window.HENative.authenticateBiometric();
+      } else {
+        requestHESecurePassword().then(async password => {
+          if (!password || !session) return;
+          const check = await db.auth.signInWithPassword({email: session.user.email, password});
+          if (check.error) { toast("Account password was not accepted.", true); return; }
+          session = check.data.session || session; action();
+        });
+      }
+    }
+    window.onHENativeBiometricResult = (success, message) => {
+      const action = window.hePendingPinAction;
+      window.hePendingPinAction = null;
+      if (success && action) action();
+      else if (!success && action) {
+        requestHESecurePassword().then(async password => {
+          if (!password || !session) return;
+          const check = await db.auth.signInWithPassword({email: session.user.email, password});
+          if (check.error) { toast("Account password was not accepted.", true); return; }
+          session = check.data.session || session; action();
+        });
+      }
+      if (!success && message) toast(message, true);
+    };
+    document.getElementById("showMyPin")?.addEventListener("click", () => verifyForPin(() => {
+      const display = document.getElementById("myPinDisplay");
+      display.textContent = state.wallet.pin ? "PIN is set ••••" : "No Wallet PIN has been set.";
+      display.hidden = false;
+    }));
+    document.getElementById("changeMyPin")?.addEventListener("click", () => verifyForPin(() => {
+      if (!state.wallet.pin) { toast("Set a Wallet PIN first.", true); return; }
+      const oldPin = prompt("Enter your current Wallet PIN");
+      if (oldPin === null) return;
+      if (oldPin !== state.wallet.pin) { toast("Current PIN is incorrect.", true); return; }
+      const nextPin = prompt("Enter your new 4–8 digit PIN");
+      if (nextPin === null) return;
+      if (!/^\\d{4,8}$/.test(nextPin)) { toast("Choose a 4–8 digit PIN.", true); return; }
+      const confirmPin = prompt("Confirm your new PIN");
+      if (confirmPin === null) return;
+      if (nextPin !== confirmPin) { toast("PINs do not match.", true); return; }
+      state.wallet.pin = nextPin;
+      if (saveState()) {
+        const overlay = document.getElementById("heSuccessOverlay");
+        overlay.classList.add("show");
+        setTimeout(() => {
+          overlay.classList.remove("show");
+          document.getElementById("securityMicro-walletpin").classList.add("hidden");
+          document.getElementById("settingsFolder-security").classList.remove("hidden");
+        }, 2000);
+      }
+    }));
+    document.getElementById("changeAccountPassword")?.addEventListener("click", async () => {
+      if (!session) { toast("Sign in first.", true); return; }
+      const oldPassword = await requestHESecurePassword();
+      if (!oldPassword) return;
+      const checked = await db.auth.signInWithPassword({email: session.user.email, password: oldPassword});
+      if (checked.error) { toast("Current password is incorrect.", true); return; }
+      const nextPassword = prompt("Enter your new account password (at least 8 characters)");
+      if (nextPassword === null) return;
+      if (nextPassword.length < 8) { toast("Use at least 8 characters.", true); return; }
+      const confirmPassword = prompt("Confirm your new account password");
+      if (confirmPassword !== nextPassword) { toast("Passwords do not match.", true); return; }
+      const updated = await db.auth.updateUser({password: nextPassword});
+      if (updated.error) toast(updated.error.message || "Password could not be changed.", true);
+      else toast("Your H&E account password has been changed.");
+    });
     const signOut = async () => {
       if (!confirm("Log out of H&E on this device? You will need to enter your email and password again.")) return;
       const buttons = [document.getElementById("logoutButton"), document.getElementById("sharedSignOut")].filter(Boolean);
