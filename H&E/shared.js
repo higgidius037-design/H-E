@@ -680,6 +680,8 @@
     return JSON.parse(decoder.decode(decrypted));
   }
   let messageRefreshBusy = false;
+  let messageRefreshQueued = false;
+  const pendingLocalMessages = new Map();
   let lastIncomingNoticeIds = new Set();
   function showIncomingNotice(title, body, tag) {
     if (document.visibilityState === "visible" && document.hasFocus() && document.getElementById("page-messages")?.classList.contains("active")) return;
@@ -693,7 +695,8 @@
   }
 
   async function refreshMessages() {
-    if (!coupleId || !partner || !session || messageRefreshBusy) return;
+    if (!coupleId || !partner || !session) return;
+    if (messageRefreshBusy) { messageRefreshQueued = true; return; }
     messageRefreshBusy = true;
     try {
       const activeCoupleId = coupleId;
@@ -714,27 +717,26 @@
         const { error: readError } = await db.rpc("mark_messages_read", { p_message_ids: readRows.map(row => row.id) });
         if (readError) console.warn("Could not mark messages read:", readError);
       }
-      for (const row of data || []) {
+      const decryptedRows = await Promise.all((data || []).map(async row => {
         const mine = row.sender_id === session.user.id;
-        if (row.view_once && row.opened_at && !mine) {
-          chats.push({ id: row.id, mine, name: activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: true, message: "", attachment:null, voice:null });
-          continue;
-        }
         if (row.view_once && !mine) {
-          chats.push({ id: row.id, mine, name: activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: false, message: "", attachment:null, voice:null });
-          continue;
+          return { id: row.id, mine, name: activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: true, opened: !!row.opened_at, message: "", attachment:null, voice:null, deliveredAt: row.delivered_at, readAt: row.read_at };
         }
         try {
           const payload = await decryptPayload(row);
-          chats.push({ id: row.id, mine, name: mine ? state.profile.you : activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, deliveredAt: row.delivered_at, readAt: row.read_at, ...payload });
-          if (!mine && !lastIncomingNoticeIds.has(row.id)) { lastIncomingNoticeIds.add(row.id); showIncomingNotice("Message from " + activePartner.name, payload.message || "Sent you a message", "he-message-" + row.id); }
+          if (!mine && !lastIncomingNoticeIds.has(row.id)) { lastIncomingNoticeIds.add(row.id); showIncomingNotice("Message from " + activePartner.name, payload.message || (payload.attachment ? "Sent a photo or video" : payload.voice ? "Sent a voice note" : "Sent you a message"), "he-message-" + row.id); }
+          return { id: row.id, mine, name: mine ? state.profile.you : activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, deliveredAt: row.delivered_at, readAt: row.read_at, ...payload };
         } catch (decryptError) {
           console.warn("Could not decrypt message", row.id, decryptError);
+          return null;
         }
-      }
+      }));
+      chats.push(...decryptedRows.filter(Boolean));
       if (coupleId === activeCoupleId && partner?.id === activePartner.id) {
-        remoteChats = chats;
-        state.chats = chats;
+        const serverIds = new Set(chats.map(chat => chat.id));
+        for (const [id, pending] of pendingLocalMessages) if (!serverIds.has(id)) chats.push(pending);
+        remoteChats = chats.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+        state.chats = remoteChats;
         renderChats();
       }
     } catch (error) {
@@ -742,6 +744,10 @@
       setStatus("Connected, but messages could not be loaded: " + (error.message || "Check message access and internet connection."));
     } finally {
       messageRefreshBusy = false;
+      if (messageRefreshQueued) {
+        messageRefreshQueued = false;
+        queueMicrotask(() => refreshMessages());
+      }
     }
   }
   let messageSendBusy = false;
@@ -753,34 +759,53 @@
     const messageInput = document.getElementById("chatMessage");
     const attachmentInput = document.getElementById("chatAttachment");
     const preview = document.getElementById("chatAttachmentPreview");
+    const message = messageInput.value.trim();
+    const attachment = pendingChatFile;
+    if (!message && !attachment) return;
+    if (!session || !coupleId || !partner?.publicKey) {
+      toast("Your phones are not fully connected yet. Check Settings → Connect Phones.", true);
+      return;
+    }
     messageSendBusy = true;
     if (submitButton) submitButton.disabled = true;
+    const optimisticId = "pending-" + (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(36).slice(2));
+    const optimistic = {
+      id: optimisticId, name: state.profile.you || "You", message,
+      date: new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }),
+      createdAt: Date.now(), mine: true, attachment: attachment || null, voice: null,
+      viewOnce: document.getElementById("viewOnceToggle")?.checked || false, pending: true
+    };
+    pendingLocalMessages.set(optimisticId, optimistic);
+    remoteChats.push(optimistic); state.chats = remoteChats; renderChats();
+    messageInput.value = ""; attachmentInput.value = "";
+    document.getElementById("chatPreviewContent").innerHTML = ""; preview.classList.add("hidden");
+    document.getElementById("viewOnceToggle").checked = false; pendingChatFile = null;
     try {
-      if (!coupleId || !partner?.publicKey || !session) {
-        const ready = session ? await refreshPairing() : false;
-        if (!ready || !coupleId || !partner?.publicKey) throw new Error("Your phones are not fully connected yet. Open Settings → Connect Phones on both devices and wait for “Devices paired”.");
-      }
-      const message = messageInput.value.trim();
-      const attachment = pendingChatFile;
-      if (!message && !attachment) return;
-      const once = document.getElementById("viewOnceToggle")?.checked || false;
-      await sendEncrypted({ message, attachment: attachment || null, voice: null }, attachment?.type === "video" ? "video" : attachment ? "image" : "text", once);
-      messageInput.value = ""; attachmentInput.value = "";
-      document.getElementById("chatPreviewContent").innerHTML = ""; preview.classList.add("hidden");
-      document.getElementById("viewOnceToggle").checked = false; pendingChatFile = null;
-      await refreshMessages();
-    } catch (error) { toast(error.message || "Message could not be sent.", true); }
-    finally {
+      const row = await sendEncrypted({ message, attachment: attachment || null, voice: null }, attachment?.type === "video" ? "video" : attachment ? "image" : "text", optimistic.viewOnce);
+      pendingLocalMessages.delete(optimisticId);
+      const sent = { ...optimistic, id: row.id, pending: false, deliveredAt: row.delivered_at, readAt: row.read_at, createdAt: new Date(row.created_at).getTime() };
+      remoteChats = remoteChats.map(chat => chat.id === optimisticId ? sent : chat);
+      state.chats = remoteChats; renderChats();
+      refreshMessages();
+    } catch (error) {
+      pendingLocalMessages.delete(optimisticId);
+      remoteChats = remoteChats.filter(chat => chat.id !== optimisticId);
+      state.chats = remoteChats; renderChats();
+      messageInput.value = message;
+      if (attachment) { pendingChatFile = attachment; attachmentInput.value = ""; }
+      toast(error.message || "Message could not be sent. Your draft has been restored.", true);
+    } finally {
       messageSendBusy = false;
       if (submitButton) submitButton.disabled = false;
     }
   }
   async function sendEncrypted(payload, type = "text", once = false) {
-    if (session && (!coupleId || !partner?.publicKey || !callChannel)) await ensureExistingPairing();
+    if (session && (!coupleId || !partner?.publicKey)) await ensureExistingPairing();
     if (!coupleId || !partner?.publicKey || !session) throw new Error("Your saved pairing could not be restored. Check your internet connection and try again; you do not need to pair again.");
     const encrypted = await encryptPayload(payload);
-    const { error } = await db.from("messages").insert({ couple_id: coupleId, sender_id: session.user.id, recipient_id: partner.id, ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, message_type: type, view_once: once });
+    const { data, error } = await db.from("messages").insert({ couple_id: coupleId, sender_id: session.user.id, recipient_id: partner.id, ciphertext: encrypted.ciphertext, nonce: encrypted.nonce, message_type: type, view_once: once }).select("id,created_at,delivered_at,read_at").single();
     if (error) throw error;
+    return data;
   }
   window.heSharedSend = async (payload, type = "voice", once = false) => {
     try { await sendEncrypted(payload, type, once); }
