@@ -44,6 +44,8 @@ public class MainActivity extends FragmentActivity {
     private static final int CALL_PERMISSION_REQUEST = 2002;
     private PermissionRequest pendingWebPermissionRequest;
     private String[] pendingAndroidPermissions = new String[0];
+    private long lastPausedAt = 0L;
+    private static final long AUTO_REFRESH_AFTER_MS = 30_000L;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -90,6 +92,21 @@ public class MainActivity extends FragmentActivity {
             }
         });
         webView.loadUrl(APP_URL);
+    }
+
+    @Override protected void onPause() {
+        lastPausedAt = System.currentTimeMillis();
+        super.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (webView != null && lastPausedAt > 0L
+                && System.currentTimeMillis() - lastPausedAt >= AUTO_REFRESH_AFTER_MS) {
+            lastPausedAt = 0L;
+            // A unique query parameter makes WebView request the current HTML instead of reusing a cached page.
+            webView.loadUrl(APP_URL + "&apprefresh=" + System.currentTimeMillis());
+        }
     }
 
     private void handleWebPermissionRequest(PermissionRequest request) {
