@@ -1,4 +1,4 @@
-const CACHE_NAME = "he-app-v44";
+const CACHE_NAME = "he-app-v45";
 const APP_URL = "/H-E/H%26E/index.html";
 
 self.addEventListener("install", event => {
