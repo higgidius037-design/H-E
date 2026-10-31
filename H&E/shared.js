@@ -840,8 +840,8 @@
             audio: false,
             video: {
               facingMode: { ideal: "user" },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
               frameRate: { ideal: 30, max: 30 }
             }
           });
@@ -870,10 +870,10 @@
         params.encodings=params.encodings?.length?params.encodings:[{}];
         // Allow high-quality 720p/1080p when the connection supports it.
         // Prefer preserving image resolution; the browser can reduce frame rate first.
-        params.encodings[0].maxBitrate=4000000;
+        params.encodings[0].maxBitrate=1800000;
         params.encodings[0].maxFramerate=30;
         params.encodings[0].priority="high";
-        params.degradationPreference="maintain-resolution";
+        params.degradationPreference="balanced";
         sender.setParameters(params).catch(err=>console.debug("Video quality adaptation unavailable",err));
       }
     }
@@ -903,12 +903,19 @@
     if(callKind!=="video") return;
     $("callVideos").classList.toggle("local-video-promoted");
   };
-  // Handle taps on the stage itself; Android may route video-surface taps
-  // differently from taps on transparent overlay buttons.
-  $("callVideos").addEventListener("pointerup",event=>{
-    if(callKind!=="video"||!$("callOverlay").classList.contains("open")) return;
-    event.preventDefault();
-    swapCallVideoFocus();
+  // Use explicit touch targets so Android WebView can reliably switch video focus.
+  ["tapRemoteVideo","tapLocalVideo"].forEach(id=>{
+    $(id).addEventListener("click",event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus();
+    });
+  });
+  ["remoteCallVideo","localCallVideo"].forEach(id=>{
+    $(id).addEventListener("click",event=>{
+      event.preventDefault();
+      if(callKind==="video"&&$("callOverlay").classList.contains("open")) swapCallVideoFocus();
+    });
   });
 
   $("rejectCall").addEventListener("click",async()=>{await callSignal("reject").catch(()=>{});stopCall();});$("endCall").addEventListener("click",async()=>{await callSignal("hangup").catch(()=>{});stopCall();});
