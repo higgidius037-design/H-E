@@ -1,6 +1,6 @@
 package com.hande.ourlittleworld;
 
-import android.app.Activity;
+import androidx.fragment.app.FragmentActivity;
 import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.content.ContextCompat;
@@ -28,7 +28,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import java.util.concurrent.Executor;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
     private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages";
