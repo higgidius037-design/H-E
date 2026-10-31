@@ -559,12 +559,12 @@
     await showSafetyCode();
     await refreshMessages();
 
-    callChannel = db.channel("he-call-" + coupleId, { config: { private: true } })
+    callChannel = db.channel("he-call-" + coupleId, { config: { private: true, presence: { key: session.user.id } } })
       .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload))
-      .subscribe(status => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("H&E call channel status:", status);
-        }
+      .on("presence", { event: "sync" }, () => { const peers = callChannel?.presenceState?.() || {}; window.heCallPartnerOnline = !!(partner?.id && peers[partner.id]?.length); })
+      .subscribe(async status => {
+        if (status === "SUBSCRIBED") { try { await callChannel.track({ user_id: session.user.id, online_at: new Date().toISOString() }); } catch (e) { console.warn("Call presence unavailable:", e); } }
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") console.warn("H&E call channel status:", status);
       });
 
     channel = db.channel("he-chat-" + coupleId, { config: { private: false } })
@@ -654,6 +654,18 @@
     return JSON.parse(decoder.decode(decrypted));
   }
   let messageRefreshBusy = false;
+  let lastIncomingNoticeIds = new Set();
+  function showIncomingNotice(title, body, tag) {
+    if (document.visibilityState === "visible" && document.hasFocus()) return;
+    try {
+      if (window.HENative && window.HENative.showNotification) { window.HENative.showNotification(title, body); return; }
+      if ("Notification" in window && Notification.permission === "granted") {
+        const notice = new Notification(title, { body, tag: tag || "he-incoming", icon: "/H-E/icon-512.png" });
+        notice.onclick = () => { window.focus(); showPage("chat"); notice.close(); };
+      }
+    } catch (error) { console.warn("H&E notification unavailable:", error); }
+  }
+
   async function refreshMessages() {
     if (!coupleId || !partner || !session || messageRefreshBusy) return;
     messageRefreshBusy = true;
@@ -661,10 +673,21 @@
       const activeCoupleId = coupleId;
       const activePartner = partner;
       const { data, error } = await db.from("messages")
-        .select("id,sender_id,recipient_id,ciphertext,nonce,message_type,view_once,opened_at,created_at")
+        .select("id,sender_id,recipient_id,ciphertext,nonce,message_type,view_once,opened_at,delivered_at,read_at,created_at")
         .eq("couple_id", activeCoupleId).order("created_at", { ascending: true }).limit(250);
       if (error) throw error;
       const chats = [];
+      const receivedRows = (data || []).filter(row => row.recipient_id === session.user.id && !row.delivered_at);
+      if (receivedRows.length) {
+        const { error: receiptError } = await db.rpc("mark_messages_delivered", { p_message_ids: receivedRows.map(row => row.id) });
+        if (receiptError) console.warn("Could not mark messages delivered:", receiptError);
+      }
+      const chatIsOpen = document.getElementById("page-chat")?.classList.contains("active");
+      const readRows = chatIsOpen ? (data || []).filter(row => row.recipient_id === session.user.id && !row.read_at) : [];
+      if (readRows.length) {
+        const { error: readError } = await db.rpc("mark_messages_read", { p_message_ids: readRows.map(row => row.id) });
+        if (readError) console.warn("Could not mark messages read:", readError);
+      }
       for (const row of data || []) {
         const mine = row.sender_id === session.user.id;
         if (row.view_once && row.opened_at && !mine) {
@@ -677,7 +700,8 @@
         }
         try {
           const payload = await decryptPayload(row);
-          chats.push({ id: row.id, mine, name: mine ? state.profile.you : activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, ...payload });
+          chats.push({ id: row.id, mine, name: mine ? state.profile.you : activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, deliveredAt: row.delivered_at, readAt: row.read_at, ...payload });
+          if (!mine && !lastIncomingNoticeIds.has(row.id)) { lastIncomingNoticeIds.add(row.id); showIncomingNotice("Message from " + activePartner.name, payload.message || "Sent you a message", "he-message-" + row.id); }
         } catch (decryptError) {
           console.warn("Could not decrypt message", row.id, decryptError);
         }
@@ -908,6 +932,11 @@
       throw new Error("Your secure call connection is still starting. Please check your internet and try once more.");
     }
   }
+  async function waitForPartnerCallPresence() {
+    const started = Date.now();
+    while (Date.now() - started < 10000) { const peers = callChannel?.presenceState?.() || {}; if (partner?.id && peers[partner.id]?.length) return true; await new Promise(resolve => setTimeout(resolve, 250)); }
+    throw new Error("Your partner is online, but their H&E calling connection is not ready yet. Ask them to reopen H&E and try again.");
+  }
   let callAttemptBusy = false;
   async function startCall(video) {
     if (callAttemptBusy || peerConnection) return;
@@ -918,6 +947,7 @@
       await ensureExistingPairing();
       if (!partner?.id || !partner?.name || !callChannel) throw new Error("Your connected partner is not ready for calls. Open Settings → Connect Phones and confirm the connection on both phones.");
       await waitForCallChannelReady();
+      await waitForPartnerCallPresence();
       showCall();
       setCallStatus("Preparing secure call with " + partner.name + "…");
       await getCallMedia(video);
@@ -935,7 +965,7 @@
       callAttemptBusy = false;
     }
   }
-  async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
+  async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();showIncomingNotice("Incoming call",(partner?.name||"Your partner")+" is calling you","he-incoming-call");}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
   async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});stopCallTone();showCall(false);setCallStatus("Connecting…"); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
   function stopCall() { stopCallTone();$("callOverlay").classList.remove("minimised");$("callMiniDock").classList.remove("visible");document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("minimiseCall").addEventListener("click",()=>{
