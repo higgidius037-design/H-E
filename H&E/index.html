@@ -802,6 +802,25 @@ button:disabled { opacity:.65; cursor:wait; }
     overscroll-behavior:contain;
   }
 }
+
+/* Refined compact calendar controls */
+.calendar-head-modern{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:12px 0 16px;margin:0;border-bottom:1px solid var(--line)}
+.calendar-period{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.calendar-period h3{font-size:clamp(20px,4vw,25px);color:var(--wine);font-weight:normal;text-align:left}
+.calendar-arrow{width:42px;height:42px;flex:0 0 42px;border:1px solid var(--line);border-radius:12px;background:#fff7f2;color:var(--burgundy);font-size:28px;line-height:1}
+.calendar-arrow:active,.calendar-today:active{transform:scale(.96)}
+.year-picker-wrap{display:inline-flex;align-items:center;margin:0}
+#calendarYearSelect{width:auto;min-width:88px;max-width:112px;padding:9px 28px 9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff7f2;color:var(--burgundy);font-size:15px}
+.calendar-today{padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#f8e9e6;color:var(--burgundy);font-size:13px;white-space:nowrap}
+#calendarGrid{gap:6px;margin-top:12px}
+.calendar-day-name{font-weight:600;font-size:12px;padding:7px 0}
+.calendar-day{min-height:clamp(43px,10vw,66px);padding:8px 2px;border-radius:10px;background:#fffdf9;font-size:14px}
+.calendar-day .day-number{font-size:14px;font-weight:500}
+.calendar-day .event-count{font-size:9px;margin-top:3px}
+.calendar-day.has-event:after{width:5px;height:5px;bottom:4px}
+#page-calendar .card{overflow:hidden}
+#page-calendar #selectedDayEvents .item{padding:12px 4px}
+@media(max-width:420px){.calendar-head-modern{gap:6px}.calendar-arrow{width:36px;height:38px;flex-basis:36px}.calendar-period{gap:5px}.calendar-period h3{font-size:19px}#calendarYearSelect{min-width:78px;padding:8px 20px 8px 7px;font-size:14px}.calendar-today{padding:8px 9px;font-size:12px}#calendarGrid{gap:3px}.calendar-day{min-height:43px;padding:6px 1px}.calendar-day .day-number{font-size:13px}}
 </style>
 </head>
 <body>
@@ -986,10 +1005,11 @@ button:disabled { opacity:.65; cursor:wait; }
       <div class="card">
         <h2 class="section-title">Our Calendar</h2>
         <p class="muted">Dates to remember, moments to look forward to.</p>
-        <div class="calendar-head">
-          <button class="secondary" id="previousMonth" type="button">←</button>
-          <h3 id="calendarMonth">Month Year</h3>
-          <button class="secondary" id="nextMonth" type="button">→</button>
+        <div class="calendar-head calendar-head-modern">
+          <button class="calendar-arrow" id="previousMonth" type="button" aria-label="Previous month">‹</button>
+          <div class="calendar-period"><h3 id="calendarMonth">Month</h3><label class="year-picker-wrap" aria-label="Choose calendar year"><select id="calendarYearSelect" aria-label="Choose year"></select></label></div>
+          <button class="calendar-arrow" id="nextMonth" type="button" aria-label="Next month">›</button>
+          <button class="calendar-today" id="todayButton" type="button">Today</button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
         <div class="card" style="box-shadow:none">
@@ -1832,7 +1852,19 @@ function renderCalendar() {
   const start=first.getDay();
   const previousDays=new Date(calendarYear,calendarMonth,0).getDate();
 
-  $("calendarMonth").textContent=first.toLocaleDateString("en",{month:"long",year:"numeric"});
+  $("calendarMonth").textContent=first.toLocaleDateString("en",{month:"long"});
+  const yearSelect=$("calendarYearSelect");
+  if(yearSelect){
+    const currentYear=new Date().getFullYear();
+    if(!yearSelect.options.length){
+      for(let year=currentYear+20;year>=1900;year--){
+        const option=document.createElement("option");
+        option.value=String(year);option.textContent=String(year);
+        yearSelect.appendChild(option);
+      }
+    }
+    yearSelect.value=String(calendarYear);
+  }
   let html=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
     .map(day=>`<div class="calendar-day-name">${day}</div>`).join("");
 
@@ -1883,6 +1915,12 @@ $("previousMonth").addEventListener("click",()=>{
 $("nextMonth").addEventListener("click",()=>{
   calendarMonth++;
   if(calendarMonth>11) { calendarMonth=0;calendarYear++; }
+  renderCalendar();
+});
+$("calendarYearSelect").addEventListener("change",event=>{
+  const year=Number(event.target.value);
+  if(!Number.isInteger(year)||year<1900||year>2200)return;
+  calendarYear=year;
   renderCalendar();
 });
 $("todayButton").addEventListener("click",()=>{
