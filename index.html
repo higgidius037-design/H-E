@@ -605,7 +605,7 @@ textarea { min-height:90px;resize:vertical; }
   *,*::before,*::after { animation:none!important;transition:none!important;scroll-behavior:auto!important; }
 }
 
-.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:linear-gradient(145deg,#310b14,#70263b);overflow:auto}.login-card{width:min(100%,420px);padding:30px;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b55}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:32px;margin:8px 0}.login-card h2{margin-top:25px;color:var(--wine)}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-note{font-size:12px;margin-top:16px}.login-feedback{font-size:14px;margin:14px 0 0;padding:11px 13px;border-radius:9px;background:#f7e6e3;color:#651e31}.login-feedback[data-kind="wait"]{background:#fff4e4;color:#62411b}.login-feedback[data-kind="ok"]{background:#e8f5e9;color:#225b2b}
+.login-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:radial-gradient(ellipse at 50% 15%,#8b4355 0%,transparent 52%),linear-gradient(145deg,#21070e,#310b14 55%,#70263b);overflow:auto}.login-card{width:min(100%,410px);padding:30px;border:1px solid #e8c58a55;border-radius:22px;background:#fffaf6;box-shadow:0 25px 80px #18050b66}.login-card h1{font-family:Georgia,serif;color:var(--wine);font-size:34px;letter-spacing:2px;margin:8px 0}.login-card h2{margin:22px 0 12px;color:var(--wine);font-weight:normal}.login-card .brand-heart{font-size:30px;color:var(--rose)}.login-card .primary{width:100%;margin-top:18px}.login-card .secondary{width:100%}.login-note{font-size:12px;margin-top:14px;text-align:center}.login-feedback{font-size:14px;margin:14px 0 0;padding:11px 13px;border-radius:9px;background:#f7e6e3;color:#651e31}.login-feedback[data-kind="wait"]{background:#fff4e4;color:#62411b}.login-feedback[data-kind="ok"]{background:#e8f5e9;color:#225b2b}#signupOtpPanel{margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff6f0}#signupOtpPanel[hidden]{display:none}#signupOtpPanel .secondary{margin-top:8px}
 
 /* FOLDER GALLERY, WALLET AND PROFILE */
 .folder-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin-top:18px}
@@ -628,15 +628,15 @@ textarea { min-height:90px;resize:vertical; }
 <section id="loginScreen" class="login-screen" aria-label="Sign in to H&E">
   <form id="loginForm" class="login-card">
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
-    <h2>Welcome back</h2><p class="muted">Sign in to open your little world on this device.</p>
-    <label for="loginName">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Enter your name">
-    <label for="loginEmail">Email</label><input id="loginEmail" type="email" maxlength="120" required autocomplete="email" placeholder="you@example.com">
-    <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Enter your password">
-    <button class="primary" id="loginSubmit" type="submit">Log in →</button>
-    <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">New here? Create an account</button>
+    <h2>Welcome back</h2>
+    <label id="loginNameLabel" for="loginName" hidden>Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Your name" hidden>
+    <label id="loginContactLabel" for="loginEmail">Email</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or phone number">
+    <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Your password">
+    <button class="primary" id="loginSubmit" type="submit">Log in</button>
+    <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">Create account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
     <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
-    <p class="muted login-note">Your sign-in is saved on this device, so you normally will not need to log in every time you open H&amp;E. You can also set up a passkey in Settings for fingerprint or face unlock.</p>
+    <p class="muted login-note">Private sign-in for your little world.</p>
   </form>
 </section>
 
@@ -1734,7 +1734,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=10"></script>
+<script src="/H-E/H%26E/shared.js?v=11"></script>
 
 </body>
 </html>
