@@ -834,8 +834,21 @@
       return "Could not start the " + kind.toLowerCase() + ": " + (error?.message || error?.name || "unknown error");
     };
     try {
-      // Open audio independently so a camera problem cannot be mistaken for a microphone problem.
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }, video: false });
+      // Start with basic audio constraints for Android WebView compatibility.
+      // Some Android devices report NotReadableError when advanced audio processing
+      // constraints cannot be applied, even though the microphone itself is available.
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false
+        });
+      } catch (audioError) {
+        if (!["NotReadableError", "OverconstrainedError", "ConstraintNotSatisfiedError"].includes(audioError?.name)) {
+          throw audioError;
+        }
+        // Retry with the least restrictive audio request supported by WebView.
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
       if (video) {
         try {
           const cameraStream = await navigator.mediaDevices.getUserMedia({
