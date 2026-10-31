@@ -682,7 +682,7 @@
   let messageRefreshBusy = false;
   let lastIncomingNoticeIds = new Set();
   function showIncomingNotice(title, body, tag) {
-    if (document.visibilityState === "visible" && document.hasFocus() && document.getElementById("page-chat")?.classList.contains("active")) return;
+    if (document.visibilityState === "visible" && document.hasFocus() && document.getElementById("page-messages")?.classList.contains("active")) return;
     try {
       if (window.HENative && window.HENative.showNotification) { window.HENative.showNotification(title, body); return; }
       if ("Notification" in window && Notification.permission === "granted") {
@@ -708,7 +708,7 @@
         const { error: receiptError } = await db.rpc("mark_messages_delivered", { p_message_ids: receivedRows.map(row => row.id) });
         if (receiptError) console.warn("Could not mark messages delivered:", receiptError);
       }
-      const chatIsOpen = document.getElementById("page-chat")?.classList.contains("active");
+      const chatIsOpen = document.getElementById("page-messages")?.classList.contains("active");
       const readRows = chatIsOpen ? (data || []).filter(row => row.recipient_id === session.user.id && !row.read_at) : [];
       if (readRows.length) {
         const { error: readError } = await db.rpc("mark_messages_read", { p_message_ids: readRows.map(row => row.id) });
