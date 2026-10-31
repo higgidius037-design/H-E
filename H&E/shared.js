@@ -591,6 +591,18 @@
       .select("couple_id,user_id").eq("user_id", session.user.id);
     if (error) throw error;
     if (!memberships?.length) {
+      // A previous partner may have disconnected from their device. Remove
+      // any locally cached conversation so this account starts clean too.
+      remoteChats = [];
+      openedOnce.clear();
+      pendingLocalMessages.clear();
+      lastIncomingNoticeIds.clear();
+      state.chats = [];
+      state.wallet.balance = 0;
+      state.wallet.transactions = [];
+      saveState();
+      renderChats();
+      renderWallet();
       setStatus("Your account is ready. Connect your partner's phone to begin.");
       return false;
     }
