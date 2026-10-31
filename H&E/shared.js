@@ -833,15 +833,15 @@
     };
     try {
       // Open audio independently so a camera problem cannot be mistaken for a microphone problem.
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }, video: false });
       if (video) {
         try {
           const cameraStream = await navigator.mediaDevices.getUserMedia({
             audio: false,
             video: {
               facingMode: { ideal: "user" },
-              width: { ideal: 1280, max: 1920 },
-              height: { ideal: 720, max: 1080 },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
               frameRate: { ideal: 30, max: 30 }
             }
           });
@@ -868,11 +868,12 @@
       if(sender?.getParameters && sender?.setParameters){
         const params=sender.getParameters();
         params.encodings=params.encodings?.length?params.encodings:[{}];
-        // Favor stable 720p/30fps over forcing 1080p on limited connections.
-        params.encodings[0].maxBitrate=2500000;
+        // Allow high-quality 720p/1080p when the connection supports it.
+        // Prefer preserving image resolution; the browser can reduce frame rate first.
+        params.encodings[0].maxBitrate=4000000;
         params.encodings[0].maxFramerate=30;
         params.encodings[0].priority="high";
-        params.degradationPreference="balanced";
+        params.degradationPreference="maintain-resolution";
         sender.setParameters(params).catch(err=>console.debug("Video quality adaptation unavailable",err));
       }
     }
