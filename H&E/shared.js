@@ -438,8 +438,6 @@
     try { await refreshPairing(); } catch (error) { console.error("Pairing setup did not finish after sign-in", error); setStatus("You are signed in. Shared features could not connect yet; check your connection and try again in Settings."); toast("Signed in, but shared features could not connect. Check your connection.", true); }
   }
   async function refreshPairing() {
-    // Clear stale pairing state first. A membership row alone is not proof that
-    // both phones can exchange encrypted messages.
     coupleId = null;
     partner = null;
     const controls = document.getElementById("pairingControls");
@@ -449,50 +447,89 @@
     if (controls) controls.hidden = false;
     if (codeText) { codeText.hidden = true; codeText.textContent = ""; }
 
-    const { data: members, error } = await db.from("couple_members")
-      .select("couple_id,user_id").eq("user_id", session.user.id).limit(1);
+    // Check every membership instead of trusting an arbitrary first row.
+    const { data: memberships, error } = await db.from("couple_members")
+      .select("couple_id,user_id").eq("user_id", session.user.id);
     if (error) throw error;
-    if (!members?.length) {
-      setStatus("Your account is ready. Enter your partner's email to create a pairing code, or paste theirs to join.");
-      return false;
-    }
-    const candidateCoupleId = members[0].couple_id;
-    const { data: allMembers, error: memberError } = await db.from("couple_members")
-      .select("user_id").eq("couple_id", candidateCoupleId);
-    if (memberError) throw memberError;
-    if (!allMembers || allMembers.length !== 2) {
-      setStatus("Pairing is not complete yet. Waiting for both devices to join.");
-      return false;
-    }
-    const other = allMembers.find(row => row.user_id !== session.user.id);
-    if (!other) {
-      setStatus("The other device is not connected yet.");
-      return false;
-    }
-    const { data: profile, error: profileError } = await db.from("profiles")
-      .select("display_name,encryption_public_key").eq("user_id", other.user_id).single();
-    if (profileError) throw profileError;
-    if (!profile?.encryption_public_key) {
-      setStatus("Your partner must open H&E and finish secure setup before messaging.");
+    if (!memberships?.length) {
+      setStatus("Your account is ready. Connect your partner's phone to begin.");
       return false;
     }
 
-    // Confirm the partner's published key can actually be used before enabling chat.
-    await crypto.subtle.importKey("raw", b64ToBytes(profile.encryption_public_key),
-      { name: "ECDH", namedCurve: "P-256" }, false, []);
-    coupleId = candidateCoupleId;
-    partner = { id: other.user_id, name: profile.display_name || "Your partner", publicKey: profile.encryption_public_key };
+    const validPairs = [];
+    const seen = new Set();
+    for (const membership of memberships) {
+      if (!membership.couple_id || seen.has(membership.couple_id)) continue;
+      seen.add(membership.couple_id);
+      const { data: members, error: memberError } = await db.from("couple_members")
+        .select("user_id").eq("couple_id", membership.couple_id);
+      if (memberError) throw memberError;
+      if (!members || members.length !== 2) continue;
+      const other = members.find(row => row.user_id !== session.user.id);
+      if (!other) continue;
+      const { data: profile, error: profileError } = await db.from("profiles")
+        .select("display_name,encryption_public_key").eq("user_id", other.user_id).maybeSingle();
+      if (profileError) throw profileError;
+      if (!profile?.encryption_public_key) continue;
+      try {
+        await crypto.subtle.importKey("raw", b64ToBytes(profile.encryption_public_key),
+          { name: "ECDH", namedCurve: "P-256" }, false, []);
+      } catch (keyError) {
+        console.warn("Skipping pair with an invalid partner encryption key", keyError);
+        continue;
+      }
+      validPairs.push({ coupleId: membership.couple_id, other, profile });
+    }
+
+    if (!validPairs.length) {
+      setStatus("Your pairing is recorded, but the other phone has not completed secure setup yet. Open H&E on both phones and refresh this page.");
+      return false;
+    }
+    if (validPairs.length > 1) {
+      setStatus("More than one shared connection is linked to this account. Messaging is paused to protect the wrong conversation from opening.");
+      return false;
+    }
+
+    const selected = validPairs[0];
+    coupleId = selected.coupleId;
+    partner = {
+      id: selected.other.user_id,
+      name: selected.profile.display_name || "Your partner",
+      publicKey: selected.profile.encryption_public_key
+    };
+
     await showSafetyCode();
     await refreshMessages();
 
     if (channel) { await db.removeChannel(channel); channel = null; }
     if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
+
     callChannel = db.channel("he-call-" + coupleId, { config: { private: true } })
-      .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload)).subscribe();
+      .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload))
+      .subscribe(status => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("H&E call channel status:", status);
+        }
+      });
+
     channel = db.channel("he-chat-" + coupleId)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: "couple_id=eq." + coupleId }, () => refreshMessages())
       .on("postgres_changes", { event: "*", schema: "public", table: "demo_wallet_transactions", filter: "couple_id=eq." + coupleId }, () => refreshWallet())
-      .subscribe();
+      .subscribe(status => {
+        if (status === "SUBSCRIBED") {
+          console.info("H&E message updates connected.");
+          refreshMessages();
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("H&E live message updates unavailable; periodic message refresh remains active.", status);
+        }
+      });
+
+    // Realtime is the fast path; periodic reads ensure incoming messages still
+    // appear if the device/browser temporarily drops its Realtime connection.
+    if (window.heMessagePollTimer) clearInterval(window.heMessagePollTimer);
+    window.heMessagePollTimer = setInterval(() => {
+      if (session && coupleId && partner) refreshMessages();
+    }, 10000);
 
     await refreshWallet();
     if (controls) controls.hidden = true;
@@ -539,21 +576,46 @@
     const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToBytes(row.nonce) }, await cryptoKey(), b64ToBytes(row.ciphertext));
     return JSON.parse(decoder.decode(decrypted));
   }
+  let messageRefreshBusy = false;
   async function refreshMessages() {
-    if (!coupleId || !partner) return;
-    const { data, error } = await db.from("messages").select("id,sender_id,recipient_id,ciphertext,nonce,message_type,view_once,opened_at,created_at").eq("couple_id", coupleId).order("created_at", { ascending: true }).limit(250);
-    if (error) { toast("Could not load shared messages: " + error.message, true); return; }
-    const chats = [];
-    for (const row of data || []) {
-      const mine = row.sender_id === session.user.id;
-      if (row.view_once && row.opened_at && !mine) { chats.push({ id: row.id, mine, name: partner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: true, message: "", attachment:null, voice:null }); continue; }
-      if (row.view_once && !mine) { chats.push({ id: row.id, mine, name: partner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: false, message: "", attachment:null, voice:null }); continue; }
-      try {
-        const payload = await decryptPayload(row);
-        chats.push({ id: row.id, mine, name: mine ? state.profile.you : partner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, ...payload });
-      } catch (error) { console.warn("Could not decrypt message", row.id, error); }
+    if (!coupleId || !partner || !session || messageRefreshBusy) return;
+    messageRefreshBusy = true;
+    try {
+      const activeCoupleId = coupleId;
+      const activePartner = partner;
+      const { data, error } = await db.from("messages")
+        .select("id,sender_id,recipient_id,ciphertext,nonce,message_type,view_once,opened_at,created_at")
+        .eq("couple_id", activeCoupleId).order("created_at", { ascending: true }).limit(250);
+      if (error) throw error;
+      const chats = [];
+      for (const row of data || []) {
+        const mine = row.sender_id === session.user.id;
+        if (row.view_once && row.opened_at && !mine) {
+          chats.push({ id: row.id, mine, name: activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: true, message: "", attachment:null, voice:null });
+          continue;
+        }
+        if (row.view_once && !mine) {
+          chats.push({ id: row.id, mine, name: activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), viewOnce: true, opened: false, message: "", attachment:null, voice:null });
+          continue;
+        }
+        try {
+          const payload = await decryptPayload(row);
+          chats.push({ id: row.id, mine, name: mine ? state.profile.you : activePartner.name, date: new Date(row.created_at).toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), createdAt: new Date(row.created_at).getTime(), viewOnce: row.view_once, opened: row.opened_at, ...payload });
+        } catch (decryptError) {
+          console.warn("Could not decrypt message", row.id, decryptError);
+        }
+      }
+      if (coupleId === activeCoupleId && partner?.id === activePartner.id) {
+        remoteChats = chats;
+        state.chats = chats;
+        renderChats();
+      }
+    } catch (error) {
+      console.error("H&E message refresh failed:", error);
+      setStatus("Connected, but messages could not be loaded: " + (error.message || "Check message access and internet connection."));
+    } finally {
+      messageRefreshBusy = false;
     }
-    remoteChats = chats; state.chats = chats; renderChats();
   }
   async function sendMessage(event) {
     event.preventDefault(); event.stopImmediatePropagation();
