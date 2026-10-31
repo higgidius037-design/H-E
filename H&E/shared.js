@@ -53,6 +53,15 @@
   const getKeyPair = () => keyStore("readonly", s => s.get("pair"));
   const putKeyPair = pair => keyStore("readwrite", s => s.put(pair, "pair"));
   const originalRenderChats = renderChats;
+  let connectFolderButton = null;
+  function updateConnectEntry(paired) {
+    if (!connectFolderButton) return;
+    const title = connectFolderButton.querySelector("[data-connect-title]");
+    const subtitle = connectFolderButton.querySelector("[data-connect-subtitle]");
+    if (title) title.textContent = paired ? "Paired" : "Add Partner";
+    if (subtitle) subtitle.textContent = paired ? "Your partner is connected" : "Connect with your partner";
+    connectFolderButton.setAttribute("aria-label", paired ? "Paired. Manage partner connection" : "Add Partner");
+  }
   let session = null, coupleId = null, ownKeyPair = null, partner = null;
   let remoteChats = [], openedOnce = new Map(), channel = null, callChannel = null, peerConnection = null, localStream = null, pendingOffer = null, queuedIce = [], callKind = "voice";
 
@@ -174,15 +183,6 @@
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
       <button class="secondary" id="sharedDisconnect" type="button">Disconnect Partner</button>`;
-    let connectFolderButton = null;
-    function updateConnectEntry(paired) {
-      if (!connectFolderButton) return;
-      const title = connectFolderButton.querySelector("[data-connect-title]");
-      const subtitle = connectFolderButton.querySelector("[data-connect-subtitle]");
-      if (title) title.textContent = paired ? "Paired" : "Add Partner";
-      if (subtitle) subtitle.textContent = paired ? "Your partner is connected" : "Connect with your partner";
-      connectFolderButton.setAttribute("aria-label", paired ? "Paired. Manage partner connection" : "Add Partner");
-    }
     const connectFolder=document.createElement("button");
     connectFolderButton = connectFolder;
     connectFolder.type="button";connectFolder.className="card settings-folder";
