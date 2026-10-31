@@ -946,8 +946,10 @@
       // Restore and verify the saved partner before opening the call screen or camera.
       await ensureExistingPairing();
       if (!partner?.id || !partner?.name || !callChannel) throw new Error("Your connected partner is not ready for calls. Open Settings → Connect Phones and confirm the connection on both phones.");
+      // A presence heartbeat is helpful for showing who is online, but it must
+      // never block a call: Android may delay presence sync even while the
+      // partner's private call channel is already subscribed and able to ring.
       await waitForCallChannelReady();
-      await waitForPartnerCallPresence();
       showCall();
       setCallStatus("Preparing secure call with " + partner.name + "…");
       await getCallMedia(video);
