@@ -111,6 +111,32 @@ jobs:
           </adaptive-icon>
           XML
 
+      - name: Create original H&E signature ringtone
+        run: |
+          mkdir -p android-apk/app/src/main/res/raw
+          python3 - <<'PY'
+          import math, struct, wave
+          path = "android-apk/app/src/main/res/raw/he_signature_ring.wav"
+          rate = 44100
+          # Original two-note chime motif, followed by a soft resolving note.
+          notes = [(523.25, .24), (659.25, .24), (783.99, .42), (0, .12),
+                   (659.25, .24), (783.99, .24), (1046.50, .48), (0, .35)]
+          frames = []
+          for freq, duration in notes:
+              count = int(rate * duration)
+              for i in range(count):
+                  if freq == 0:
+                      sample = 0.0
+                  else:
+                      t = i / rate
+                      edge = min(1.0, i / (rate * .018), (count - i) / (rate * .055))
+                      sample = .34 * edge * (math.sin(2*math.pi*freq*t) + .22*math.sin(4*math.pi*freq*t))
+                  frames.append(struct.pack("<h", int(max(-1,min(1,sample))*32767)))
+          with wave.open(path, "wb") as out:
+              out.setnchannels(1); out.setsampwidth(2); out.setframerate(rate)
+              out.writeframes(b"".join(frames))
+          PY
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
