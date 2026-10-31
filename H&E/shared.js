@@ -203,11 +203,22 @@
           setStatus("A passkey was registered with your H&E sign-in service. You can use your phone's screen lock to verify.");
           toast("Fingerprint / face sign-in enabled.");
         } catch (error) {
-          const message = friendlyAuthError(error);
-          setStatus(message);
-          toast(message, true);
+          if (!passkeySupported() || !platformPasskeyAvailable) {
+            const hint = "Biometric sign-in is unavailable in this browser. Use your account password and Wallet PIN instead.";
+            if (passkeyAvailability) passkeyAvailability.textContent = hint;
+            if (securityButton) {
+              securityButton.disabled = true;
+              securityButton.textContent = "Biometric sign-in unavailable";
+            }
+            setStatus(hint);
+            // Unsupported biometrics are explained inline; never create a bottom toast/banner.
+          } else {
+            const message = friendlyAuthError(error);
+            setStatus(message);
+            toast(message, true);
+          }
         } finally {
-          button.disabled = false;
+          button.disabled = !platformPasskeyAvailable;
         }
       });
     }
