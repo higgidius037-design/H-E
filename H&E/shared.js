@@ -124,6 +124,13 @@
     card.className = "card"; card.id = "sharedSetupCard";
     card.innerHTML = `<h2 class="section-title">Connect our phones</h2>
       <p class="muted" id="sharedStatus">Sign in with your email to start a private shared space.</p>
+      <div class="card" style="margin:14px 0;padding:14px;border:1px solid #e8cbd5;border-radius:14px;background:#fff7f9">
+        <strong>Stay in touch</strong>
+        <p class="muted">Allow H&E notifications for messages and reminders.</p>
+        <button class="secondary" id="enableHENotifications" type="button">Enable notifications</button>
+        <button class="secondary" id="chooseHENotificationSound" type="button">Choose notification sound</button>
+        <p class="muted" id="heNotificationStatus">Notifications have not been enabled yet.</p>
+      </div>
       <div id="pairingControls">
         <label for="partnerEmail">Your partner's email</label>
         <input id="partnerEmail" type="email" inputmode="email" placeholder="partner@example.com">
@@ -147,9 +154,9 @@
         @media(prefers-reduced-motion:reduce){.pair-success-tick,.pair-success-tick:after{animation:none}}
         @media(prefers-color-scheme:dark){#pairedConfirmation.pair-success{background:linear-gradient(110deg,rgba(74,37,53,.9),rgba(50,36,43,.96));border-color:rgba(220,143,169,.28);color:#fff}#pairedConfirmation.pair-success .pair-success-copy strong{color:#fff}#pairedConfirmation.pair-success .pair-success-copy small{color:#e3c5d0}}
       </style>
-      <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden>
-        <span class="pair-success-tick" aria-hidden="true"></span>
-        <span class="pair-success-copy"><strong>You're connected</strong><small>Together, closer than ever. ♡</small></span>
+      <div id="pairedConfirmation" class="pair-success" role="status" aria-live="polite" hidden style="display:flex;align-items:center;gap:13px;margin:18px 0;padding:16px 18px;border:1px solid #e8cbd5;border-radius:15px;background:#fff4f7;box-shadow:0 5px 18px rgba(80,35,52,.09);color:#482936">
+        <span class="pair-success-tick" aria-hidden="true" style="flex:0 0 34px;width:34px;height:34px;border:1.5px solid #48a978;border-radius:50%;display:grid;place-items:center;background:#edf8f1"></span>
+        <span class="pair-success-copy" style="display:flex;flex-direction:column;gap:4px;text-align:left"><strong style="font-size:16px;font-weight:700;color:#482936">You're connected</strong><small style="font-size:13px;line-height:1.4;color:#795463">Together, closer than ever. ♡</small></span>
       </div>
       <button class="secondary" id="refreshPairingStatus" type="button">Refresh pairing status</button>
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
@@ -166,6 +173,16 @@
     connectFolder.addEventListener("click",()=>{document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");history.pushState({hePage:"settings",heFolder:"connect"},"","#settings-connect");});
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
+    const notificationStatus=document.getElementById("heNotificationStatus");
+    document.getElementById("enableHENotifications").addEventListener("click",async()=>{
+      if(window.HENative?.requestNotificationPermission){window.HENative.requestNotificationPermission();notificationStatus.textContent="Waiting for Android permission…";return;}
+      if("Notification" in window){const result=await Notification.requestPermission();notificationStatus.textContent=result==="granted"?"Notifications enabled.":"Notifications were not allowed.";}
+      else notificationStatus.textContent="Notifications are unavailable in this browser.";
+    });
+    document.getElementById("chooseHENotificationSound").addEventListener("click",()=>{
+      if(window.HENative?.openNotificationSettings)window.HENative.openNotificationSettings();
+      else notificationStatus.textContent="Open H&E notification settings on your phone to choose a sound.";
+    });
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
     const refreshPairingButton = document.getElementById("refreshPairingStatus");
     refreshPairingButton.addEventListener("click", async () => {
