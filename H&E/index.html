@@ -191,22 +191,7 @@
   color: white;
   font-size: 20px;
 }
-.chat-recording {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px;
-  background: #fffaf5;
-  color: var(--burgundy);
-}
-.chat-recording button {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 10px;
-  color: var(--burgundy);
-  background: #f8e9e6;
-}
+.chat-recording{display:flex;align-items:center;flex-wrap:nowrap;gap:7px;padding:7px 8px;background:#fffaf5;color:var(--burgundy);overflow:hidden;min-height:42px}.chat-recording button{flex:0 0 auto;border:1px solid var(--line);border-radius:18px;padding:6px 9px;color:var(--burgundy);background:#f8e9e6;font-size:11px;white-space:nowrap}.chat-recording #stopVoice{background:var(--burgundy);color:#fff;border-color:var(--burgundy)}.chat-recording #recordingStatus{font-size:11px;white-space:nowrap}.chat-recording #voiceWaveform{width:auto;min-width:28px;flex:1;height:28px;background:transparent;border-radius:0}.chat-recording .view-once-control{font-size:10px;gap:3px;margin:0;white-space:nowrap}.chat-recording .view-once-control input{width:13px;height:13px}
 .recording-dot {
   width: 10px;
   height: 10px;
@@ -1624,10 +1609,15 @@ $("recordVoice").addEventListener("click", async () => {
         });
 
         if (saveState()) {
-          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice",$("recordingViewOnce").checked);
-          $("recordingViewOnce").checked=false;
+          const viewOnce = $("recordingViewOnce").checked;
+          $("recordingViewOnce").checked = false;
           renderChats();
-          toast("Voice note saved ♡");
+          toast("Voice note sent ♡");
+          // Show the sent note immediately; sync it in the background.
+          if (window.heSharedSend) {
+            Promise.resolve(window.heSharedSend({message:"",attachment:null,voice},"voice",viewOnce))
+              .catch(syncError => console.error("Voice note sync failed:", syncError));
+          }
         }
       } catch (error) {
         console.error(error);
