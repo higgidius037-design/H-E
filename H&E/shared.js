@@ -878,7 +878,22 @@
   async function startCall(video) { try { await ensureExistingPairing();callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind});startCallTone();setCallStatus("Ringing…"); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
   async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
   async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});stopCallTone();showCall(false);setCallStatus("Connecting…"); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
-  function stopCall() { stopCallTone();document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
+  function stopCall() { stopCallTone();$("callOverlay").classList.remove("minimised");$("callMiniDock").classList.remove("visible");document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
+  $("minimiseCall").addEventListener("click",()=>{
+    if(!$("callOverlay").classList.contains("open")) return;
+    $("callOverlay").classList.add("minimised");
+    $("callMiniDock").classList.add("visible");
+    $("miniCallName").textContent=partner?.name||"H&E call";
+    $("miniCallStatus").textContent=$("callStatus").textContent||"Call in progress";
+  });
+  $("restoreCall").addEventListener("click",()=>{
+    $("callOverlay").classList.remove("minimised");
+    $("callMiniDock").classList.remove("visible");
+  });
+  $("endMiniCall").addEventListener("click",async()=>{
+    await callSignal("hangup").catch(()=>{});
+    stopCall();
+  });
   $("startVoiceCall").addEventListener("click",()=>startCall(false));$("startVideoCall").addEventListener("click",()=>startCall(true));$("acceptCall").addEventListener("click",acceptCall);
   const swapCallVideoFocus=()=>{
     if(callKind!=="video") return;
