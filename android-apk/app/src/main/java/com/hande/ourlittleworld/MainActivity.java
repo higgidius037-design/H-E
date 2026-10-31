@@ -89,9 +89,18 @@ public class MainActivity extends FragmentActivity {
                 if (pendingWebPermissionRequest == request) pendingWebPermissionRequest = null;
             }
             @Override public boolean onShowFileChooser(WebView view,ValueCallback<Uri[]> callback,FileChooserParams params){
-                if(fileCallback!=null)fileCallback.onReceiveValue(null); fileCallback=callback;
-                try{startActivityForResult(params.createIntent(),FILE_CHOOSER_REQUEST);}
-                catch(ActivityNotFoundException e){fileCallback=null;Toast.makeText(MainActivity.this,"No file picker is available.",Toast.LENGTH_SHORT).show();return false;}
+                if(fileCallback!=null)fileCallback.onReceiveValue(null);
+                fileCallback=callback;
+                try {
+                    Intent picker=params.createIntent();
+                    picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    picker.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+                    startActivityForResult(picker,FILE_CHOOSER_REQUEST);
+                } catch(ActivityNotFoundException e) {
+                    fileCallback=null;
+                    Toast.makeText(MainActivity.this,"No file picker is available.",Toast.LENGTH_SHORT).show();
+                    return false;
+                }
                 return true;
             }
         });
@@ -357,7 +366,26 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
         super.onActivityResult(requestCode,resultCode,data);
-        if(requestCode==FILE_CHOOSER_REQUEST&&fileCallback!=null){fileCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode,data));fileCallback=null;}
+        if(requestCode==FILE_CHOOSER_REQUEST&&fileCallback!=null){
+            Uri[] results=null;
+            if(resultCode==RESULT_OK&&data!=null){
+                if(data.getClipData()!=null){
+                    android.content.ClipData clip=data.getClipData();
+                    results=new Uri[clip.getItemCount()];
+                    for(int i=0;i<clip.getItemCount();i++) results[i]=clip.getItemAt(i).getUri();
+                } else if(data.getData()!=null) {
+                    results=new Uri[]{data.getData()};
+                }
+                if(results!=null && Build.VERSION.SDK_INT>=19){
+                    for(Uri uri:results){
+                        try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}
+                        catch(SecurityException ignored){}
+                    }
+                }
+            }
+            fileCallback.onReceiveValue(results);
+            fileCallback=null;
+        }
     }
     @Override public void onBackPressed(){if(webView!=null&&webView.canGoBack())webView.goBack();else super.onBackPressed();}
     @Override protected void onDestroy(){if(fileCallback!=null)fileCallback.onReceiveValue(null);if(webView!=null){webView.stopLoading();webView.destroy();webView=null;}super.onDestroy();}
