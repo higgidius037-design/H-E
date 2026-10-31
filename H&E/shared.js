@@ -172,7 +172,7 @@
       <p class="muted">Private chat uses encryption on this device. Compare the safety code with your partner using a call before sharing sensitive messages.</p>
       <p id="safetyCode" class="pill" hidden></p>
       <button class="secondary" id="registerPasskey" type="button">Set fingerprint / face unlock</button>
-      <button class="secondary" id="sharedSignOut" type="button">Sign out</button>`;
+      <button class="secondary" id="sharedDisconnect" type="button">Disconnect Partner</button>`;
     const connectFolder=document.createElement("button");
     connectFolder.type="button";connectFolder.className="card settings-folder";
     connectFolder.innerHTML='<span class="settings-folder-icon">⌁</span><span><strong>Connect Phones</strong><small>Pair devices and manage your shared space</small></span><span class="settings-arrow">›</span>';
@@ -399,7 +399,7 @@
     });
     const signOut = async () => {
       if (!confirm("Log out of H&E on this device? You will need to enter your email and password again.")) return;
-      const buttons = [document.getElementById("logoutButton"), document.getElementById("sharedSignOut")].filter(Boolean);
+      const buttons = [document.getElementById("logoutButton")].filter(Boolean);
       buttons.forEach(button => { button.disabled = true; });
       try {
         const { error } = await db.auth.signOut({ scope: "local" });
@@ -416,8 +416,8 @@
         toast(error.message || "Could not log out. Please try again.", true);
       }
     };
-    document.getElementById("sharedSignOut").addEventListener("click", signOut);
     document.getElementById("logoutButton")?.addEventListener("click", signOut);
+    document.getElementById("sharedDisconnect").addEventListener("click", disconnectPartner);
     document.getElementById("chatForm").addEventListener("submit", sendMessage, true);
     document.getElementById("chatList").addEventListener("click", openViewOnce, true);
     document.getElementById("walletForm").addEventListener("submit", sharedWallet, true);
@@ -490,6 +490,62 @@
       finally {allow.disabled=false;decline.disabled=false;}
     };
     allow.addEventListener("click",()=>decide(true));decline.addEventListener("click",()=>decide(false));render();
+  }
+
+  async function disconnectPartner() {
+    const button = document.getElementById("sharedDisconnect");
+    if (!session) {
+      toast("Sign in to manage your partner connection.", true);
+      return;
+    }
+    if (!confirm("Disconnect this partner on both devices? This permanently deletes the shared conversation, including all messages and chat photos/videos, and resets this pair's demo wallet history. Your H&E account and personal Gallery files will remain. This cannot be undone.")) return;
+    if (button) { button.disabled = true; button.textContent = "Disconnecting…"; }
+    try {
+      const { data, error } = await db.rpc("disconnect_current_partner");
+      if (error) throw error;
+
+      if (callChannel) { await db.removeChannel(callChannel); callChannel = null; }
+      if (channel) { await db.removeChannel(channel); channel = null; }
+      if (window.heMessagePollTimer) {
+        clearInterval(window.heMessagePollTimer);
+        window.heMessagePollTimer = null;
+      }
+      if (peerConnection || localStream) {
+        await callSignal("hangup").catch(() => {});
+        stopCall();
+      }
+
+      coupleId = null;
+      partner = null;
+      remoteChats = [];
+      openedOnce.clear();
+      pendingLocalMessages.clear();
+      lastIncomingNoticeIds.clear();
+      state.chats = [];
+      state.wallet.balance = 0;
+      state.wallet.transactions = [];
+      saveState();
+      renderChats();
+      renderWallet();
+
+      const controls = document.getElementById("pairingControls");
+      const confirmation = document.getElementById("pairedConfirmation");
+      const codeText = document.getElementById("pairCodeText");
+      if (controls) controls.hidden = false;
+      if (confirmation) confirmation.hidden = true;
+      if (codeText) { codeText.hidden = true; codeText.textContent = ""; }
+      document.getElementById("safetyCode").hidden = true;
+      document.getElementById("partnerEmail").value = "";
+      document.getElementById("pairCode").value = "";
+      setStatus(data
+        ? "Partner disconnected. Your H&E account is still signed in. You can now connect a new partner."
+        : "No active partner was found. Your H&E account is still signed in and ready to connect.");
+      toast(data ? "Partner disconnected. Shared messages and chat media were deleted." : "You are already disconnected.");
+    } catch (error) {
+      toast(error?.message || "Could not disconnect this partner. Your current connection has been kept.", true);
+    } finally {
+      if (button) { button.disabled = false; button.textContent = "Disconnect Partner"; }
+    }
   }
 
   async function enterApp(nextSession, showIntro = true) {
