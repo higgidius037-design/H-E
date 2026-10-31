@@ -811,7 +811,8 @@
     overlay.classList.toggle("voice-mode",callKind!=="video");
     overlay.classList.toggle("incoming-call",incoming);
     $("callVideos").classList.remove("local-video-promoted");
-    $("callStatus").textContent=incoming?(partner.name+" is calling…"):"Calling "+partner.name+"…";
+    const displayName = partner?.name || "your contact";
+    $("callStatus").textContent=incoming?(displayName+" is calling…"):"Calling "+displayName+"…";
     $("incomingCallControls").style.display=incoming?"flex":"none"; $("activeCallControls").style.display=incoming?"none":"flex";
     $("cameraCall").classList.toggle("control-hidden",callKind!=="video"); $("switchCameraCall").classList.toggle("control-hidden",callKind!=="video");
     $("callSpeaker").classList.remove("control-active"); $("muteCall").classList.remove("control-active");
