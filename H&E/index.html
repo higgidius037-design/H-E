@@ -677,28 +677,60 @@ textarea { min-height:90px;resize:vertical; }
 .call-stage.video-mode.local-video-promoted .local-hit-area{z-index:9!important}
 
 
-/* Keep the selected video full-screen and keep call controls above the video layer. */
-.call-stage.local-video-promoted>#localCallVideo{
-  inset:0!important;width:100%!important;height:100%!important;
-  max-width:none!important;max-height:none!important;
-  border:0!important;border-radius:0!important;object-fit:cover!important;
-  z-index:2!important;display:block!important;
+/* Live video switching: selected caller fills the stage; the other stays in a small preview.
+   Call controls remain in their original row below the video stage. */
+.call-stage.video-mode{position:relative;isolation:isolate}
+.call-stage.video-mode>#remoteCallVideo,
+.call-stage.video-mode>#localCallVideo{
+  position:absolute!important;object-fit:cover!important;max-width:none!important;max-height:none!important;
 }
-.call-stage.local-video-promoted.remote-video-ready>#remoteCallVideo{
+.call-stage.video-mode:not(.local-video-promoted)>#remoteCallVideo{
+  display:block!important;inset:0!important;width:100%!important;height:100%!important;
+  border:0!important;border-radius:0!important;z-index:1!important;
+}
+.call-stage.video-mode:not(.local-video-promoted)>#localCallVideo{
+  display:block!important;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border:1px solid #ffffffaa!important;border-radius:18px!important;z-index:2!important;
+}
+.call-stage.video-mode.local-video-promoted>#localCallVideo{
+  display:block!important;inset:0!important;width:100%!important;height:100%!important;
+  border:0!important;border-radius:0!important;z-index:1!important;
+}
+.call-stage.video-mode.local-video-promoted>#remoteCallVideo{
+  display:block!important;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border:1px solid #ffffffaa!important;border-radius:18px!important;z-index:2!important;
+}
+.call-stage.video-mode:not(.remote-video-ready):not(.local-video-promoted)>#remoteCallVideo{display:none!important}
+.call-stage.video-mode:not(.remote-video-ready):not(.local-video-promoted)>#callPersonBackdrop{
+  display:flex!important;opacity:1!important;visibility:visible!important;z-index:3!important;
+  pointer-events:none!important;
+}
+.call-stage.video-mode.remote-video-ready>#callPersonBackdrop{opacity:0!important;visibility:hidden!important}
+.call-stage.video-mode.local-video-promoted>#callPersonBackdrop{opacity:0!important;visibility:hidden!important}
+.call-stage.video-mode .video-hit-area{
+  position:absolute!important;display:block!important;padding:0!important;margin:0!important;
+  border:0!important;background:transparent!important;touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.call-stage.video-mode:not(.local-video-promoted)>.remote-hit-area{
+  inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important;
+}
+.call-stage.video-mode:not(.local-video-promoted)>.local-hit-area{
   inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
   width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
-  max-width:none!important;max-height:none!important;
-  border:1px solid #ffffffaa!important;border-radius:18px!important;
-  object-fit:cover!important;z-index:4!important;display:block!important;
+  border-radius:18px!important;z-index:6!important;
 }
-.call-stage.local-video-promoted>#callPersonBackdrop{
-  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+.call-stage.video-mode.local-video-promoted>.local-hit-area{
+  inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important;
 }
-.call-overlay.open .call-card{position:relative;isolation:isolate}
-.call-overlay.open .call-controls{
-  position:relative!important;z-index:30!important;flex-shrink:0!important;
-  visibility:visible!important;opacity:1!important;pointer-events:auto!important;
+.call-stage.video-mode.local-video-promoted>.remote-hit-area{
+  inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border-radius:18px!important;z-index:6!important;
 }
+/* Do not reposition the directive/call buttons: they stay below the video stage. */
 </style>
 </head>
 <body>
