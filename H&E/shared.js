@@ -75,7 +75,7 @@
     const passkeyButton = document.getElementById("loginPasskey");
     let isSignUp = false;
     let otpPending = false;
-    let pendingSignupPhone = "";
+    let pendingSignupEmail = "";
     const nameLabel = document.getElementById("loginNameLabel");
     const dobLabel = document.createElement("label");
     dobLabel.htmlFor = "loginDateOfBirth";
@@ -87,24 +87,22 @@
     dobInput.autocomplete = "bday";
     dobInput.max = new Date().toISOString().slice(0,10);
     dobInput.hidden = true;
-    const signupEmailLabel = document.createElement("label");
-    signupEmailLabel.htmlFor = "loginSignupEmail";
-    signupEmailLabel.textContent = "Email address (optional)";
-    signupEmailLabel.hidden = true;
-    const signupEmailInput = document.createElement("input");
-    signupEmailInput.id = "loginSignupEmail";
-    signupEmailInput.type = "email";
-    signupEmailInput.autocomplete = "email";
-    signupEmailInput.placeholder = "name@example.com";
-    signupEmailInput.hidden = true;
     document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
     dobLabel.insertAdjacentElement("afterend", dobInput);
-    dobInput.insertAdjacentElement("afterend", signupEmailLabel);
-    signupEmailLabel.insertAdjacentElement("afterend", signupEmailInput);
     const contactLabel = document.getElementById("loginContactLabel");
-    const otpPanel = document.getElementById("signupOtpPanel");
-    const otpInput = document.getElementById("signupOtp");
-    const resendOtpButton = document.getElementById("resendSignupOtp");
+    let otpPanel = document.getElementById("signupOtpPanel");
+    let otpInput = document.getElementById("signupOtp");
+    let resendOtpButton = document.getElementById("resendSignupOtp");
+    if (!otpPanel) {
+      otpPanel = document.createElement("div");
+      otpPanel.id = "signupOtpPanel";
+      otpPanel.hidden = true;
+      otpPanel.innerHTML = '<label for="signupOtp">Email verification code</label><input id="signupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code"><button class="secondary" id="resendSignupOtp" type="button">Resend code</button>';
+      const feedbackAnchor = document.getElementById("loginFeedback");
+      form.insertBefore(otpPanel, feedbackAnchor || null);
+      otpInput = otpPanel.querySelector("#signupOtp");
+      resendOtpButton = otpPanel.querySelector("#resendSignupOtp");
+    }
     const note = form.querySelector(".login-note");
     const feedback = document.getElementById("loginFeedback");
     const reportLogin = (message, kind = "error") => { if (feedback) { feedback.textContent = message; feedback.dataset.kind = kind; feedback.hidden = false; } };
@@ -124,6 +122,7 @@
       otpPending = false;
       otpPanel.hidden = true;
       email.hidden = false;
+      otpPanel.hidden = true;
       document.querySelector('label[for="loginEmail"]').hidden = false;
       password.hidden = false;
       document.querySelector('label[for="loginPassword"]').hidden = false;
@@ -141,12 +140,10 @@
       nameLabel.hidden = true;
       dobLabel.hidden = true;
       dobInput.hidden = true;
-      signupEmailLabel.hidden = true;
-      signupEmailInput.hidden = true;
       toggleMethod.hidden = true;
       passkeyButton.hidden = true;
-      submitButton.textContent = "Verify phone →";
-      if (note) note.textContent = "Your account will be ready after your phone number is verified.";
+      submitButton.textContent = "Verify email";
+      if (note) note.textContent = "Enter the code sent to your email.";
       otpInput.focus();
     }
     toggleMethod.addEventListener("click", () => {
@@ -159,24 +156,22 @@
       dobLabel.hidden = !isSignUp;
       dobInput.hidden = !isSignUp;
       dobInput.required = isSignUp;
-      signupEmailLabel.hidden = !isSignUp;
-      signupEmailInput.hidden = !isSignUp;
-      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
-      email.type = "text";
-      email.inputMode = isSignUp ? "tel" : "email";
-      email.autocomplete = isSignUp ? "tel" : "username";
-      email.placeholder = isSignUp ? "+2547XXXXXXXX" : "Email or +2547XXXXXXXX";
-      submitButton.textContent = isSignUp ? "Create account →" : "Log in →";
+      contactLabel.textContent = "Email";
+      email.type = isSignUp ? "email" : "text";
+      email.inputMode = isSignUp ? "email" : "text";
+      email.autocomplete = isSignUp ? "email" : "username";
+      email.placeholder = isSignUp ? "you@example.com" : "Email or phone number";
+      submitButton.textContent = isSignUp ? "Create account" : "Log in";
       toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
       password.autocomplete = isSignUp ? "new-password" : "current-password";
       if (note) note.textContent = isSignUp
-        ? "Create an account with your name, phone number and a password you choose. We'll text you a code to verify your number."
-        : "Sign in securely with your email or phone number and password.";
+        ? "Choose your own password. We'll email you a verification code."
+        : "Sign in with your email or existing phone account.";
     });
     resendOtpButton?.addEventListener("click", async () => {
       resendOtpButton.disabled = true;
       try {
-        const { error } = await db.auth.resend({ type: "sms", phone: pendingSignupPhone });
+        const { error } = await db.auth.resend({ type: "signup", email: pendingSignupEmail });
         if (error) throw error;
         reportLogin("A new verification code has been sent.", "ok");
       } catch (error) { reportLogin(friendlyAuthError(error)); }
@@ -197,12 +192,12 @@
       event.preventDefault(); event.stopImmediatePropagation();
       submitButton.disabled = true;
       submitButton.textContent = otpPending ? "Verifying code…" : (isSignUp ? "Sending code…" : "Signing in…");
-      reportLogin(otpPending ? "Verifying your phone number…" : (isSignUp ? "Creating your account and sending a verification code…" : "Checking your sign-in…"), "wait");
+      reportLogin(otpPending ? "Verifying your email…" : (isSignUp ? "Creating your account and sending a verification code…" : "Checking your sign-in…"), "wait");
       try {
         if (otpPending) {
           const token = otpInput.value.replace(/\D/g, "");
-          if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit SMS verification code.");
-          const { data, error } = await db.auth.verifyOtp({ phone: pendingSignupPhone, token, type: "sms" });
+          if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit email verification code.");
+          const { data, error } = await db.auth.verifyOtp({ email: pendingSignupEmail, token, type: "email" });
           if (error) throw error;
           if (!data.session) throw new Error("Your phone was verified, but sign-in could not be completed. Please log in with your phone and password.");
           await enterApp(data.session);
@@ -212,24 +207,25 @@
         const displayName = document.getElementById("loginName").value.trim();
         const passwordValue = password.value;
         if (isSignUp) {
-          const phone = contact.replace(/[\s()-]/g, "");
-          if (!/^\+[1-9]\d{7,14}$/.test(phone)) throw new Error("Enter your phone number in international format, for example +2547XXXXXXXX.");
+          const emailAddress = normalEmail(contact);
           if (!displayName) throw new Error("Enter your name.");
           const dateOfBirth = dobInput.value;
-          const contactEmail = signupEmailInput.value.trim() ? normalEmail(signupEmailInput.value) : "";
           if (!dateOfBirth) throw new Error("Enter your date of birth.");
           if (dateOfBirth > new Date().toISOString().slice(0,10)) throw new Error("Date of birth cannot be in the future.");
           if (passwordValue.length < 6) throw new Error("Choose a password with at least 6 characters.");
           const { data, error } = await db.auth.signUp({
-            phone,
+            email: emailAddress,
             password: passwordValue,
-            options: { data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: contactEmail } }
+            options: { data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: emailAddress } }
           });
           if (error) throw error;
-          if (data.session) throw new Error("Phone confirmation is not enabled on the H&E sign-in service yet. Please try again later.");
-          pendingSignupPhone = phone;
+          if (data.session) {
+            await db.auth.signOut();
+            throw new Error("Email verification is not enabled yet. Please contact the H&E administrator.");
+          }
+          pendingSignupEmail = emailAddress;
           showSignupOtpStep();
-          reportLogin("Verification code sent. Enter the six digits from your SMS to finish registration.", "ok");
+          reportLogin("Code sent. Check your email to finish creating your account.", "ok");
         } else {
           const contactValue = contact.trim();
           let credentials;
