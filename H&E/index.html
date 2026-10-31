@@ -720,6 +720,24 @@ textarea { min-height:90px;resize:vertical; }
   border-radius:18px!important;z-index:6!important;
 }
 /* The original call controls remain in their original row below the stage. */
+
+/* Deterministic WhatsApp-style caller focus: preview buttons are the only switch targets. */
+.call-stage.video-mode>#remoteCallVideo{z-index:1!important}
+.call-stage.video-mode>#localCallVideo{z-index:2!important}
+.call-stage.video-mode>.remote-hit-area{inset:0!important;width:100%!important;height:100%!important;z-index:5!important}
+.call-stage.video-mode>.local-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:6!important;border-radius:16px!important}
+.call-stage.video-mode.local-video-promoted>#localCallVideo{inset:0!important;width:100%!important;height:100%!important;max-height:none!important;z-index:1!important}
+.call-stage.video-mode.local-video-promoted>#remoteCallVideo{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:3!important;border-radius:16px!important;object-fit:cover!important}
+.call-stage.video-mode.local-video-promoted>.local-hit-area{inset:0!important;width:100%!important;height:100%!important;z-index:5!important}
+.call-stage.video-mode.local-video-promoted>.remote-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:7!important;border-radius:16px!important}
+.remote-profile-mini{display:none;position:absolute;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(112px,32vw,156px);height:clamp(150px,25vh,205px);z-index:4;border-radius:16px;background:linear-gradient(145deg,#3b1728,#160b13);border:1px solid #ffffff88;box-shadow:0 8px 30px #0009;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#fff;pointer-events:none}
+.remote-profile-mini .call-avatar{width:64px;height:64px;font-size:25px;margin:0}
+.remote-profile-mini span{font-size:12px;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-stage.video-mode.local-video-promoted:not(.remote-video-ready)>.remote-profile-mini{display:flex}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>.remote-profile-mini{display:none}
+.call-stage.video-mode:not(.local-video-promoted)>.remote-profile-mini{display:none}
+.call-stage.video-mode #localCallVideo{object-fit:cover!important;image-rendering:auto}
+
 </style>
 </head>
 <body>
@@ -992,7 +1010,7 @@ textarea { min-height:90px;resize:vertical; }
   <button class="modal-close" id="closeModal" aria-label="Close viewer">×</button>
   <div class="modal-content" id="modalContent"></div>
 </div>
-<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-label="Call"><div class="call-card"><div class="call-topbar"><button class="call-icon-btn" id="minimiseCall" type="button" aria-label="Minimise call" title="Minimise call">⌄</button><span id="callTitle">Private call</span><span class="call-top-spacer"></span></div><div class="call-stage" id="callVideos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video><button class="video-hit-area remote-hit-area" id="tapRemoteVideo" type="button" aria-label="Make other caller video full screen"></button><button class="video-hit-area local-hit-area" id="tapLocalVideo" type="button" aria-label="Make my video full screen"></button><div class="call-person-backdrop" id="callPersonBackdrop"><div class="call-avatar" id="callAvatarInitials">H</div><h2 id="callPartnerName">Private contact</h2><p id="callStatus">Calling…</p></div><div class="call-mini-name" id="callMiniName"></div></div><div id="incomingCallControls" class="call-controls incoming-controls"><button class="call-control accept-control" id="acceptCall" type="button" aria-label="Answer call" title="Answer call"><span>☎</span></button><button class="call-control decline-control" id="rejectCall" type="button" aria-label="Decline call" title="Decline call"><span>✕</span></button></div><div id="activeCallControls" class="call-controls"><button class="call-control" id="muteCall" type="button" aria-label="Mute microphone" title="Mute microphone"><span>🎙</span></button><button class="call-control" id="callSpeaker" type="button" aria-label="Turn sound off" title="Speaker"><span>🔊</span></button><button class="call-control" id="switchCameraCall" type="button" aria-label="Switch camera" title="Switch camera"><span>🔄</span></button><button class="call-control" id="cameraCall" type="button" aria-label="Turn camera off" title="Turn camera off"><span>▣</span></button><button class="call-control decline-control end-control" id="endCall" type="button" aria-label="End call" title="End call"><span>☎</span></button></div></div></div>
+<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-label="Call"><div class="call-card"><div class="call-topbar"><button class="call-icon-btn" id="minimiseCall" type="button" aria-label="Minimise call" title="Minimise call">⌄</button><span id="callTitle">Private call</span><span class="call-top-spacer"></span></div><div class="call-stage" id="callVideos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video><button class="video-hit-area remote-hit-area" id="tapRemoteVideo" type="button" aria-label="Make other caller video full screen"></button><button class="video-hit-area local-hit-area" id="tapLocalVideo" type="button" aria-label="Make my video full screen"></button><div class="call-person-backdrop" id="callPersonBackdrop"><div class="call-avatar" id="callAvatarInitials">H</div><h2 id="callPartnerName">Private contact</h2><p id="callStatus">Calling…</p></div><div class="remote-profile-mini" id="remoteProfileMini"><div class="call-avatar" id="remoteMiniInitials">H</div><span id="remoteMiniName">Private contact</span></div><div class="call-mini-name" id="callMiniName"></div></div><div id="incomingCallControls" class="call-controls incoming-controls"><button class="call-control accept-control" id="acceptCall" type="button" aria-label="Answer call" title="Answer call"><span>☎</span></button><button class="call-control decline-control" id="rejectCall" type="button" aria-label="Decline call" title="Decline call"><span>✕</span></button></div><div id="activeCallControls" class="call-controls"><button class="call-control" id="muteCall" type="button" aria-label="Mute microphone" title="Mute microphone"><span>🎙</span></button><button class="call-control" id="callSpeaker" type="button" aria-label="Turn sound off" title="Speaker"><span>🔊</span></button><button class="call-control" id="switchCameraCall" type="button" aria-label="Switch camera" title="Switch camera"><span>🔄</span></button><button class="call-control" id="cameraCall" type="button" aria-label="Turn camera off" title="Turn camera off"><span>▣</span></button><button class="call-control decline-control end-control" id="endCall" type="button" aria-label="End call" title="End call"><span>☎</span></button></div></div></div>
 <div class="call-mini-dock" id="callMiniDock" aria-live="polite"><button class="call-mini-restore" id="restoreCall" type="button"><strong id="miniCallName">H&E call</strong><small id="miniCallStatus">Call continues in the background</small></button><button class="call-mini-end" id="endMiniCall" type="button" aria-label="End call">☎</button></div>
 
 <script>
@@ -1865,7 +1883,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=38"></script>
+<script src="/H-E/H%26E/shared.js?v=39"></script>
 
 </body>
 </html>
