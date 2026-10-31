@@ -262,8 +262,11 @@
             throw new Error("Email verification is not enabled yet. Please contact the H&E administrator.");
           }
           pendingSignupEmail = emailAddress;
+          if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+            throw new Error("An account with this email already exists. No new code was sent. Please log in, or use Resend code if that account is still awaiting email verification.");
+          }
           showSignupOtpStep();
-          reportLogin("Code sent. Check your email to finish creating your account.", "ok");
+          reportLogin("Your verification request was accepted. Check your inbox and spam folder for the code.", "ok");
         } else {
           const contactValue = contact.trim();
           let credentials;
