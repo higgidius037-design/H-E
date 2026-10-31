@@ -841,6 +841,7 @@
       throw new Error("H&E could not send the call signal (" + String(result) + "). Reconnecting the secure call channel may fix this; please try again.");
     }
   }
+  let callTimeoutTimer = null, callWasAnswered = false, callMissedLogged = false;
   let callToneTimer=null, callToneContext=null;
   function stopCallTone(){ if(callToneTimer){clearInterval(callToneTimer);callToneTimer=null;} if(callToneContext){callToneContext.close().catch(()=>{});callToneContext=null;} }
   function playCallTone(){ try { if(!callToneContext)callToneContext=new (window.AudioContext||window.webkitAudioContext)(); if(callToneContext.state==="suspended")callToneContext.resume(); const ctx=callToneContext; [0,0.22].forEach((delay,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type="sine";osc.frequency.value=i?480:425;gain.gain.setValueAtTime(0.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+delay+0.025);gain.gain.setValueAtTime(0.12,ctx.currentTime+delay+0.13);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+delay+0.19);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+0.2);}); }catch(e){console.debug("Call tone unavailable",e);} }
@@ -974,6 +975,9 @@
     if (callAttemptBusy || peerConnection) return;
     callAttemptBusy = true;
     callKind = video ? "video" : "voice";
+    callWasAnswered = false;
+    callMissedLogged = false;
+    if (callTimeoutTimer) { clearTimeout(callTimeoutTimer); callTimeoutTimer = null; }
     try {
       // Restore and verify the saved partner before opening the call screen or camera.
       await ensureExistingPairing();
@@ -992,6 +996,21 @@
       await callSignal("offer", { offer, callKind });
       startCallTone();
       setCallStatus("Ringing…");
+      // Save an unanswered call as an encrypted chat item visible on both phones.
+      callTimeoutTimer = setTimeout(async () => {
+        if (callWasAnswered || callMissedLogged) return;
+        callMissedLogged = true;
+        const missedKind = callKind;
+        stopCall();
+        setCallStatus("No answer");
+        const label = missedKind === "video" ? "Missed video call" : "Missed voice call";
+        try {
+          await sendEncrypted({ message: label, callEvent: "missed", callKind: missedKind }, "call");
+        } catch (logError) {
+          console.error("Could not save missed call to chat:", logError);
+          toast("The call was not answered, but its chat record could not be saved.", true);
+        }
+      }, 30000);
     } catch (e) {
       stopCall();
       toast(e.message || "Could not start call.", true);
@@ -999,9 +1018,9 @@
       callAttemptBusy = false;
     }
   }
-  async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();showIncomingNotice("Incoming call",(partner?.name||"Your partner")+" is calling you","he-incoming-call");}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
+  async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();showIncomingNotice("Incoming call",(partner?.name||"Your partner")+" is calling you","he-incoming-call");}else if(m.type==="answer"&&peerConnection){callWasAnswered=true;if(callTimeoutTimer){clearTimeout(callTimeoutTimer);callTimeoutTimer=null;}await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
   async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});stopCallTone();showCall(false);setCallStatus("Connecting…"); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
-  function stopCall() { stopCallTone();$("callOverlay").classList.remove("minimised");$("callMiniDock").classList.remove("visible");document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
+  function stopCall() { if(callTimeoutTimer){clearTimeout(callTimeoutTimer);callTimeoutTimer=null;} stopCallTone();$("callOverlay").classList.remove("minimised");$("callMiniDock").classList.remove("visible");document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
   $("minimiseCall").addEventListener("click",()=>{
     if(!$("callOverlay").classList.contains("open")) return;
     $("callOverlay").classList.add("minimised");
