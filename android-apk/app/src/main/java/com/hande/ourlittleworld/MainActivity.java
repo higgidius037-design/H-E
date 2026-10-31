@@ -128,6 +128,25 @@ public class MainActivity extends FragmentActivity {
 
     private class HENativeBridge {
         @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
+        @JavascriptInterface public void openBiometricSettings(){
+            runOnUiThread(()->{
+                Intent intent;
+                if(Build.VERSION.SDK_INT>=30){
+                    intent=new Intent(Settings.ACTION_BIOMETRIC_ENROLL);
+                    intent.putExtra(Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
+                        BiometricManager.Authenticators.BIOMETRIC_STRONG);
+                } else {
+                    intent=new Intent(Settings.ACTION_SECURITY_SETTINGS);
+                }
+                try { startActivity(intent); }
+                catch(ActivityNotFoundException e) {
+                    try { startActivity(new Intent(Settings.ACTION_SECURITY_SETTINGS)); }
+                    catch(ActivityNotFoundException ignored) {
+                        Toast.makeText(MainActivity.this,"Open Android Settings → Security to manage fingerprints.",Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
         @JavascriptInterface public void showNotification(String title,String body){
             runOnUiThread(()->{
                 if(Build.VERSION.SDK_INT>=33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED){
