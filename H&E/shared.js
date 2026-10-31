@@ -822,13 +822,13 @@
         } catch (cameraError) {
           localStream.getTracks().forEach(track => track.stop());
           localStream = null;
-          throw new Error(explainMediaError(cameraError, "Camera"));
+          throw new Error("Camera: " + explainMediaError(cameraError, "Camera"));
         }
       }
     } catch (error) {
       if (localStream) localStream.getTracks().forEach(track => track.stop());
       localStream = null;
-      if (error instanceof Error && error.message.startsWith("Camera ")) throw error;
+      if (error instanceof Error && error.message.startsWith("Camera:")) throw error;
       throw new Error(explainMediaError(error, "Microphone"));
     }
     $("localCallVideo").srcObject = localStream;
