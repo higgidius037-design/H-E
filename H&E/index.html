@@ -1589,11 +1589,6 @@ $("recordVoice").addEventListener("click", async () => {
           type: chatRecorder.mimeType || "audio/webm"
         });
 
-        if (blob.size > 500000) {
-          toast("Voice note is too large for local storage.", true);
-          return;
-        }
-
         const voice = await saveChatFile(blob);
         state.chats.push({
           id: chatId(),
