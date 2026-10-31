@@ -33,7 +33,7 @@ import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.3";
+    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1&appversion=1.1.4";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages_v2";
     private static final int APP_PERMISSION_REQUEST = 2003;
