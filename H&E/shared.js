@@ -874,9 +874,9 @@
         if (item.voice) content += `<div class="voice-tile"><audio class="chat-audio" preload="metadata" src="${item.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
         if (chat.viewOnce && openedOnce.has(chat.id)) content += `<button class="link-button" type="button" data-close-once="${chat.id}">Close view</button>`;
       }
-      const tickClass = chat.readAt ? "is-read" : chat.deliveredAt ? "is-delivered" : "";
-      const tickLabel = chat.readAt || chat.deliveredAt ? "✓✓" : "✓";
-      return `<article class="chat-bubble ${isMine ? "mine" : "theirs"}">${!isMine ? `<div class="chat-sender">${escapeHTML(chat.name || partner?.name || "Partner")}</div>` : ""}${content}<div class="chat-time"><span>${escapeHTML(chat.date || "")}</span>${isMine ? `<span class="chat-tick ${tickClass}" title="${chat.readAt ? "Read" : chat.deliveredAt ? "Delivered" : "Sent"}">${tickLabel}</span>` : ""}</div></article>`;
+      const tickClass = chat.pending ? "is-pending" : chat.readAt ? "is-read" : chat.deliveredAt ? "is-delivered" : "";
+      const tickLabel = chat.pending ? "…" : chat.readAt || chat.deliveredAt ? "✓✓" : "✓";
+      return `<article class="chat-bubble ${isMine ? "mine" : "theirs"}">${!isMine ? `<div class="chat-sender">${escapeHTML(chat.name || partner?.name || "Partner")}</div>` : ""}${content}<div class="chat-time"><span>${escapeHTML(chat.date || "")}</span>${isMine ? `<span class="chat-tick ${tickClass}" title="${chat.pending ? "Sending…" : chat.readAt ? "Read" : chat.deliveredAt ? "Delivered" : "Sent"}">${tickLabel}</span>` : ""}</div></article>`;
     }).join("");
     list.querySelectorAll("[data-close-once]").forEach(btn => btn.addEventListener("click", () => { openedOnce.delete(btn.dataset.closeOnce); refreshMessages(); }));
     list.querySelectorAll("[data-voice-play]").forEach(btn=>btn.addEventListener("click",event=>{event.stopPropagation();const audio=btn.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();btn.textContent="Ⅱ";}else{audio.pause();btn.textContent="▶";}audio.onended=()=>btn.textContent="▶";}));
