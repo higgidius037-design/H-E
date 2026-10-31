@@ -729,7 +729,11 @@
       if (createdCode) {
         await db.rpc("cancel_pair_invite", { p_code: createdCode }).catch(() => {});
       }
-      const message = error?.message || "Could not send a pairing code.";
+      let message = error?.message || "Could not send a pairing code.";
+      try {
+        const details = await error?.context?.json?.();
+        if (details?.error) message = details.error;
+      } catch {}
       if (/already paired|already connected|existing pair/i.test(message)) {
         try { if (await refreshPairing()) { toast("Your devices are already paired."); return; } }
         catch (checkError) { console.warn("Could not verify pairing status:", checkError); }
