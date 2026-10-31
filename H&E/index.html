@@ -836,8 +836,8 @@ textarea { min-height:90px;resize:vertical; }
             <option value="1440">1 day before</option>
           </select>
           <button class="primary" type="submit">Save Event ♡</button>
-          <button class="secondary" id="enableNotifications" type="button">Enable browser notifications</button>
-          <p class="muted">Reminders are checked while the app is open. Background reminders need additional notification services.</p>
+          <button class="secondary" id="enableNotifications" type="button">Enable H&E notifications</button>
+          <p class="muted">Calendar reminders are checked while H&E is open. Allow notifications in Android settings to receive alerts.</p>
         </form>
       </div>
       <div class="card"><h2 class="section-title">All Upcoming Events</h2><div id="allEvents"></div></div>
@@ -1681,7 +1681,7 @@ $("enableNotifications").addEventListener("click",async()=>{
   toast(permission==="granted"?"Notifications enabled while this app is open.":"Notification permission was not granted.",permission!=="granted");
 });
 function checkReminders() {
-  if(!("Notification" in window)||Notification.permission!=="granted") return;
+  if(!window.HENative && (!("Notification" in window)||Notification.permission!=="granted")) return;
   const now=Date.now();
   let changed=false;
 
@@ -1754,7 +1754,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=11"></script>
+<script src="/H-E/H%26E/shared.js?v=12"></script>
 
 </body>
 </html>
