@@ -559,7 +559,7 @@
     await showSafetyCode();
     await refreshMessages();
 
-    callChannel = db.channel("he-call-" + coupleId, { config: { private: true, presence: { key: session.user.id } } })
+    callChannel = db.channel("he-call-" + coupleId, { config: { private: true, broadcast: { ack: true }, presence: { key: session.user.id } } })
       .on("broadcast", { event: "signal" }, ({ payload }) => handleCallSignal(payload))
       .on("presence", { event: "sync" }, () => { const peers = callChannel?.presenceState?.() || {}; window.heCallPartnerOnline = !!(partner?.id && peers[partner.id]?.length); })
       .subscribe(async status => {
@@ -819,7 +819,19 @@
     list.querySelectorAll("[data-voice-play]").forEach(btn=>btn.addEventListener("click",event=>{event.stopPropagation();const audio=btn.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();btn.textContent="Ⅱ";}else{audio.pause();btn.textContent="▶";}audio.onended=()=>btn.textContent="▶";}));
     const bottom = document.getElementById("chatList"); bottom.scrollTop = bottom.scrollHeight;
   };
-  async function callSignal(type, data = {}) { if (!callChannel || !partner) throw new Error("Pair your phones first in Settings."); const result = await callChannel.send({ type: "broadcast", event: "signal", payload: { from: session.user.id, to: partner.id, type, ...data } }); if (result !== "ok") throw new Error("Could not reach your paired phone."); }
+  async function callSignal(type, data = {}) {
+    if (!callChannel || !partner) throw new Error("Pair your phones first in Settings.");
+    await waitForCallChannelReady();
+    const result = await callChannel.send({
+      type: "broadcast",
+      event: "signal",
+      payload: { from: session.user.id, to: partner.id, type, ...data }
+    });
+    if (result !== "ok") {
+      console.error("H&E call signal was not accepted by Realtime:", result, "channel state:", callChannel?.state);
+      throw new Error("H&E could not send the call signal (" + String(result) + "). Reconnecting the secure call channel may fix this; please try again.");
+    }
+  }
   let callToneTimer=null, callToneContext=null;
   function stopCallTone(){ if(callToneTimer){clearInterval(callToneTimer);callToneTimer=null;} if(callToneContext){callToneContext.close().catch(()=>{});callToneContext=null;} }
   function playCallTone(){ try { if(!callToneContext)callToneContext=new (window.AudioContext||window.webkitAudioContext)(); if(callToneContext.state==="suspended")callToneContext.resume(); const ctx=callToneContext; [0,0.22].forEach((delay,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type="sine";osc.frequency.value=i?480:425;gain.gain.setValueAtTime(0.0001,ctx.currentTime+delay);gain.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+delay+0.025);gain.gain.setValueAtTime(0.12,ctx.currentTime+delay+0.13);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+delay+0.19);osc.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime+delay);osc.stop(ctx.currentTime+delay+0.2);}); }catch(e){console.debug("Call tone unavailable",e);} }
@@ -919,7 +931,18 @@
       }
     }
   }); }
-  async function ensureExistingPairing() { if(coupleId && partner?.publicKey && callChannel) return true; if(!session) throw new Error("Please sign in to your existing H&E account."); const ready=await refreshPairing(); if(!ready || !coupleId || !partner?.publicKey || !callChannel) throw new Error("Could not restore your saved connection. Check your internet and try again; you do not need to pair again."); return true; }
+  async function ensureExistingPairing() {
+    // A channel object can remain truthy after its socket has errored or closed.
+    // Rebuild stale channels instead of treating them as a valid call connection.
+    if (coupleId && partner?.publicKey && callChannel?.state === "joined") return true;
+    if (!session) throw new Error("Please sign in to your existing H&E account.");
+    const ready = await refreshPairing();
+    if (!ready || !coupleId || !partner?.publicKey || !callChannel) {
+      throw new Error("Could not restore your saved connection. Check your internet and try again; you do not need to pair again.");
+    }
+    await waitForCallChannelReady();
+    return true;
+  }
   async function waitForCallChannelReady() {
     // Pair restoration creates the realtime channel asynchronously. Wait for its
     // first subscription before sending the first call signal, so the first tap works.
