@@ -1,10 +1,10 @@
-const CACHE_NAME = "he-app-v35";
+const CACHE_NAME = "he-app-v36";
 const APP_URL = "/H-E/H%26E/index.html";
 
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll([APP_URL, "/H-E/H%26E/shared.js?v=31"]))
+      .then(cache => cache.addAll([APP_URL, "/H-E/H%26E/shared.js?v=32"]))
       .then(() => self.skipWaiting())
   );
 });
