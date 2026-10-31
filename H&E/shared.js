@@ -146,6 +146,24 @@
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
+    const nativeBiometricButton = document.getElementById("nativeBiometricTest");
+    const nativeBiometricStatus = document.getElementById("nativeBiometricStatus");
+    window.onHENativeBiometricResult = (success, message) => {
+      if (nativeBiometricButton) nativeBiometricButton.disabled = false;
+      if (nativeBiometricStatus) nativeBiometricStatus.textContent = message || (success ? "Device verification successful." : "Device verification was not completed.");
+      if (success) toast("Your phone verified your fingerprint / face. This is a device check only.");
+      else if (message) toast(message, true);
+    };
+    if (nativeBiometricButton) nativeBiometricButton.addEventListener("click", () => {
+      if (!window.HENative || typeof window.HENative.authenticateBiometric !== "function") {
+        if (nativeBiometricStatus) nativeBiometricStatus.textContent = "Native biometric verification is available only in the installed H&E Android app.";
+        toast("Open H&E from its Android app icon to use the phone's biometric prompt.", true);
+        return;
+      }
+      nativeBiometricButton.disabled = true;
+      if (nativeBiometricStatus) nativeBiometricStatus.textContent = "Waiting for Android biometric verification…";
+      window.HENative.authenticateBiometric();
+    });
     const securityButton = document.getElementById("securitySetFingerprint");
     const passkeySetupButton = document.getElementById("registerPasskey");
     const passkeyStatus = document.getElementById("fingerprintStatus");
