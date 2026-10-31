@@ -696,9 +696,13 @@ textarea { min-height:90px;resize:vertical; }
   opacity:0!important;
   visibility:hidden!important;
 }
-.call-stage.video-mode.local-video-promoted>#remoteCallVideo{
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{
   display:block!important;
 }
+.call-stage.video-mode.local-video-promoted:not(.remote-video-ready)>#remoteCallVideo{
+  display:none!important;
+}
+.call-stage.video-mode>.video-hit-area{pointer-events:auto!important;}
 .call-stage.video-mode:not(.local-video-promoted)>.remote-hit-area{
   inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important;
 }
