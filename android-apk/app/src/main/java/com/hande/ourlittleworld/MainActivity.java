@@ -1,7 +1,9 @@
 package com.hande.ourlittleworld;
 
 import android.app.Activity;
-import android.app.NotificationManager;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -24,6 +26,7 @@ import android.widget.Toast;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import java.util.concurrent.Executor;
 
 public class MainActivity extends Activity {
     private static final String APP_URL = "https://higgidius037-design.github.io/H-E/H%26E/index.html?android=1";
@@ -31,6 +34,7 @@ public class MainActivity extends Activity {
     private static final String CHANNEL_ID = "he_messages";
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
+    private BiometricPrompt biometricPrompt;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,7 +87,47 @@ public class MainActivity extends Activity {
         }
     }
 
+    
+    private void authenticateBiometric() {
+        int authenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK | BiometricManager.Authenticators.BIOMETRIC_STRONG;
+        int availability = BiometricManager.from(this).canAuthenticate(authenticators);
+        if (availability != BiometricManager.BIOMETRIC_SUCCESS) {
+            notifyWebBiometric(false, availability == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED
+                ? "No fingerprint or face is enrolled in Android settings."
+                : "Biometric authentication is unavailable on this device.");
+            return;
+        }
+        Executor executor = ContextCompat.getMainExecutor(this);
+        biometricPrompt = new BiometricPrompt(this, executor, new BiometricPrompt.AuthenticationCallback() {
+            @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                notifyWebBiometric(true, "Device biometric check successful.");
+            }
+            @Override public void onAuthenticationError(int code, CharSequence message) {
+                notifyWebBiometric(false, message == null ? "Biometric check was cancelled." : message.toString());
+            }
+            @Override public void onAuthenticationFailed() {
+                Toast.makeText(MainActivity.this, "Biometric not recognised. Try again.", Toast.LENGTH_SHORT).show();
+            }
+        });
+        BiometricPrompt.PromptInfo prompt = new BiometricPrompt.PromptInfo.Builder()
+            .setTitle("H&E security check")
+            .setSubtitle("Confirm your identity on this device")
+            .setNegativeButtonText("Cancel")
+            .setAllowedAuthenticators(authenticators)
+            .build();
+        biometricPrompt.authenticate(prompt);
+    }
+
+    private void notifyWebBiometric(boolean success, String message) {
+        String safe = org.json.JSONObject.quote(message == null ? "" : message);
+        runOnUiThread(() -> {
+            if (webView != null) webView.evaluateJavascript(
+                "window.onHENativeBiometricResult && window.onHENativeBiometricResult(" + success + "," + safe + ")", null);
+        });
+    }
+
     private class HENativeBridge {
+        @JavascriptInterface public void authenticateBiometric(){ runOnUiThread(() -> MainActivity.this.authenticateBiometric()); }
         @JavascriptInterface public void showNotification(String title,String body){
             runOnUiThread(()->{
                 if(Build.VERSION.SDK_INT>=33 && checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED){
