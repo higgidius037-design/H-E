@@ -882,7 +882,30 @@
     }
   }); }
   async function ensureExistingPairing() { if(coupleId && partner?.publicKey && callChannel) return true; if(!session) throw new Error("Please sign in to your existing H&E account."); const ready=await refreshPairing(); if(!ready || !coupleId || !partner?.publicKey || !callChannel) throw new Error("Could not restore your saved connection. Check your internet and try again; you do not need to pair again."); return true; }
-  async function startCall(video) { try { await ensureExistingPairing();callKind=video?"video":"voice";await getCallMedia(video);makePeer();showCall();const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);await callSignal("offer",{offer,callKind});startCallTone();setCallStatus("Ringing…"); } catch(e) { stopCall();toast(e.message||"Could not start call.",true); } }
+  let callAttemptBusy = false;
+  async function startCall(video) {
+    if (callAttemptBusy || peerConnection) return;
+    callAttemptBusy = true;
+    callKind = video ? "video" : "voice";
+    try {
+      showCall();
+      setCallStatus("Preparing secure call…");
+      await ensureExistingPairing();
+      await getCallMedia(video);
+      makePeer();
+      setCallStatus("Connecting securely…");
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await callSignal("offer", { offer, callKind });
+      startCallTone();
+      setCallStatus("Ringing…");
+    } catch (e) {
+      stopCall();
+      toast(e.message || "Could not start call.", true);
+    } finally {
+      callAttemptBusy = false;
+    }
+  }
   async function handleCallSignal(m) { if(!m||m.to!==session?.user?.id||m.from!==partner?.id)return;try{if(m.type==="offer"){if(peerConnection)stopCall();pendingOffer=m.offer;callKind=m.callKind==="video"?"video":"voice";showCall(true);startCallTone();}else if(m.type==="answer"&&peerConnection){await peerConnection.setRemoteDescription(m.answer);for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);}else if(m.type==="ice"){if(peerConnection?.remoteDescription)await peerConnection.addIceCandidate(m.candidate);else queuedIce.push(m.candidate);}else if(["reject","hangup"].includes(m.type)){stopCall();toast(m.type==="reject"?"Call declined.":"Call ended.");}}catch(e){stopCall();toast("Could not connect this call.",true);} }
   async function acceptCall() { try { await getCallMedia(callKind==="video");makePeer();await peerConnection.setRemoteDescription(pendingOffer);pendingOffer=null;for(const c of queuedIce.splice(0))await peerConnection.addIceCandidate(c);const answer=await peerConnection.createAnswer();await peerConnection.setLocalDescription(answer);await callSignal("answer",{answer});stopCallTone();showCall(false);setCallStatus("Connecting…"); }catch(e){stopCall();toast(e.message||"Could not accept call.",true);} }
   function stopCall() { stopCallTone();$("callOverlay").classList.remove("minimised");$("callMiniDock").classList.remove("visible");document.body.classList.remove("in-call"); if(peerConnection){peerConnection.onicecandidate=null;peerConnection.close();}peerConnection=null;if(localStream)localStream.getTracks().forEach(t=>t.stop());localStream=null;queuedIce=[];pendingOffer=null;$("localCallVideo").srcObject=null;$("remoteCallVideo").srcObject=null;$("callOverlay").classList.remove("open"); }
