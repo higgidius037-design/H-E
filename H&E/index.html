@@ -138,7 +138,7 @@
   background: var(--blush);
 }
 .chat-audio { display:none; }
-.voice-tile{width:2in;height:2in;max-width:100%;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#f7e5e1,#fff4eb);border:1px solid var(--line);margin:8px 0}.voice-play{width:56px;height:56px;border-radius:50%;border:0;background:var(--burgundy);color:white;font-size:25px}
+.voice-tile{width:min(100%,250px);min-height:48px;display:flex;align-items:center;gap:12px;padding:7px 12px;border-radius:24px;background:#fff8f5;border:1px solid #ead8d8;margin:7px 0}.voice-play{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:0;background:var(--burgundy);color:white;font-size:15px;display:grid;place-items:center}.voice-wave{height:28px;flex:1;display:flex;align-items:center;justify-content:space-between;gap:2px;overflow:hidden}.voice-wave i{display:block;width:3px;min-width:2px;border-radius:4px;background:#a66a7b;height:var(--bar-height);opacity:.8}.voice-tile.playing .voice-wave i{animation:voiceBars .65s ease-in-out infinite alternate}.voice-tile.playing .voice-wave i:nth-child(3n){animation-delay:.2s}.voice-tile.playing .voice-wave i:nth-child(3n+1){animation-delay:.4s}@keyframes voiceBars{to{transform:scaleY(.45);opacity:.45}}
 .view-once-control{display:flex;align-items:center;gap:8px;margin:7px 4px;color:var(--burgundy)}.view-once-control input{width:auto}#voiceWaveform{width:min(100%,360px);height:52px;background:#fff8ee;border-radius:8px}
 .chat-message-actions {
   display: flex;
@@ -1428,8 +1428,8 @@ function renderChats() {
     }
 
     if (chat.voice) {
-      media += `<div class="voice-tile"><audio class="chat-audio" preload="metadata"
-                  src="${chat.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
+      const bars = [8,14,20,12,24,16,10,22,15,25,12,19,9,23,14,20,11,17,24,13,8,18,12,21];
+      media += '<div class="voice-tile"><audio class="chat-audio" preload="metadata" src="' + chat.voice + '" ></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button><span class="voice-wave" aria-hidden="true">' + bars.map(h => '<i style="--bar-height:' + h + 'px"></i>').join("") + '</span></div>';
     }
     const isMissedCall = chat.callEvent === "missed";
     const callLabel = chat.callKind === "video" ? "Missed video call" : "Missed voice call";
@@ -1543,7 +1543,7 @@ $("chatList").addEventListener("click", event => {
   }
 });
 
-$("chatList").addEventListener("click",event=>{const button=event.target.closest("[data-voice-play]");if(!button)return;const audio=button.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();button.textContent="Ⅱ";}else{audio.pause();button.textContent="▶";}audio.onended=()=>button.textContent="▶";});
+$("chatList").addEventListener("click",event=>{const button=event.target.closest("[data-voice-play]");if(!button)return;const tile=button.closest(".voice-tile"),audio=tile.querySelector("audio");if(audio.paused){audio.play().then(()=>{button.textContent="Ⅱ";tile.classList.add("playing");}).catch(error=>{console.error("Voice playback failed:",error);toast("Could not play this voice note.",true);});}else{audio.pause();button.textContent="▶";tile.classList.remove("playing");}audio.onended=()=>{button.textContent="▶";tile.classList.remove("playing");};});
 
 $("chatMessage").addEventListener("input", event => {
   event.target.style.height = "auto";
@@ -1638,6 +1638,8 @@ $("recordVoice").addEventListener("click", async () => {
         chatStream = null;
         chatRecorder = null;
         $("recordVoice").textContent = "🎙";
+        $("stopVoice").disabled = false;
+        $("stopVoice").textContent = "Stop & send";
         $("recordingPanel").classList.add("hidden");
       }
     });
@@ -1677,6 +1679,8 @@ function drawVoiceWaveform(){const canvas=$("voiceWaveform"),ctx=canvas.getConte
 
 $("stopVoice").addEventListener("click", () => {
   if (chatRecorder && chatRecorder.state !== "inactive") {
+    $("stopVoice").disabled = true;
+    $("stopVoice").textContent = "Sending…";
     chatRecorder.stop();
   }
 });
