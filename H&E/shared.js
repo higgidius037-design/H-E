@@ -156,8 +156,8 @@
     let passkeyCheckReason = "The browser has not completed its passkey capability check.";
     const passkeyHelp = () => {
       const reason = passkeyCheckReason;
-      alert("Your phone may have fingerprint or face unlock, but this browser view is not exposing its passkey authenticator.\\n\\nReason: " + reason +
-        "\\n\\nTry these steps:\\n1. Open H&E in the latest Chrome browser tab, not only from the installed app icon.\\n2. In Android Settings, check Google Password Manager / Passkeys is enabled.\\n3. Update Chrome and Google Play services.\\n4. Return to H&E Settings and try again.\\n\\nYour account password and Wallet PIN remain available.");
+      alert("Your phone may have fingerprint or face unlock, but this browser view is not exposing its passkey authenticator.\n\nReason: " + reason +
+        "\n\nTry these steps:\n1. Open H&E in the latest Chrome browser tab, not only from the installed app icon.\n2. In Android Settings, check Google Password Manager / Passkeys is enabled.\n3. Update Chrome and Google Play services.\n4. Return to H&E Settings and try again.\n\nYour account password and Wallet PIN remain available.");
     };
     (async () => {
       if (!window.isSecureContext) {
