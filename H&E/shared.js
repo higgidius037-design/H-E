@@ -262,8 +262,8 @@
           });
           if (error) throw error;
           if (data.session) {
-            await db.auth.signOut();
-            throw new Error("Email verification is not enabled yet. Please contact the H&E administrator.");
+            await enterApp(data.session);
+            return;
           }
           pendingSignupPhone = phone;
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
@@ -274,7 +274,6 @@
               phone
             });
             if (resendError) throw resendError;
-            pendingSignupEmail = emailAddress;
             showSignupOtpStep();
             reportLogin("This phone number already has an account awaiting verification. A fresh SMS code has been requested.", "ok");
             return;
