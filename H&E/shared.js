@@ -296,7 +296,9 @@
         <div id="pairCodeDisplay" hidden style="margin-top:12px;padding:16px;text-align:center;border:1px solid rgba(167,73,105,.35);border-radius:14px;background:#fff5f8;color:#472433">
           <p style="margin:0 0 6px;font-weight:600">Your pairing code</p>
           <strong id="pairCodeDigits" style="display:block;font-size:30px;letter-spacing:8px;color:#7b2948"></strong>
-          <p class="muted" style="margin:8px 0 0">Share this six-digit code with your partner. It expires in 10 minutes.</p>
+          <p class="muted" style="margin:8px 0 0">Share the secure link below. It fills the code automatically and expires in 10 minutes.</p>
+          <input id="pairInviteLink" type="text" readonly aria-label="Secure pairing link" style="width:100%;margin-top:10px;font-size:12px">
+          <button class="secondary" id="sharePairInvite" type="button" style="width:100%;margin-top:8px">Share invitation link</button>
         </div>
         <div class="divider" style="margin:18px 0"></div>
         <label for="pairCode">Enter the six-digit code your partner shared</label>
@@ -347,6 +349,26 @@
     window.addEventListener("popstate",event=>{if(event.state?.hePage==="settings"&&event.state?.heFolder==="connect"){document.getElementById("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(item=>item.classList.add("hidden"));connectPage.classList.remove("hidden");}else if(connectPage&&!event.state?.heFolder){connectPage.classList.add("hidden");}});
     document.getElementById("makePairInvite").addEventListener("click", createInvite);
     document.getElementById("acceptPairInvite").addEventListener("click", acceptInvite);
+    document.getElementById("sharePairInvite").addEventListener("click", async () => {
+      const link = document.getElementById("pairInviteLink")?.value || "";
+      if (!link) { toast("Generate an invitation link first.", true); return; }
+      try {
+        if (navigator.share) await navigator.share({ title: "H&E – Connect Devices", text: "Open this secure H&E invitation to connect our devices:", url: link });
+        else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(link); toast("Invitation link copied. Send it privately to your partner."); }
+        else { document.getElementById("pairInviteLink").focus(); document.getElementById("pairInviteLink").select(); toast("Copy the selected invitation link and send it privately."); }
+      } catch (error) {
+        if (error?.name !== "AbortError") toast("Could not share automatically. Copy the invitation link shown above.", true);
+      }
+    });
+    const incomingPairCode = new URL(window.location.href).searchParams.get("pair");
+    if (incomingPairCode && /^[0-9]{6}$/.test(incomingPairCode)) {
+      const incomingField = document.getElementById("pairCode");
+      if (incomingField) {
+        incomingField.value = incomingPairCode;
+        incomingField.setAttribute("aria-label", "Invitation code filled automatically");
+        toast("Your H&E invitation code is filled in. Sign in to the account matching the invited contact, then tap Connect Partner.");
+      }
+    }
     const refreshPairingButton = document.getElementById("refreshPairingStatus");
     refreshPairingButton.addEventListener("click", async () => {
       refreshPairingButton.disabled = true;
@@ -946,9 +968,14 @@
       const validCode = String(code || "");
       if (!/^[0-9]{6}$/.test(validCode)) throw new Error("The server did not return a valid six-digit code. Please try again.");
       if (codeDigits) codeDigits.textContent = validCode;
+      const inviteUrl = new URL(window.location.href);
+      inviteUrl.searchParams.set("pair", validCode);
+      inviteUrl.hash = "settings-connect";
+      const inviteLink = document.getElementById("pairInviteLink");
+      if (inviteLink) inviteLink.value = inviteUrl.toString();
       if (codeDisplay) codeDisplay.hidden = false;
       document.getElementById("pairCode").focus();
-      toast("Code ready. Share it privately with your partner; they must enter it using the verified contact you specified. Expires in 10 minutes.");
+      toast("Secure invite link ready. Share it with your partner; the code will fill automatically when they open it. They must sign in with the verified contact you entered and tap Connect.");
     } catch (error) {
       let message = error?.message || "Could not create a pairing code.";
       try {
@@ -974,6 +1001,9 @@
       const ready = await refreshPairing();
       if (!ready) throw new Error("The invitation was accepted, but both devices are not ready for messaging yet. Ask your partner to open H&E and try again.");
       document.getElementById("pairCode").value = "";
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("pair");
+      history.replaceState(history.state, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
       updateConnectEntry(true);
       toast("Partner paired successfully. ♡");
     } catch (error) { toast(error.message || "Could not join this shared space.", true); }
