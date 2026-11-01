@@ -933,6 +933,7 @@
   async function createInvite() {
     const button = document.getElementById("makePairInvite");
     let createdCode = null;
+    let keepInviteForManualEntry = false;
     const codeDisplay = document.getElementById("pairCodeDisplay");
     const codeDigits = document.getElementById("pairCodeDigits");
     if (codeDisplay) codeDisplay.hidden = true;
@@ -941,22 +942,34 @@
       if (!session) throw new Error("Sign in first.");
       const contact = document.getElementById("partnerContact").value.trim();
       if (!contact) throw new Error("Enter your partner's email address or phone number.");
-      if (button) { button.disabled = true; button.textContent = "Sending code…"; }
+      if (button) { button.disabled = true; button.textContent = "Creating code…"; }
       const { data: code, error } = await db.rpc("create_pair_invite", { p_recipient: contact });
       if (error) throw error;
-      createdCode = code;
-      const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code } });
-      if (deliveryError) throw deliveryError;
-      createdCode = null;
-      if (codeDigits) codeDigits.textContent = String(code);
+      createdCode = String(code);
+      // Always reveal a valid newly-created code, even if email/SMS delivery is
+      // unavailable. The partner can enter it manually; do not cancel it.
+      if (codeDigits) codeDigits.textContent = createdCode;
       if (codeDisplay) codeDisplay.hidden = false;
       document.getElementById("pairCode").focus();
-      toast("Your pairing code is displayed below. It expires in 10 minutes.");
+      const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code: createdCode } });
+      if (deliveryError) {
+        keepInviteForManualEntry = true;
+        createdCode = null;
+        let deliveryMessage = deliveryError.message || "Email/SMS delivery is not configured.";
+        try {
+          const details = await deliveryError.context?.json?.();
+          if (details?.error) deliveryMessage = details.error;
+        } catch {}
+        toast("Code created but automatic delivery failed. Share the code shown on screen privately with your partner. " + deliveryMessage, true);
+        return;
+      }
+      createdCode = null;
+      toast("Your pairing code is displayed below and has been sent. It expires in 10 minutes.");
     } catch (error) {
-      if (createdCode) {
+      if (createdCode && !keepInviteForManualEntry) {
         await db.rpc("cancel_pair_invite", { p_code: createdCode }).catch(() => {});
       }
-      let message = error?.message || "Could not send a pairing code.";
+      let message = error?.message || "Could not create a pairing code.";
       try {
         const details = await error?.context?.json?.();
         if (details?.error) message = details.error;
