@@ -118,7 +118,7 @@
       if (feedbackBox) feedbackBox.hidden = true;
     };
     // Use the button's direct click property so there is exactly one toggle handler.
-    toggleMethod.onclick = () => setSignupMode(!isSignUp);
+    toggleMethod.addEventListener("click", () => setSignupMode(form.classList.contains("signup-mode")));
     const contactLabel = document.getElementById("loginContactLabel");
     let otpPanel = document.getElementById("signupOtpPanel");
     let otpInput = document.getElementById("signupOtp");
