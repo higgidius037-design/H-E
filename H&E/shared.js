@@ -75,6 +75,8 @@
     const toggleMethod = document.getElementById("toggleLoginMethod");
     const submitButton = document.getElementById("loginSubmit");
     const passkeyButton = document.getElementById("loginPasskey");
+    // Keep optional WebAuthn sign-in out of the login screen; unsupported browser views otherwise show a WebAuthn error.
+    if (passkeyButton) passkeyButton.hidden = true;
     let isSignUp = false;
     let otpPending = false;
     let pendingSignupEmail = "";
@@ -161,7 +163,7 @@
       password.required = true;
       document.querySelector('label[for="loginPassword"]').hidden = false;
       toggleMethod.hidden = false;
-      passkeyButton.hidden = false;
+      passkeyButton.hidden = true;
     }
     function showSignupOtpStep() {
       otpPending = true;
