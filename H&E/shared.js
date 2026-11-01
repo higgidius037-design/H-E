@@ -78,6 +78,9 @@
     let pendingSignupEmail = "";
     let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
+    const nameField = document.getElementById("signupNameField");
+    const dobField = document.getElementById("signupDobField");
+    const dobInput = document.getElementById("loginDateOfBirth");
     // Minimal signup switch is deliberately independent of the optional DOB picker.
     // It remains usable even if later setup code fails.
     toggleMethod.addEventListener("click", () => {
@@ -88,6 +91,10 @@
       const nameLabelEl = document.getElementById("loginNameLabel");
       const contactLabelEl = document.getElementById("loginContactLabel");
       const noteEl = form.querySelector(".login-note");
+      nameField.hidden = !creating;
+      nameField.style.display = creating ? "block" : "none";
+      dobField.hidden = !creating;
+      dobField.style.display = creating ? "block" : "none";
       if (creating) {
         name.removeAttribute("hidden");
         nameLabelEl.removeAttribute("hidden");
@@ -115,30 +122,11 @@
       if (noteEl) noteEl.textContent = creating
         ? "Enter your name, phone number and password to create an account."
         : "Private sign-in for your little world.";
-      dobLabel.hidden = !creating;
-      dobLabel.style.display = creating ? "block" : "none";
-      dobInput.hidden = !creating;
-      dobInput.style.display = creating ? "block" : "none";
       dobInput.required = creating;
       if (!creating) dobInput.value = "";
       const feedbackEl = document.getElementById("loginFeedback");
       if (feedbackEl) feedbackEl.hidden = true;
     });
-    const dobLabel = document.createElement("label");
-    dobLabel.htmlFor = "loginDateOfBirth";
-    dobLabel.textContent = "Date of birth";
-    dobLabel.hidden = true;
-    dobLabel.style.cssText = "display:none;margin-top:12px;font-weight:600;text-align:left";
-    const dobInput = document.createElement("input");
-    dobInput.id = "loginDateOfBirth";
-    dobInput.type = "date";
-    dobInput.autocomplete = "bday";
-    dobInput.max = new Date().toISOString().slice(0, 10);
-    dobInput.required = false;
-    dobInput.hidden = true;
-    dobInput.style.cssText = "display:none;width:100%;box-sizing:border-box;min-height:48px;margin-top:6px;padding:10px 12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit";
-    document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
-    dobLabel.insertAdjacentElement("afterend", dobInput);
     const contactLabel = document.getElementById("loginContactLabel");
     let otpPanel = document.getElementById("signupOtpPanel");
     let otpInput = document.getElementById("signupOtp");
