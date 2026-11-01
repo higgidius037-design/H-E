@@ -235,8 +235,8 @@
     form.addEventListener("submit", async event => {
       event.preventDefault(); event.stopImmediatePropagation();
       submitButton.disabled = true;
-      submitButton.textContent = otpPending ? "Verifying code…" : (isSignUp ? "Sending code…" : "Signing in…");
-      reportLogin(otpPending ? "Verifying your phone…" : (isSignUp ? "Creating your account and requesting an SMS code…" : "Checking your sign-in…"), "wait");
+      submitButton.textContent = otpPending ? "Verifying code…" : (isSignUp ? "Creating account…" : "Signing in…");
+      reportLogin(otpPending ? "Verifying your phone…" : (isSignUp ? "Creating your account…" : "Checking your sign-in…"), "wait");
       try {
         if (otpPending) {
           const token = otpInput.value.replace(/\D/g, "");
@@ -267,32 +267,16 @@
             options: { data: { display_name: displayName, date_of_birth: dateOfBirth, phone_number: phone } }
           });
           if (error) throw error;
-          if (data.session) {
-            // Some Supabase projects have phone confirmation disabled, which returns
-            // a session immediately and does not send a signup SMS. Explicitly request
-            // an SMS OTP for this newly created phone account before allowing entry.
-            await db.auth.signOut();
-            const { error: otpError } = await db.auth.signInWithOtp({
-              phone,
-              options: { shouldCreateUser: false }
-            });
-            if (otpError) throw otpError;
-          }
-          pendingSignupPhone = phone;
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-            // Supabase deliberately returns a generic signup response for an existing
-            // account. If that account is still unverified, explicitly request a fresh OTP.
-            const { error: resendError } = await db.auth.resend({
-              type: "sms",
-              phone
-            });
-            if (resendError) throw resendError;
-            showSignupOtpStep();
-            reportLogin("This phone number already has an account awaiting verification. A fresh SMS code has been requested.", "ok");
-            return;
+            throw new Error("An account with this phone number already exists. Please sign in instead.");
           }
-          showSignupOtpStep();
-          reportLogin("Your verification request was accepted. Check your phone for the SMS code. Delivery time depends on your SMS provider and mobile network.", "ok");
+          if (!data.session) {
+            throw new Error("Your account request was received, but Supabase is still requiring phone confirmation. Disable Phone Confirmations in Supabase Authentication settings, then try again.");
+          }
+          // Phone confirmation is disabled in Supabase: create the account and
+          // enter H&E immediately without sending or requesting an SMS OTP.
+          await enterApp(data.session);
+          return;
         } else {
           const contactValue = contact.trim();
           let credentials;
