@@ -89,8 +89,10 @@
       const contactLabelEl = document.getElementById("loginContactLabel");
       const noteEl = form.querySelector(".login-note");
       name.hidden = !creating;
+      name.style.display = creating ? "block" : "none";
       name.required = creating;
       nameLabelEl.hidden = !creating;
+      nameLabelEl.style.display = creating ? "block" : "none";
       email.type = creating ? "tel" : "text";
       email.inputMode = creating ? "tel" : "email";
       email.autocomplete = creating ? "tel" : "username";
@@ -103,7 +105,9 @@
         ? "Enter your name, phone number and password to create an account."
         : "Private sign-in for your little world.";
       dobLabel.hidden = !creating;
+      dobLabel.style.display = creating ? "block" : "none";
       dobInput.hidden = !creating;
+      dobInput.style.display = creating ? "block" : "none";
       dobInput.required = creating;
       if (!creating) dobInput.value = "";
       const feedbackEl = document.getElementById("loginFeedback");
@@ -113,7 +117,7 @@
     dobLabel.htmlFor = "loginDateOfBirth";
     dobLabel.textContent = "Date of birth";
     dobLabel.hidden = true;
-    dobLabel.style.cssText = "display:block;margin-top:12px;font-weight:600;text-align:left";
+    dobLabel.style.cssText = "display:none;margin-top:12px;font-weight:600;text-align:left";
     const dobInput = document.createElement("input");
     dobInput.id = "loginDateOfBirth";
     dobInput.type = "date";
@@ -121,7 +125,7 @@
     dobInput.max = new Date().toISOString().slice(0, 10);
     dobInput.required = false;
     dobInput.hidden = true;
-    dobInput.style.cssText = "display:block;width:100%;box-sizing:border-box;min-height:48px;margin-top:6px;padding:10px 12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit";
+    dobInput.style.cssText = "display:none;width:100%;box-sizing:border-box;min-height:48px;margin-top:6px;padding:10px 12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit";
     document.getElementById("loginName").insertAdjacentElement("afterend", dobLabel);
     dobLabel.insertAdjacentElement("afterend", dobInput);
     const contactLabel = document.getElementById("loginContactLabel");
