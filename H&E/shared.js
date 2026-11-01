@@ -262,8 +262,15 @@
           });
           if (error) throw error;
           if (data.session) {
-            await enterApp(data.session);
-            return;
+            // Some Supabase projects have phone confirmation disabled, which returns
+            // a session immediately and does not send a signup SMS. Explicitly request
+            // an SMS OTP for this newly created phone account before allowing entry.
+            await db.auth.signOut();
+            const { error: otpError } = await db.auth.signInWithOtp({
+              phone,
+              options: { shouldCreateUser: false }
+            });
+            if (otpError) throw otpError;
           }
           pendingSignupPhone = phone;
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
