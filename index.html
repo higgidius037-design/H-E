@@ -822,6 +822,11 @@ button:disabled { opacity:.65; cursor:wait; }
 #page-calendar #selectedDayEvents .item{padding:12px 4px}
 @media(max-width:420px){.calendar-head-modern{gap:6px}.calendar-arrow{width:36px;height:38px;flex-basis:36px}.calendar-period{gap:5px}.calendar-period h3{font-size:19px}#calendarYearSelect{min-width:78px;padding:8px 20px 8px 7px;font-size:14px}.calendar-today{padding:8px 9px;font-size:12px}#calendarGrid{gap:3px}.calendar-day{min-height:43px;padding:6px 1px}.calendar-day .day-number{font-size:13px}}
 #loginForm.signup-mode #signupNameField,#loginForm.signup-mode #signupDobField{display:block!important}
+
+.calendar-month-picker-wrap{display:flex;align-items:center;min-width:0;flex:1}
+#calendarMonthPicker{width:100%;max-width:220px;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff7f2;color:var(--burgundy);font:inherit;font-size:17px;font-weight:600}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:420px){#calendarMonthPicker{font-size:15px;padding:7px 5px}}
 </style>
 </head>
 <body>
@@ -1009,13 +1014,13 @@ button:disabled { opacity:.65; cursor:wait; }
         <p class="muted">Dates to remember, moments to look forward to.</p>
         <div class="calendar-head calendar-head-modern">
           <button class="calendar-arrow" id="previousMonth" type="button" aria-label="Previous month">‹</button>
-          <div class="calendar-period"><h3 id="calendarMonth">Month</h3><label class="year-picker-wrap" aria-label="Choose calendar year"><select id="calendarYearSelect" aria-label="Choose year"></select></label></div>
+          <div class="calendar-period"><label class="calendar-month-picker-wrap" for="calendarMonthPicker"><span class="sr-only">Choose month</span><input id="calendarMonthPicker" type="month" aria-label="Choose month and year"></label></div>
           <button class="calendar-arrow" id="nextMonth" type="button" aria-label="Next month">›</button>
           <button class="calendar-today" id="todayButton" type="button">Today</button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
         <div class="card" style="box-shadow:none">
-          <div class="card-heading"><h2 id="selectedDateTitle">Selected date</h2><button class="link-button" id="todayButton" type="button">Today</button></div>
+          <div class="card-heading"><h2 id="selectedDateTitle">Selected date</h2></div>
           <div id="selectedDayEvents"></div>
         </div>
       </div>
@@ -1860,19 +1865,8 @@ function renderCalendar() {
   const start=first.getDay();
   const previousDays=new Date(calendarYear,calendarMonth,0).getDate();
 
-  $("calendarMonth").textContent=first.toLocaleDateString("en",{month:"long"});
-  const yearSelect=$("calendarYearSelect");
-  if(yearSelect){
-    const currentYear=new Date().getFullYear();
-    if(!yearSelect.options.length){
-      for(let year=currentYear+20;year>=1900;year--){
-        const option=document.createElement("option");
-        option.value=String(year);option.textContent=String(year);
-        yearSelect.appendChild(option);
-      }
-    }
-    yearSelect.value=String(calendarYear);
-  }
+  const monthPicker=$("calendarMonthPicker");
+  if(monthPicker) monthPicker.value=`${calendarYear}-${String(calendarMonth+1).padStart(2,"0")}`;
   let html=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
     .map(day=>`<div class="calendar-day-name">${day}</div>`).join("");
 
@@ -1925,10 +1919,13 @@ $("nextMonth").addEventListener("click",()=>{
   if(calendarMonth>11) { calendarMonth=0;calendarYear++; }
   renderCalendar();
 });
-$("calendarYearSelect").addEventListener("change",event=>{
-  const year=Number(event.target.value);
-  if(!Number.isInteger(year)||year<1900||year>2200)return;
-  calendarYear=year;
+$("calendarMonthPicker").addEventListener("change",event=>{
+  if(!event.target.value)return;
+  const [year,month]=event.target.value.split("-").map(Number);
+  if(!Number.isInteger(year)||!Number.isInteger(month)||month<1||month>12)return;
+  calendarYear=year;calendarMonth=month-1;
+  const day=Math.min(Number(selectedDate.slice(8,10)),new Date(year,month,0).getDate());
+  selectedDate=dateString(new Date(year,month-1,day));
   renderCalendar();
 });
 $("todayButton").addEventListener("click",()=>{
@@ -2105,7 +2102,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=38"></script>
+<script src="/H-E/H%26E/shared.js?v=39"></script>
 
 </body>
 </html>
