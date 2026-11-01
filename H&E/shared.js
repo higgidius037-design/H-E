@@ -69,6 +69,8 @@
 
   function addSetupUI() {
     const form = document.getElementById("loginForm");
+    // Handle validation inside the form so mobile browsers always show our feedback.
+    form.noValidate = true;
     const email = document.getElementById("loginEmail"), password = document.getElementById("loginPassword");
     const toggleMethod = document.getElementById("toggleLoginMethod");
     const submitButton = document.getElementById("loginSubmit");
@@ -242,6 +244,8 @@
         const contact = email.value.trim();
         const displayName = document.getElementById("loginName").value.trim();
         const passwordValue = password.value;
+        if (!contact) throw new Error(isSignUp ? "Enter your phone number." : "Enter your email or phone number.");
+        if (!passwordValue) throw new Error("Enter your password.");
         if (isSignUp) {
           let phone = contact.replace(/[\s()-]/g, "");
           if (/^0[17]\d{8}$/.test(phone)) phone = "+254" + phone.slice(1);
