@@ -1476,7 +1476,10 @@ $("profileForm").addEventListener("submit",event=>{
   state.profile.you=$("yourName").value.trim();
   state.profile.phone=$("profilePhone").value.trim();
   state.profile.email=$("profileEmail").value.trim();
-  if(saveState()){renderProfile();toast("Profile saved on this device.");}
+  if(saveState()){
+    try { if (window.HEAccountUserId) localStorage.setItem("he-profile-photo-v1:" + window.HEAccountUserId, state.profile.photo || ""); } catch {}
+    renderProfile();toast("Profile saved on this device.");
+  }
 });
 $("profilePhotoInput").addEventListener("change",()=>{
   const file=$("profilePhotoInput").files[0];
@@ -1486,7 +1489,10 @@ $("profilePhotoInput").addEventListener("change",()=>{
   reader.onload=()=>{
     state.profile.photo=String(reader.result);
     renderProfile();
-    if(saveState())toast("Profile picture saved on this device.");
+    if(saveState()) {
+      try { if (window.HEAccountUserId) localStorage.setItem("he-profile-photo-v1:" + window.HEAccountUserId, state.profile.photo); } catch {}
+      toast("Profile picture saved on this device.");
+    }
   };
   reader.readAsDataURL(file);
 });
