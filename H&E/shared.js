@@ -756,9 +756,13 @@
     if (!activeSession || (session && session.user.id === activeSession.user.id && !document.getElementById("loginScreen"))) return;
     const previousSession = session; session = activeSession;
     try {
-      const phone = session.user.phone || state.profile.phone || "";
-      const name = document.getElementById("loginName")?.value.trim() || state.profile.you || session.user.user_metadata?.display_name || "H&E";
-      state.profile = { ...state.profile, you: name, phone, email: session.user.email || state.profile.email || "" };
+      const phone = session.user.phone || "";
+      const name = document.getElementById("loginName")?.value.trim() || session.user.user_metadata?.display_name || "H&E";
+      // Keep each account's profile photo separate on this device.
+      const accountPhotoKey = "he-profile-photo-v1:" + session.user.id;
+      let accountPhoto = "";
+      try { accountPhoto = localStorage.getItem(accountPhotoKey) || ""; } catch {}
+      state.profile = { ...state.profile, you: name, phone, email: session.user.email || "", photo: accountPhoto };
       saveState(); renderProfile(); await ensureKeys();
       const login = document.getElementById("loginScreen"); if (login) login.remove(); if (showIntro) startWelcome(); showPermissionOnboarding();
     } catch (error) { session = previousSession; throw error; }
