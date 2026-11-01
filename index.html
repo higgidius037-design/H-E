@@ -138,7 +138,7 @@
   background: var(--blush);
 }
 .chat-audio { display:none; }
-.voice-tile{width:2in;height:2in;max-width:100%;display:grid;place-items:center;border-radius:14px;background:linear-gradient(145deg,#f7e5e1,#fff4eb);border:1px solid var(--line);margin:8px 0}.voice-play{width:56px;height:56px;border-radius:50%;border:0;background:var(--burgundy);color:white;font-size:25px}
+.voice-tile{width:4cm;height:0.5cm;min-height:0.5cm;display:flex;align-items:center;gap:4px;padding:0 3px;border-radius:12px;background:#fff8f5;border:1px solid #ead8d8;margin:7px 0;overflow:hidden}.voice-play{flex:0 0 14px;width:14px;height:14px;border-radius:50%;border:0;background:var(--burgundy);color:white;font-size:8px;line-height:1;display:grid;place-items:center;padding:0}.voice-wave{height:12px;min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:1px;overflow:hidden}.voice-wave i{display:block;width:2px;min-width:1px;border-radius:2px;background:#a66a7b;height:var(--bar-height);max-height:10px;opacity:.8}.voice-tile.playing .voice-wave i{animation:voiceBars .65s ease-in-out infinite alternate}.voice-tile.playing .voice-wave i:nth-child(3n){animation-delay:.2s}.voice-tile.playing .voice-wave i:nth-child(3n+1){animation-delay:.4s}@keyframes voiceBars{to{transform:scaleY(.45);opacity:.45}}
 .view-once-control{display:flex;align-items:center;gap:8px;margin:7px 4px;color:var(--burgundy)}.view-once-control input{width:auto}#voiceWaveform{width:min(100%,360px);height:52px;background:#fff8ee;border-radius:8px}
 .chat-message-actions {
   display: flex;
@@ -191,22 +191,7 @@
   color: white;
   font-size: 20px;
 }
-.chat-recording {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px;
-  background: #fffaf5;
-  color: var(--burgundy);
-}
-.chat-recording button {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 7px 10px;
-  color: var(--burgundy);
-  background: #f8e9e6;
-}
+.chat-recording{display:flex;align-items:center;flex-wrap:nowrap;gap:7px;padding:7px 8px;background:#fffaf5;color:var(--burgundy);overflow:hidden;min-height:42px}.chat-recording button{flex:0 0 auto;border:1px solid var(--line);border-radius:18px;padding:6px 9px;color:var(--burgundy);background:#f8e9e6;font-size:11px;white-space:nowrap}.chat-recording #stopVoice{background:var(--burgundy);color:#fff;border-color:var(--burgundy)}.chat-recording #recordingStatus{font-size:11px;white-space:nowrap}.chat-recording #voiceWaveform{width:auto;min-width:28px;flex:1;height:28px;background:transparent;border-radius:0}.chat-recording .view-once-control{font-size:10px;gap:3px;margin:0;white-space:nowrap}.chat-recording .view-once-control input{width:13px;height:13px}
 .recording-dot {
   width: 10px;
   height: 10px;
@@ -420,11 +405,13 @@ main { min-width:0;padding:25px clamp(14px,3vw,38px); }
 .topbar h2 { font-size:clamp(23px,3vw,33px);font-weight:normal;color:#401521;margin:0 0 7px; }
 .topbar p { color:var(--muted);margin:0; }
 .avatar {
-  width:46px;height:46px;flex-shrink:0;border-radius:50%;
+  width:46px;height:46px;flex-shrink:0;border-radius:50%;overflow:hidden;position:relative;
   display:grid;place-items:center;color:var(--wine);
   background:linear-gradient(135deg,var(--rose),var(--gold));
   border:3px solid white;box-shadow:0 0 0 1px var(--line);font-size:25px;
 }
+.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:50%;display:block;max-width:none;max-height:none}.avatar img[hidden]{display:none}
+.settings-folders{display:grid;gap:12px}.settings-folder{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;cursor:pointer;color:inherit}.settings-folder>span:nth-child(2){flex:1;min-width:0}.settings-folder strong{display:block;font-size:16px}.settings-folder small{display:block;margin-top:4px;color:var(--muted);font-size:13px}.settings-folder-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--blush);color:var(--burgundy);font-size:22px;flex-shrink:0}.settings-arrow{font-size:28px;color:var(--muted)}.settings-back{margin:0 0 12px}
 .page { display:none; }
 .page.active { display:block; }
 
@@ -555,8 +542,11 @@ textarea { min-height:90px;resize:vertical; }
 
 .bottom-nav { display:none; }
 #toast {
-  position:fixed;z-index:1100;bottom:18px;right:18px;max-width:calc(100vw - 36px);
+  position:fixed;z-index:19;bottom:18px;right:18px;max-width:calc(100vw - 36px);
   padding:13px 17px;background:var(--wine);color:white;border-radius:10px;display:none;
+}
+@media(max-width:650px) {
+  #toast { bottom:calc(86px + env(safe-area-inset-bottom)); }
 }
 #toast.show { display:block; }
 .modal { position:fixed;z-index:90;inset:0;background:#16060df2;display:none;align-items:center;justify-content:center;padding:20px; }
@@ -621,6 +611,198 @@ textarea { min-height:90px;resize:vertical; }
 #welcomeScreen .welcome-logo { display:block; width:clamp(172px,48vw,230px); height:auto; border:0; border-radius:0; background:transparent; box-shadow:none; animation:welcomeRise .8s ease both; }
 #welcomeScreen .welcome-subtitle { margin:0; color:#e8c58a; font-family:Georgia,serif; font-size:clamp(19px,5vw,25px); font-style:italic; }
 
+.he-auth-overlay{position:fixed;inset:0;z-index:10000;background:rgba(20,5,10,.72);display:grid;place-items:center;padding:22px}.he-auth-dialog{width:min(100%,430px);background:var(--card,#fffaf4);color:var(--ink,#310b14);border:1px solid rgba(173,133,77,.45);border-radius:22px;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.3)}.he-auth-mark{font-family:Georgia,serif;font-size:27px;color:#9b7544;letter-spacing:2px}.he-auth-dialog h2{font-family:Georgia,serif;margin:12px 0 8px}.he-auth-dialog p{line-height:1.55;color:var(--muted,#75666a)}.he-auth-dialog input{width:100%;box-sizing:border-box;margin:8px 0 18px}.he-auth-actions{display:flex;justify-content:flex-end;gap:10px}.he-auth-actions button{min-width:104px}
+#heSuccessOverlay{position:fixed;inset:0;z-index:99999;background:#210b14f5;color:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center}#heSuccessOverlay.show{display:flex}.he-success-check{width:108px;height:108px;border:4px solid #fff;border-radius:50%;display:grid;place-items:center;font-size:72px;animation:hePinPop .4s ease-out}#heSuccessOverlay p{font-size:20px;margin-top:20px}@keyframes hePinPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+/* Full-screen WhatsApp-inspired calling UI */
+.call-overlay{position:fixed;inset:0;z-index:999999;display:none;place-items:stretch;background:#12070d;color:#fff;padding:0;overflow:hidden;min-height:100dvh}.call-overlay.open{display:grid}.call-card{width:100%;height:100%;min-height:100dvh;max-width:none;border:0;border-radius:0;padding:0;display:flex;flex-direction:column;text-align:center;background:radial-gradient(ellipse at 50% 35%,#512334 0%,#24111b 48%,#09060a 100%);overflow:hidden}.call-topbar{height:62px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:calc(8px + env(safe-area-inset-top)) 18px 8px;font-size:15px;color:#f7eaf0}.call-topbar .call-icon-btn{border:0;background:transparent;color:white;font-size:27px;width:42px;height:42px}.call-top-spacer{flex:1}.call-stage{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(ellipse at center,#573044 0%,#25121d 55%,#0c070b 100%);display:flex;align-items:center;justify-content:center}.call-stage>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#12070d;display:none}.call-stage.remote-video-ready> #remoteCallVideo{display:block}.call-stage.video-mode> #localCallVideo{display:block;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(112px,36vw,176px);height:clamp(150px,28vh,220px);border-radius:18px;object-fit:cover;z-index:4;border:1px solid #ffffff77;box-shadow:0 8px 30px #0008}.call-stage.video-mode.camera-disabled #localCallVideo{display:none}.call-stage.local-video-promoted>#localCallVideo{display:block!important;inset:0!important;width:100%!important;height:100%!important;max-height:none!important;border:0!important;border-radius:0!important;z-index:3!important;box-shadow:none!important;cursor:pointer}.call-stage.local-video-promoted.remote-video-ready>#remoteCallVideo{display:block;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(94px,29vw,142px);height:clamp(130px,22vh,190px);border-radius:18px;object-fit:cover;z-index:6;border:1px solid #ffffffaa;box-shadow:0 8px 30px #0008;cursor:pointer}.call-stage.local-video-promoted>#callPersonBackdrop{opacity:0;pointer-events:none}.call-stage>#localCallVideo,.call-stage>#remoteCallVideo{cursor:pointer;touch-action:manipulation}.call-person-backdrop{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:radial-gradient(ellipse at center,#75465b55 0%,#28121f99 45%,#09060acc 100%);backdrop-filter:blur(3px);transition:opacity .25s}.call-stage.remote-video-ready .call-person-backdrop{opacity:0;pointer-events:none}.call-stage.video-mode:not(.remote-video-ready) .call-person-backdrop{background:linear-gradient(135deg,#2a1722aa,#10090f99)}.call-avatar{width:clamp(112px,32vw,158px);height:clamp(112px,32vw,158px);border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#e8b6c8,#87445f 55%,#432235);border:2px solid #ffffff55;box-shadow:0 0 0 12px #ffffff08,0 18px 55px #0007;font-size:clamp(42px,12vw,62px);font-weight:600;color:#fff}.call-person-backdrop h2{margin:25px 16px 5px;font-size:clamp(22px,6vw,30px);font-weight:500}.call-person-backdrop p{margin:5px 16px;color:#e5cdd6;font-size:14px}.call-mini-name{display:none}.call-controls{display:flex;justify-content:center;align-items:center;gap:clamp(12px,4vw,24px);flex-shrink:0;padding:20px 14px calc(24px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#0c070b00,#0c070bf2 45%)}.call-control{width:58px;height:58px;border-radius:50%;border:1px solid #ffffff30;background:#ffffff1c;color:#fff;display:grid;place-items:center;font-size:24px;box-shadow:0 4px 18px #0003}.call-control span{line-height:1}.call-control.control-active{background:#f4dce5;color:#311522}.call-control.decline-control{background:#e74452;border-color:#e74452}.call-control.accept-control{background:#22b96b;border-color:#22b96b}.call-control.end-control span{transform:rotate(135deg)}.control-hidden{display:none!important}#incomingCallControls{gap:clamp(40px,15vw,90px)}.voice-mode .call-stage>video{display:none!important}.voice-mode .call-person-backdrop{opacity:1!important}.call-overlay.incoming-call .call-topbar{justify-content:center}.call-overlay.incoming-call .call-topbar .call-icon-btn{visibility:hidden}.call-overlay.incoming-call #callTitle{font-size:15px}.call-overlay.incoming-call .call-person-backdrop p{animation:callPulse 1.8s ease-in-out infinite}@keyframes callPulse{50%{opacity:.55}}body.in-call{overflow:hidden}.call-control:focus-visible,.call-icon-btn:focus-visible{outline:2px solid #fff;outline-offset:4px}@media(min-width:700px){.call-card{max-width:none}.call-stage.video-mode> #localCallVideo{width:180px;height:240px;top:24px;right:24px}}
+
+/* Video call focus: both video tiles are tappable and the controls float above the full-screen picture. */
+.call-overlay.open .call-card{position:relative;isolation:isolate}
+.call-overlay.minimised{display:none!important}
+.call-mini-dock{position:fixed;z-index:1250;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));display:none;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--gold);border-radius:16px;background:linear-gradient(120deg,#310b14,#70263b);color:#fff;box-shadow:0 8px 28px #0005}
+.call-mini-dock.visible{display:flex}
+.call-mini-restore{flex:1;min-width:0;text-align:left;border:0;background:transparent;color:#fff;padding:4px}
+.call-mini-restore strong,.call-mini-restore small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-mini-restore small{margin-top:3px;color:#f0d8dc}
+.call-mini-end{width:42px;height:42px;border:0;border-radius:50%;background:#e74452;color:#fff;font-size:19px}
+.call-overlay.open .call-topbar{position:absolute;z-index:20;top:0;left:0;right:0;width:100%;box-sizing:border-box;background:linear-gradient(180deg,rgba(8,4,8,.62),transparent);pointer-events:none}
+.call-overlay.open .call-topbar button{pointer-events:auto}
+.call-overlay.open .call-stage{position:absolute;inset:0;width:100%;height:100%;flex:none;min-height:100%;padding:0;margin:0}
+.call-overlay.open .call-controls{position:absolute;z-index:30;left:0;right:0;bottom:0;min-height:112px;box-sizing:border-box;padding:18px 14px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,rgba(8,4,8,.78) 38%,rgba(8,4,8,.94));}
+.call-overlay.open #incomingCallControls{bottom:0}
+.call-stage.video-mode>#remoteCallVideo{z-index:1}
+.call-stage.video-mode>#localCallVideo{z-index:5;pointer-events:auto;touch-action:manipulation}
+.call-stage.video-mode.local-video-promoted>#localCallVideo{z-index:2!important}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{z-index:5}
+.call-stage.video-mode.local-video-promoted>#callPersonBackdrop{opacity:0;pointer-events:none}
+.call-stage.video-mode:not(.local-video-promoted)>#localCallVideo{cursor:pointer}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{cursor:pointer}
+.call-stage.video-mode>video{pointer-events:auto}
+.call-stage.video-mode #callPersonBackdrop{pointer-events:none}
+@media(max-width:520px){.call-control{width:54px;height:54px}.call-overlay.open .call-controls{gap:clamp(9px,3vw,17px)}}
+
+
+/* Reliable touch targets above Android video surfaces */
+.call-stage.video-mode .video-hit-area{position:absolute;display:block;padding:0;margin:0;border:0;background:transparent;z-index:8;touch-action:manipulation;-webkit-tap-highlight-color:transparent;cursor:pointer}
+.call-stage.video-mode .remote-hit-area{inset:0;z-index:7}
+.call-stage.video-mode .local-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(94px,29vw,142px);height:clamp(130px,22vh,190px);border-radius:18px;z-index:9}
+.call-stage.video-mode.local-video-promoted .remote-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(94px,29vw,142px);height:clamp(130px,22vh,190px);border-radius:18px;z-index:10}
+.call-stage.video-mode.local-video-promoted .local-hit-area{inset:0;width:100%;height:100%;border-radius:0;z-index:7}
+.call-stage.video-mode .call-person-backdrop{pointer-events:none}
+.call-stage.video-mode .video-hit-area:focus-visible{outline:2px solid #fff;outline-offset:-5px}
+/* Final video stacking fix: keep the other caller above the enlarged self-view. */
+.call-stage.video-mode.local-video-promoted>#localCallVideo{z-index:1!important}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{z-index:2!important}
+.call-stage.video-mode:not(.local-video-promoted)>#remoteCallVideo{z-index:1!important}
+.call-stage.video-mode:not(.local-video-promoted)>#localCallVideo{z-index:2!important}
+.call-stage.video-mode .call-person-backdrop{z-index:0!important;pointer-events:none!important}
+.call-stage.video-mode.local-video-promoted .call-person-backdrop{opacity:0!important}
+.call-stage.video-mode .video-hit-area{z-index:10!important}
+.call-stage.video-mode.local-video-promoted .remote-hit-area{z-index:12!important}
+.call-stage.video-mode.local-video-promoted .local-hit-area{z-index:9!important}
+
+
+/* Preserve the original clear call-screen design and show the caller profile until remote video is live. */
+.call-stage.video-mode:not(.remote-video-ready):not(.local-video-promoted)>#remoteCallVideo{
+  display:none!important;
+}
+.call-stage.video-mode:not(.remote-video-ready):not(.local-video-promoted)>#callPersonBackdrop{
+  display:flex!important;
+  opacity:1!important;
+  visibility:visible!important;
+  z-index:3!important;
+  /* Keep the original burgundy/plum gradient and centred caller avatar. */
+  background:radial-gradient(ellipse at center,#75465b55 0%,#28121f99 45%,#09060acc 100%)!important;
+  backdrop-filter:blur(3px);
+  pointer-events:none!important;
+}
+.call-stage.video-mode.remote-video-ready>#callPersonBackdrop,
+.call-stage.video-mode.local-video-promoted>#callPersonBackdrop{
+  opacity:0!important;
+  visibility:hidden!important;
+}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>#remoteCallVideo{
+  display:block!important;
+}
+.call-stage.video-mode.local-video-promoted:not(.remote-video-ready)>#remoteCallVideo{
+  display:none!important;
+}
+.call-stage.video-mode>.video-hit-area{pointer-events:auto!important;}
+.call-stage.video-mode:not(.local-video-promoted)>.remote-hit-area{
+  inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important;
+}
+.call-stage.video-mode:not(.local-video-promoted)>.local-hit-area{
+  inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border-radius:18px!important;z-index:6!important;
+}
+.call-stage.video-mode.local-video-promoted>.local-hit-area{
+  inset:0!important;width:100%!important;height:100%!important;border-radius:0!important;z-index:5!important;
+}
+.call-stage.video-mode.local-video-promoted>.remote-hit-area{
+  inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;
+  width:clamp(94px,29vw,142px)!important;height:clamp(130px,22vh,190px)!important;
+  border-radius:18px!important;z-index:6!important;
+}
+/* The original call controls remain in their original row below the stage. */
+
+/* Deterministic WhatsApp-style caller focus: preview buttons are the only switch targets. */
+.call-stage.video-mode>#remoteCallVideo{z-index:1!important}
+.call-stage.video-mode>#localCallVideo{z-index:2!important}
+.call-stage.video-mode>.remote-hit-area{inset:0!important;width:100%!important;height:100%!important;z-index:5!important}
+.call-stage.video-mode>.local-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:6!important;border-radius:16px!important}
+.call-stage.video-mode.local-video-promoted>#localCallVideo{inset:0!important;width:100%!important;height:100%!important;max-height:none!important;z-index:1!important}
+.call-stage.video-mode.local-video-promoted>#remoteCallVideo{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:3!important;border-radius:16px!important;object-fit:cover!important}
+.call-stage.video-mode.local-video-promoted>.local-hit-area{inset:0!important;width:100%!important;height:100%!important;z-index:5!important}
+.call-stage.video-mode.local-video-promoted>.remote-hit-area{inset:calc(12px + env(safe-area-inset-top)) 14px auto auto!important;width:clamp(112px,32vw,156px)!important;height:clamp(150px,25vh,205px)!important;z-index:7!important;border-radius:16px!important}
+.remote-profile-mini{display:none;position:absolute;inset:calc(12px + env(safe-area-inset-top)) 14px auto auto;width:clamp(112px,32vw,156px);height:clamp(150px,25vh,205px);z-index:4;border-radius:16px;background:linear-gradient(145deg,#3b1728,#160b13);border:1px solid #ffffff88;box-shadow:0 8px 30px #0009;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:#fff;pointer-events:none}
+.remote-profile-mini .call-avatar{width:64px;height:64px;font-size:25px;margin:0}
+.remote-profile-mini span{font-size:12px;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.call-stage.video-mode.local-video-promoted:not(.remote-video-ready)>.remote-profile-mini{display:flex}
+.call-stage.video-mode.local-video-promoted.remote-video-ready>.remote-profile-mini{display:none}
+.call-stage.video-mode:not(.local-video-promoted)>.remote-profile-mini{display:none}
+.call-stage.video-mode #localCallVideo{object-fit:cover!important;image-rendering:auto}
+/* Keep the small self-view crisp; it uses the same camera stream as full-screen. */
+.call-stage.video-mode:not(.local-video-promoted)>#localCallVideo{
+  filter:none!important;
+  opacity:1!important;
+  image-rendering:auto!important;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  will-change:transform;
+  object-position:center center;
+}
+
+.chat-tick{color:#999;font-size:12px;letter-spacing:-3px;padding-left:4px}.chat-tick.is-delivered{color:#999}.chat-tick.is-read{color:#2296f3}
+/* Consistent edge-to-edge page sizing across desktop and mobile. */
+html,body { width:100%; min-width:0; overflow-x:hidden; }
+main { width:100%; min-width:0; }
+.page,.page.active { width:100%; min-width:0; max-width:none; }
+.page > *, .card, .lower-grid, .stat-grid, .media-grid, .folder-grid { min-width:0; max-width:100%; }
+img,video,canvas,svg { max-width:100%; }
+table { max-width:100%; }
+pre, code { overflow-wrap:anywhere; }
+.chat-app { width:100%; min-width:0; }
+.chat-messages { min-width:0; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+.chat-composer { padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+.chat-composer textarea { min-width:0; }
+.chat-tick { white-space:nowrap; letter-spacing:-2px; }
+button:disabled { opacity:.65; cursor:wait; }
+@media(max-width:650px) {
+  main { padding:0 8px calc(90px + env(safe-area-inset-bottom)); }
+  .topbar { margin:0 -8px 10px; padding:15px 12px; }
+  .page.active { overflow:visible; }
+  .card { width:100%; margin-left:0; margin-right:0; }
+  #page-messages.active { width:calc(100% + 16px); margin:0 -8px; min-height:calc(100dvh - 90px); }
+  #page-messages .card { width:100%; }
+  #page-messages .chat-app { width:100%; height:calc(100dvh - 150px); min-height:360px; max-height:none; border-radius:0; }
+  .chat-header { padding:12px; }
+  .chat-messages { padding:10px; }
+  .chat-composer { padding:8px; gap:6px; }
+  .chat-attach-btn,.chat-mic-btn,.chat-send-btn { width:40px; height:40px; }
+  .media-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .media-preview { width:100%; }
+  .calendar-grid { grid-template-columns:repeat(7,minmax(0,1fr)); }
+  .bottom-nav { padding-bottom:calc(8px + env(safe-area-inset-bottom)); }
+}
+@media(min-width:651px) {
+  .page.active { width:100%; }
+  main { overflow-x:clip; }
+}
+
+
+/* MOBILE SAFE-AREA: keep page controls above the fixed bottom navigation */
+@media (max-width:650px) {
+  .app {
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  main {
+    padding-bottom:calc(100px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav {
+    min-height:64px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    z-index:30;
+  }
+  #page-home {
+    padding-bottom:12px;
+  }
+  #page-messages.active {
+    min-height:0;
+    height:auto;
+  }
+  #page-messages .chat-app {
+    height:calc(100dvh - 190px - env(safe-area-inset-bottom));
+    min-height:0;
+    max-height:calc(100dvh - 190px - env(safe-area-inset-bottom));
+    flex:0 1 auto;
+  }
+  #page-messages .chat-messages {
+    min-height:0;
+    overscroll-behavior:contain;
+  }
+}
+
 /* Refined compact calendar controls */
 .calendar-head-modern{display:flex;align-items:center;justify-content:flex-start;gap:10px;padding:12px 0 16px;margin:0;border-bottom:1px solid var(--line)}
 .calendar-period{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
@@ -648,9 +830,14 @@ textarea { min-height:90px;resize:vertical; }
   <form id="loginForm" class="login-card">
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2>
-    <label id="loginNameLabel" for="loginName" hidden>Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Your name" hidden>
-    <label id="loginContactLabel" for="loginEmail">Email</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or phone number">
+    <label for="loginName" id="loginNameLabel" hidden>Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Your name" hidden>
+    <label for="loginEmail" id="loginContactLabel">Email</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or phone number">
     <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Your password">
+    <div id="signupOtpPanel" hidden>
+      <label for="signupOtp">Email verification code</label>
+      <input id="signupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code">
+      <button class="secondary" id="resendSignupOtp" type="button">Resend code</button>
+    </div>
     <button class="primary" id="loginSubmit" type="submit">Log in</button>
     <button class="secondary" id="toggleLoginMethod" type="button" style="width:100%;margin-top:10px">Create account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
@@ -692,7 +879,7 @@ textarea { min-height:90px;resize:vertical; }
         <h2>H&amp;E — Our Little World</h2>
         <p>Two hearts. One journey. Our little world. ♡</p>
       </div>
-      <div class="avatar" aria-label="H&E">♡</div>
+      <div class="avatar" aria-label="Profile picture"><img id="dashboardAvatarPhoto" alt="" hidden><span id="dashboardAvatarHeart">♡</span></div>
     </div>
 
     <!-- HOME -->
@@ -752,7 +939,7 @@ textarea { min-height:90px;resize:vertical; }
           </div>
         </div>
         <input id="photoFiles" type="file" accept="image/*" multiple hidden>
-        <input id="videoFiles" type="file" accept="video/*" multiple hidden>
+        <input id="videoFiles" type="file" accept="video/*,.mp4,.m4v,.mov,.webm,.3gp,.mkv,.avi" multiple hidden>
         <div class="toolbar hidden" id="sortTools"><label style="margin:0;flex:1">Sort by <select id="mediaSort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="name">Name (A–Z)</option></select></label></div>
         <div class="toolbar hidden" id="selectTools"><button class="secondary" id="toggleSelect" type="button">Cancel selection</button><button class="secondary hidden" id="deleteSelected" type="button">Delete selected</button></div>
         <div class="card-heading"><span id="mediaTotal" class="muted">0 files</span></div>
@@ -826,7 +1013,7 @@ textarea { min-height:90px;resize:vertical; }
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
         <div class="card" style="box-shadow:none">
-          <div class="card-heading"><h2 id="selectedDateTitle">Selected date</h2></div>
+          <div class="card-heading"><h2 id="selectedDateTitle">Selected date</h2><button class="link-button" id="todayButton" type="button">Today</button></div>
           <div id="selectedDayEvents"></div>
         </div>
       </div>
@@ -852,8 +1039,8 @@ textarea { min-height:90px;resize:vertical; }
             <option value="1440">1 day before</option>
           </select>
           <button class="primary" type="submit">Save Event ♡</button>
-          <button class="secondary" id="enableNotifications" type="button">Enable browser notifications</button>
-          <p class="muted">Reminders are checked while the app is open. Background reminders need additional notification services.</p>
+          <button class="secondary" id="enableNotifications" type="button">Enable H&E notifications</button>
+          <p class="muted">Calendar reminders are checked while H&E is open. Allow notifications in Android settings to receive alerts.</p>
         </form>
       </div>
       <div class="card"><h2 class="section-title">All Upcoming Events</h2><div id="allEvents"></div></div>
@@ -874,18 +1061,28 @@ textarea { min-height:90px;resize:vertical; }
 
     <!-- SETTINGS -->
     <section class="page" id="page-settings">
-      <div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div>
-      <div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
-        <div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
-        <form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form>
-      </div>
-      <div class="card"><h2 class="section-title">Security</h2><p class="muted">Choose how you want to protect parts of the app.</p>
-        <div class="security-row"><div><strong>Chats fingerprint lock</strong><p class="muted">Fingerprint authentication depends on device and browser support.</p></div><span class="pill">Not available here</span></div>
-        <form id="pinForm"><label for="newWalletPin">Set or change Wallet PIN</label><input id="newWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="4–8 digit PIN"><label for="confirmWalletPin">Confirm Wallet PIN</label><input id="confirmWalletPin" type="password" inputmode="numeric" minlength="4" maxlength="8" placeholder="Repeat PIN"><button class="primary" type="submit">Save Wallet PIN</button></form>
-        <p class="muted">The PIN in this prototype is stored locally and is not suitable for protecting real funds.</p>
-      </div>
-      <div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div>
-    </section>
+<div id="settingsHome" class="settings-folders">
+<button type="button" class="card settings-folder" data-settings-open="profile"><span class="settings-folder-icon">♙</span><span><strong>Profile</strong><small>Your photo and personal details</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="security"><span class="settings-folder-icon">◇</span><span><strong>Security &amp; Privacy</strong><small>Chat lock and Wallet PIN</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="display"><span class="settings-folder-icon">◐</span><span><strong>Display</strong><small>Theme and wallpaper colour</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="notifications"><span class="settings-folder-icon">♬</span><span><strong>Notifications</strong><small>Alerts, sounds and pop-up preferences</small></span><span class="settings-arrow">›</span></button>
+<button type="button" class="card settings-folder" data-settings-open="account"><span class="settings-folder-icon">⚙</span><span><strong>Account</strong><small>Backup and local app data</small></span><span class="settings-arrow">›</span></button>
+</div>
+<div id="settingsFolder-profile" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Profile</h2><p class="muted">Your personal information for this device.</p>
+<div class="profile-photo-wrap"><img id="profilePhotoPreview" class="profile-photo" alt="Profile picture" hidden><div id="profilePhotoPlaceholder" class="profile-photo placeholder">♡</div><label class="secondary upload-profile" for="profilePhotoInput">Add profile picture</label><input id="profilePhotoInput" type="file" accept="image/*" hidden></div>
+<form id="profileForm"><label for="yourName">Your name</label><input id="yourName" maxlength="60" placeholder="Your name" required><label for="profilePhone">Phone number</label><input id="profilePhone" type="tel" maxlength="16" autocomplete="tel" inputmode="tel" pattern="(?:\+?254|0)[17][0-9]{8}" placeholder="07XXXXXXXX" title="Enter a Kenyan mobile number, e.g. 0712345678"><label for="profileEmail">Email</label><input id="profileEmail" type="email" maxlength="120" placeholder="you@example.com"><button class="primary" type="submit">Save profile</button></form></div></div>
+<div id="settingsFolder-security" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Security</h2><p class="muted">Manage fingerprint, Wallet PIN and account password.</p><div class="settings-folders">
+<button class="card settings-folder" type="button" data-security-open="fingerprint"><span class="settings-folder-icon">▤</span><span><strong>Fingerprint</strong><small>Manage fingerprints in Android settings</small></span><span class="settings-arrow">›</span></button>
+<button class="card settings-folder" type="button" data-security-open="walletpin"><span class="settings-folder-icon">⌑</span><span><strong>Wallet PIN</strong><small>View status or change your PIN</small></span><span class="settings-arrow">›</span></button>
+<button class="card settings-folder" type="button" data-security-open="password"><span class="settings-folder-icon">●</span><span><strong>Password</strong><small>Change your H&amp;E account password</small></span><span class="settings-arrow">›</span></button></div></div></div>
+<div id="securityMicro-fingerprint" class="settings-subfolder hidden"><button class="secondary settings-back" type="button" data-security-back>← Security</button><div class="card"><h2 class="section-title">Fingerprint</h2><p class="muted">Android securely manages fingerprint templates. H&amp;E cannot directly read or erase them.</p><button class="primary" id="addFingerprint" type="button">Add fingerprint</button><button class="secondary" id="deleteFingerprint" type="button">Delete fingerprint</button><p class="muted" id="fingerprintManageStatus" role="status">Android settings will open to manage fingerprints.</p></div></div>
+<div id="securityMicro-walletpin" class="settings-subfolder hidden"><button class="secondary settings-back" type="button" data-security-back>← Security</button><div class="card"><h2 class="section-title">Wallet PIN</h2><button class="secondary" id="showMyPin" type="button">My PIN</button><p id="myPinDisplay" class="muted" hidden>PIN status</p><button class="primary" id="changeMyPin" type="button">Change PIN</button></div></div>
+<div id="securityMicro-password" class="settings-subfolder hidden"><button class="secondary settings-back" type="button" data-security-back>← Security</button><div class="card"><h2 class="section-title">Password</h2><p class="muted">Change the password used to sign in to your H&amp;E account.</p><button class="primary" type="button" id="changeAccountPassword">Change password</button></div></div>
+<div id="heSuccessOverlay" aria-hidden="true"><div class="he-success-check">✓</div><p>PIN changed successfully</p></div>
+<div id="settingsFolder-display" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Display</h2><label for="themeChoice">Theme</label><select id="themeChoice"><option value="light">Light</option><option value="dark">Dark</option></select><label for="wallpaperChoice">Wallpaper colour</label><input id="wallpaperChoice" type="color" value="#fff9f1"><p class="muted">Display choices are saved on this device.</p></div></div>
+<div id="settingsFolder-notifications" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Notifications</h2><p class="muted">Manage H&amp;E alerts on this phone. Android controls the notification sound and pop-up style.</p><button class="primary" id="openAndroidNotifications" type="button">Notification settings &amp; sounds</button><p class="muted">Choose a sound, allow pop-ups, and control lock-screen alerts in Android settings.</p></div></div>
+<div id="settingsFolder-account" class="settings-subfolder hidden"><button type="button" class="secondary settings-back" data-settings-back>← Settings</button><div class="card"><h2 class="section-title">Account</h2><p class="muted">Gallery, calendar, and profile details stay on this device. Paired accounts share encrypted messages and a demo-only wallet balance; no real funds move.</p><button class="secondary" id="exportData" type="button">Export a backup</button> <button class="secondary" id="logoutButton" type="button">Log out</button><button class="secondary" id="clearData" type="button">Clear local app data</button></div></div>
+</section>
   </main>
 </div>
 
@@ -902,7 +1099,8 @@ textarea { min-height:90px;resize:vertical; }
   <button class="modal-close" id="closeModal" aria-label="Close viewer">×</button>
   <div class="modal-content" id="modalContent"></div>
 </div>
-<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true"><div class="call-card"><h2 id="callTitle">Private call</h2><p id="callStatus">Waiting…</p><div class="call-videos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video></div><div id="incomingCallControls"><button class="primary" id="acceptCall" type="button">Accept</button><button class="secondary" id="rejectCall" type="button">Decline</button></div><div id="activeCallControls"><button class="secondary" id="muteCall" type="button">Mute</button><button class="secondary" id="cameraCall" type="button">Camera off</button><button class="secondary" id="endCall" type="button">End call</button></div></div></div>
+<div class="call-overlay" id="callOverlay" role="dialog" aria-modal="true" aria-label="Call"><div class="call-card"><div class="call-topbar"><button class="call-icon-btn" id="minimiseCall" type="button" aria-label="Minimise call" title="Minimise call">⌄</button><span id="callTitle">Private call</span><span class="call-top-spacer"></span></div><div class="call-stage" id="callVideos"><video id="remoteCallVideo" autoplay playsinline></video><video id="localCallVideo" autoplay muted playsinline></video><button class="video-hit-area remote-hit-area" id="tapRemoteVideo" type="button" aria-label="Make other caller video full screen"></button><button class="video-hit-area local-hit-area" id="tapLocalVideo" type="button" aria-label="Make my video full screen"></button><div class="call-person-backdrop" id="callPersonBackdrop"><div class="call-avatar" id="callAvatarInitials">H</div><h2 id="callPartnerName">Private contact</h2><p id="callStatus">Calling…</p></div><div class="remote-profile-mini" id="remoteProfileMini"><div class="call-avatar" id="remoteMiniInitials">H</div><span id="remoteMiniName">Private contact</span></div><div class="call-mini-name" id="callMiniName"></div></div><div id="incomingCallControls" class="call-controls incoming-controls"><button class="call-control accept-control" id="acceptCall" type="button" aria-label="Answer call" title="Answer call"><span>☎</span></button><button class="call-control decline-control" id="rejectCall" type="button" aria-label="Decline call" title="Decline call"><span>✕</span></button></div><div id="activeCallControls" class="call-controls"><button class="call-control" id="muteCall" type="button" aria-label="Mute microphone" title="Mute microphone"><span>🎙</span></button><button class="call-control" id="callSpeaker" type="button" aria-label="Turn sound off" title="Speaker"><span>🔊</span></button><button class="call-control" id="switchCameraCall" type="button" aria-label="Switch camera" title="Switch camera"><span>🔄</span></button><button class="call-control" id="cameraCall" type="button" aria-label="Turn camera off" title="Turn camera off"><span>▣</span></button><button class="call-control decline-control end-control" id="endCall" type="button" aria-label="End call" title="End call"><span>☎</span></button></div></div></div>
+<div class="call-mini-dock" id="callMiniDock" aria-live="polite"><button class="call-mini-restore" id="restoreCall" type="button"><strong id="miniCallName">H&E call</strong><small id="miniCallStatus">Call continues in the background</small></button><button class="call-mini-end" id="endMiniCall" type="button" aria-label="End call">☎</button></div>
 
 <script>
 "use strict";
@@ -912,6 +1110,7 @@ const STORAGE_KEY = "he-little-world-v1";
 const MEDIA_KEY = "he-little-world-media-v1";
 const EVENT_KEY = "he-little-world-events-v1";
 const DISPLAY_KEY = "he-display-v1";
+document.addEventListener("DOMContentLoaded",()=>{const b=$("openAndroidNotifications");if(b)b.addEventListener("click",()=>{if(window.HENative?.openNotificationSettings)window.HENative.openNotificationSettings();else toast("Notification sound settings are available in your phone’s app settings.");});});
 function applyDisplayPreferences(){const pref=JSON.parse(localStorage.getItem(DISPLAY_KEY)||"{}");const theme=$("themeChoice");const wallpaper=$("wallpaperChoice");if(theme)theme.value=pref.theme||"light";if(wallpaper)wallpaper.value=pref.wallpaper||"#fff9f1";document.documentElement.classList.toggle("theme-dark",pref.theme==="dark");document.documentElement.style.setProperty("--app-wallpaper",pref.wallpaper||"#fff9f1");}
 function saveDisplayPreferences(){const data={theme:$("themeChoice").value,wallpaper:$("wallpaperChoice").value};localStorage.setItem(DISPLAY_KEY,JSON.stringify(data));applyDisplayPreferences();}
 applyDisplayPreferences();$("themeChoice").addEventListener("change",saveDisplayPreferences);$("wallpaperChoice").addEventListener("input",saveDisplayPreferences);
@@ -928,6 +1127,7 @@ let selectMode = false;
 let selectedMedia = new Set();
 let mediaFilter = "image";
 let mediaDBPromise = null;
+let mediaReady = Promise.resolve();
 const mediaURLCache = new Map();
 
 const now = new Date();
@@ -1047,6 +1247,26 @@ async function saveMedia() {
     return false;
   }
 }
+
+async function clearLocalGalleryMedia() {
+  try {
+    const db = await openMediaDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("items", "readwrite");
+      tx.objectStore("items").clear();
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+  } catch (error) { console.warn("Could not clear Gallery storage:", error); }
+  mediaItems = [];
+  for (const url of mediaURLCache.values()) { try { URL.revokeObjectURL(url); } catch {} }
+  mediaURLCache.clear();
+  try { localStorage.removeItem(MEDIA_KEY); } catch {}
+  selectedMedia.clear();
+  renderMedia();
+}
+window.clearLocalGalleryMedia = clearLocalGalleryMedia;
 function saveEvents() {
   try {
     localStorage.setItem(EVENT_KEY,JSON.stringify(events));
@@ -1064,7 +1284,15 @@ function toast(message,error=false) {
   clearTimeout(toast.timer);
   toast.timer=setTimeout(()=>box.classList.remove("show"),3200);
 }
-function showPage(page) {
+function showSettingsHome(){ $("settingsHome").classList.remove("hidden"); document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden")); }
+function openSettingsFolder(name,fromPop=false){$("settingsHome").classList.add("hidden");document.querySelectorAll(".settings-subfolder").forEach(f=>f.classList.add("hidden"));const f=$("settingsFolder-"+name);if(f)f.classList.remove("hidden");if(!fromPop)history.pushState({hePage:"settings",heFolder:name},"","#settings-"+name);}
+document.querySelectorAll("[data-settings-open]").forEach(b=>b.addEventListener("click",()=>openSettingsFolder(b.dataset.settingsOpen)));
+document.querySelectorAll("[data-settings-back]").forEach(b=>b.addEventListener("click",()=>{showSettingsHome();history.pushState({hePage:"settings",heFolder:null},"","#settings");}));
+history.replaceState({hePage:"home",heFolder:null},"","#home");
+window.addEventListener("popstate",event=>{const target=event.state||{hePage:"home",heFolder:null};showPage(target.hePage||"home",true);if(target.hePage==="settings"&&target.heFolder)openSettingsFolder(target.heFolder,true);});
+function showPage(page,fromPop=false) {
+  if(page==="settings") showSettingsHome();
+  if(!fromPop){const current=history.state||{};if(current.hePage!==page||current.heFolder)history.pushState({hePage:page,heFolder:null},"","#"+page);else history.replaceState({hePage:page,heFolder:null},"","#"+page);}
   const target = document.getElementById("page-" + page);
   if (!target) return;
   document.querySelectorAll(".page").forEach(section => {
@@ -1151,34 +1379,53 @@ $("toggleSelect").addEventListener("click",()=>{selectMode=false;selectedMedia.c
 $("deleteSelected").addEventListener("click",async()=>{if(!selectedMedia.size)return toast("Select at least one file first.",true);if(!confirm(`Delete ${selectedMedia.size} selected file(s) from this device?`))return;for(const item of mediaItems)if(selectedMedia.has(item.id)&&mediaURLCache.has(item.id)){URL.revokeObjectURL(mediaURLCache.get(item.id));mediaURLCache.delete(item.id);}mediaItems=mediaItems.filter(item=>!selectedMedia.has(item.id));selectedMedia.clear();if(await saveMedia()){renderMedia();toast("Selected files deleted.");}});
 document.addEventListener("click",event=>{if(event.target.id==="emptyAdd")(mediaFilter==="image"?$("photoFiles"):$("videoFiles")).click();if(!event.target.closest(".menu-wrap"))$("galleryMenu")?.classList.add("hidden");});
 async function addGalleryFiles(input, expectedType) {
-  const files=[...input.files];
-  input.value="";
-  if(!files.length) return;
-  const valid=files.filter(file=>expectedType==="image"?file.type.startsWith("image/"):file.type.startsWith("video/"));
-  if(!valid.length) return toast(`Choose ${expectedType==="image"?"photo":"video"} files only.`,true);
-  const previous=[...mediaItems];
-  const added=valid.map(file=>{
-    const fileDate=new Date(file.lastModified||Date.now());
-    return {
-      id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),
-      title:file.name,
-      name:file.name,
-      date:dateString(fileDate),
-      note:"",
-      type:expectedType,
-      blob:file,
-      data:"",
-      createdAt:file.lastModified||Date.now(),
-      size:file.size,
-      mimeType:file.type
-    };
-  });
-  mediaItems.push(...added);
-  if(await saveMedia()) {
-    mediaFilter=expectedType;
+  const files = Array.from(input.files || []);
+  input.value = "";
+  if (!files.length) return;
+  try { await mediaReady; } catch (error) { console.warn(error); }
+  const valid = files.filter(file => detectMediaKind(file) === expectedType && file.size > 0);
+  if (!valid.length) {
+    toast("No supported " + (expectedType === "image" ? "photo" : "video") + " files found.", true);
+    return;
+  }
+  const previous = mediaItems.slice();
+  toast("Adding " + valid.length + " file(s)…");
+  try {
+    const added = [];
+    for (const file of valid) {
+      const buffer = await file.arrayBuffer();
+      const mime = file.type || (expectedType === "image" ? "image/jpeg" : "video/mp4");
+      const blob = new Blob([buffer], { type: mime });
+      const stamp = file.lastModified || Date.now();
+      added.push({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        title: file.name || "Media",
+        name: file.name || "Media",
+        date: dateString(new Date(stamp)),
+        note: "",
+        type: expectedType,
+        blob: blob,
+        data: "",
+        createdAt: stamp,
+        size: blob.size,
+        mimeType: mime
+      });
+    }
+    mediaItems.push(...added);
+    if (await saveMedia()) {
+      mediaFilter = expectedType;
+      renderMedia();
+      toast(added.length + " file(s) saved. ♡");
+    } else {
+      mediaItems = previous;
+      renderMedia();
+    }
+  } catch (error) {
+    console.error("Gallery import error:", error);
+    mediaItems = previous;
     renderMedia();
-    toast(`${added.length} ${expectedType==="image"?"photo":"video"}${added.length===1?"":"s"} saved. ♡`);
-  } else mediaItems=previous;
+    toast("Could not save this media. Check available device storage.", true);
+  }
 }
 $("photoFiles").addEventListener("change",()=>addGalleryFiles($("photoFiles"),"image"));
 $("videoFiles").addEventListener("change",()=>addGalleryFiles($("videoFiles"),"video"));
@@ -1219,6 +1466,8 @@ function renderProfile() {
   $("profilePhotoPreview").src=state.profile.photo||"";
   $("profilePhotoPreview").hidden=!state.profile.photo;
   $("profilePhotoPlaceholder").classList.toggle("hidden",!!state.profile.photo);
+  const dp=$("dashboardAvatarPhoto"), dh=$("dashboardAvatarHeart");
+  if(dp&&dh){dp.src=state.profile.photo||"";dp.hidden=!state.profile.photo;dh.hidden=!!state.profile.photo;}
 }
 $("profileForm").addEventListener("submit",event=>{
   event.preventDefault();
@@ -1239,14 +1488,7 @@ $("profilePhotoInput").addEventListener("change",()=>{
   };
   reader.readAsDataURL(file);
 });
-$("pinForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  const pin=$("newWalletPin").value,confirmPin=$("confirmWalletPin").value;
-  if(!/^\d{4,8}$/.test(pin))return toast("Choose a 4–8 digit PIN.",true);
-  if(pin!==confirmPin)return toast("PINs do not match.",true);
-  state.wallet.pin=pin;
-  if(saveState()){event.target.reset();toast("Wallet PIN saved locally. This is a prototype, not secure banking storage.");}
-});
+$("pinForm")?.addEventListener("submit",event=>event.preventDefault());
 
 /* MESSAGES — DEVICE ONLY */
 
@@ -1277,6 +1519,13 @@ function saveChatFile(file) {
     reader.readAsDataURL(file);
   });
 }
+function detectMediaKind(file) {
+  const mime=String(file?.type||"").toLowerCase();
+  const name=String(file?.name||"").toLowerCase();
+  if(mime.startsWith("image/") || /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif)$/i.test(name)) return "image";
+  if(mime.startsWith("video/") || /\.(mp4|m4v|mov|webm|3gp|mkv|avi)$/i.test(name)) return "video";
+  return "";
+}
 
 function renderChats() {
   const list = $("chatList");
@@ -1305,19 +1554,22 @@ function renderChats() {
     }
 
     if (chat.voice) {
-      media += `<div class="voice-tile"><audio class="chat-audio" preload="metadata"
-                  src="${chat.voice}"></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button></div>`;
+      const bars = [8,14,20,12,24,16,10,22,15,25,12,19,9,23,14,20,11,17,24,13,8,18,12,21];
+      media += '<div class="voice-tile"><audio class="chat-audio" preload="metadata" src="' + chat.voice + '" ></audio><button class="voice-play" type="button" data-voice-play aria-label="Play voice note">▶</button><span class="voice-wave" aria-hidden="true">' + bars.map(h => '<i style="--bar-height:' + h + 'px"></i>').join("") + '</span></div>';
     }
+    const isMissedCall = chat.callEvent === "missed";
+    const callLabel = chat.callKind === "video" ? "Missed video call" : "Missed voice call";
 
     return `
       <article class="chat-bubble ${isMine ? "mine" : "theirs"}">
         ${!isMine ? `<div class="chat-sender">${escapeHTML(name)}</div>` : ""}
-        ${chat.message
-          ? `<p class="chat-text">${escapeHTML(chat.message)}</p>` : ""}
+        ${isMissedCall
+          ? `<p class="chat-text" style="font-weight:700;color:#b44b64">↙ ${callLabel}</p>`
+          : chat.message ? `<p class="chat-text">${escapeHTML(chat.message)}</p>` : ""}
         ${media}
         <div class="chat-time">
           <span>${escapeHTML(time)}</span>
-          ${isMine ? '<span class="chat-tick">✓</span>' : ""}
+          ${isMine ? '<span class="chat-tick ${chat.readAt ? "is-read" : chat.deliveredAt ? "is-delivered" : ""}">${chat.readAt || chat.deliveredAt ? "✓✓" : "✓"}</span>' : ""}
         </div>
         <div class="chat-message-actions">
           <button class="chat-delete" type="button"
@@ -1333,9 +1585,9 @@ $("chatAttachment").addEventListener("change", async event => {
   const file = event.target.files[0];
   if (!file) return;
 
-  if (!file.type.startsWith("image/") &&
-      !file.type.startsWith("video/")) {
-    toast("Choose a photo or video.", true);
+  const mediaKind=detectMediaKind(file);
+  if (!mediaKind) {
+    toast("Choose a supported photo or video file.", true);
     event.target.value = "";
     return;
   }
@@ -1343,7 +1595,7 @@ $("chatAttachment").addEventListener("change", async event => {
   try {
     pendingChatFile = {
       name: file.name,
-      type: file.type.startsWith("video/") ? "video" : "image",
+      type: mediaKind,
       data: await saveChatFile(file)
     };
 
@@ -1417,7 +1669,7 @@ $("chatList").addEventListener("click", event => {
   }
 });
 
-$("chatList").addEventListener("click",event=>{const button=event.target.closest("[data-voice-play]");if(!button)return;const audio=button.closest(".voice-tile").querySelector("audio");if(audio.paused){audio.play();button.textContent="Ⅱ";}else{audio.pause();button.textContent="▶";}audio.onended=()=>button.textContent="▶";});
+$("chatList").addEventListener("click",event=>{const button=event.target.closest("[data-voice-play]");if(!button)return;const tile=button.closest(".voice-tile"),audio=tile.querySelector("audio");if(audio.paused){audio.play().then(()=>{button.textContent="Ⅱ";tile.classList.add("playing");}).catch(error=>{console.error("Voice playback failed:",error);toast("Could not play this voice note.",true);});}else{audio.pause();button.textContent="▶";tile.classList.remove("playing");}audio.onended=()=>{button.textContent="▶";tile.classList.remove("playing");};});
 
 $("chatMessage").addEventListener("input", event => {
   event.target.style.height = "auto";
@@ -1441,10 +1693,31 @@ $("recordVoice").addEventListener("click", async () => {
   }
 
   try {
-    chatStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    voiceAudioContext=new (window.AudioContext||window.webkitAudioContext)();voiceAnalyser=voiceAudioContext.createAnalyser();voiceAnalyser.fftSize=128;voiceAudioContext.createMediaStreamSource(chatStream).connect(voiceAnalyser);drawVoiceWaveform();
+    // Request the microphone with the simplest constraints for Android WebView.
+    chatStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    // Waveform visuals are optional: an AudioContext failure must never block recording.
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        voiceAudioContext = new AudioContextClass();
+        if (voiceAudioContext.state === "suspended") await voiceAudioContext.resume().catch(() => {});
+        voiceAnalyser = voiceAudioContext.createAnalyser();
+        voiceAnalyser.fftSize = 128;
+        voiceAudioContext.createMediaStreamSource(chatStream).connect(voiceAnalyser);
+        drawVoiceWaveform();
+      }
+    } catch (waveError) {
+      console.warn("Voice waveform unavailable; continuing without it.", waveError);
+      voiceAnalyser = null;
+    }
+
     chatChunks = [];
-    chatRecorder = new MediaRecorder(chatStream);
+    const recorderTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+    const recorderType = recorderTypes.find(type => MediaRecorder.isTypeSupported?.(type));
+    chatRecorder = recorderType
+      ? new MediaRecorder(chatStream, { mimeType: recorderType })
+      : new MediaRecorder(chatStream);
 
     chatRecorder.addEventListener("dataavailable", event => {
       if (event.data.size) chatChunks.push(event.data);
@@ -1456,11 +1729,6 @@ $("recordVoice").addEventListener("click", async () => {
         const blob = new Blob(chatChunks, {
           type: chatRecorder.mimeType || "audio/webm"
         });
-
-        if (blob.size > 500000) {
-          toast("Voice note is too large for local storage.", true);
-          return;
-        }
 
         const voice = await saveChatFile(blob);
         state.chats.push({
@@ -1477,10 +1745,15 @@ $("recordVoice").addEventListener("click", async () => {
         });
 
         if (saveState()) {
-          if (window.heSharedSend) await window.heSharedSend({message:"",attachment:null,voice},"voice",$("recordingViewOnce").checked);
-          $("recordingViewOnce").checked=false;
+          const viewOnce = $("recordingViewOnce").checked;
+          $("recordingViewOnce").checked = false;
           renderChats();
-          toast("Voice note saved ♡");
+          toast("Voice note sent ♡");
+          // Show the sent note immediately; sync it in the background.
+          if (window.heSharedSend) {
+            Promise.resolve(window.heSharedSend({message:"",attachment:null,voice},"voice",viewOnce))
+              .catch(syncError => console.error("Voice note sync failed:", syncError));
+          }
         }
       } catch (error) {
         console.error(error);
@@ -1491,6 +1764,8 @@ $("recordVoice").addEventListener("click", async () => {
         chatStream = null;
         chatRecorder = null;
         $("recordVoice").textContent = "🎙";
+        $("stopVoice").disabled = false;
+        $("stopVoice").textContent = "Stop & send";
         $("recordingPanel").classList.add("hidden");
       }
     });
@@ -1501,10 +1776,28 @@ $("recordVoice").addEventListener("click", async () => {
     $("recordingPanel").classList.remove("hidden");
     $("recordingStatus").textContent = "Recording voice note…";
   } catch (error) {
-    console.error(error);
-    toast("Allow microphone access to record a voice note.", true);
+    console.error("H&E voice-note recording failed:", error);
+    const name = error?.name || "Error";
+    let message;
+    if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+      message = "H&E was blocked from opening the microphone. Check the app's microphone access.";
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      message = "No microphone was detected by Android.";
+    } else if (name === "NotReadableError" || name === "TrackStartError") {
+      message = "Android could not start the microphone. It may be busy or unavailable to WebView.";
+    } else if (name === "NotSupportedError") {
+      message = "This Android WebView does not support the available voice-recording format.";
+    } else {
+      message = "Voice recording failed (" + name + "): " + (error?.message || "unknown error");
+    }
+    toast(message, true);
     chatStream?.getTracks().forEach(track => track.stop());
     chatStream = null;
+    chatRecorder = null;
+    if (voiceAudioContext) voiceAudioContext.close().catch(() => {});
+    voiceAudioContext = null;
+    voiceAnalyser = null;
+    cancelAnimationFrame(waveFrame);
   }
 });
 
@@ -1512,6 +1805,8 @@ function drawVoiceWaveform(){const canvas=$("voiceWaveform"),ctx=canvas.getConte
 
 $("stopVoice").addEventListener("click", () => {
   if (chatRecorder && chatRecorder.state !== "inactive") {
+    $("stopVoice").disabled = true;
+    $("stopVoice").textContent = "Sending…";
     chatRecorder.stop();
   }
 });
@@ -1541,7 +1836,15 @@ function renderGoal(){renderWallet();}
 
 /* CALENDAR AND IN-APP REMINDERS */
 function eventsOnDate(date) {
-  return events.filter(item=>item.date===date);
+  return events.filter(item=>item.date===date ||
+    (item.recurring==="yearly" && item.date.slice(5)===date.slice(5)))
+    .map(item=>item.recurring==="yearly" ? {...item,date} : item);
+}
+function nextAnnualDate(item, fromDate=new Date()) {
+  const today = new Date(fromDate.getFullYear(),fromDate.getMonth(),fromDate.getDate());
+  let next = new Date(today.getFullYear(),Number(item.date.slice(5,7))-1,Number(item.date.slice(8,10)));
+  if(next<today) next = new Date(today.getFullYear()+1,Number(item.date.slice(5,7))-1,Number(item.date.slice(8,10)));
+  return dateString(next);
 }
 function renderCalendar() {
   const first=new Date(calendarYear,calendarMonth,1);
@@ -1658,7 +1961,7 @@ function eventMarkup(item) {
     <h3>${escapeHTML(item.title)}</h3>
     ${item.note?`<p class="muted">${escapeHTML(item.note)}</p>`:""}
     ${item.reminder?`<small class="muted" style="display:block">Reminder set</small>`:""}
-    <button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>
+    ${item.systemEvent?"":`<button class="link-button" type="button" data-delete-event="${escapeHTML(item.id)}">Remove event</button>`}
   </div>`;
 }
 function renderSelectedEvents() {
@@ -1669,7 +1972,9 @@ function renderSelectedEvents() {
 }
 function renderAllEvents() {
   const todayValue=dateString(new Date());
-  const list=events.filter(item=>item.date>=todayValue)
+  const list=events
+    .filter(item=>item.recurring==="yearly" || item.date>=todayValue)
+    .map(item=>item.recurring==="yearly" ? {...item,date:nextAnnualDate(item)} : item)
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||"").localeCompare(b.time||""));
   $("allEvents").innerHTML=list.length
     ?list.map(eventMarkup).join("")
@@ -1677,7 +1982,9 @@ function renderAllEvents() {
 }
 function renderHomeEvents() {
   const todayValue=dateString(new Date());
-  const list=events.filter(item=>item.date>=todayValue)
+  const list=events
+    .filter(item=>item.recurring==="yearly" || item.date>=todayValue)
+    .map(item=>item.recurring==="yearly" ? {...item,date:nextAnnualDate(item)} : item)
     .sort((a,b)=>a.date.localeCompare(b.date)).slice(0,3);
   $("homeEvents").innerHTML=list.length
     ?list.map(item=>`<div class="item"><span class="pill">${escapeHTML(item.date)}${item.time?" · "+escapeHTML(item.time):""}</span><strong>${escapeHTML(item.title)}</strong></div>`).join("")
@@ -1695,11 +2002,12 @@ document.addEventListener("click",event=>{
 });
 $("enableNotifications").addEventListener("click",async()=>{
   if(!("Notification" in window)) return toast("This browser does not support notifications.",true);
+  if(window.HENative?.showNotification){window.HENative.showNotification("H&E","Notifications are ready on this device.");toast("H&E notifications requested. You can adjust sounds and pop-ups in Settings.");return;}
   const permission=await Notification.requestPermission();
   toast(permission==="granted"?"Notifications enabled while this app is open.":"Notification permission was not granted.",permission!=="granted");
 });
 function checkReminders() {
-  if(!("Notification" in window)||Notification.permission!=="granted") return;
+  if(!window.HENative && (!("Notification" in window)||Notification.permission!=="granted")) return;
   const now=Date.now();
   let changed=false;
 
@@ -1707,7 +2015,7 @@ function checkReminders() {
     if(!item.reminder||!item.time||item.reminded) continue;
     const reminderAt=new Date(item.date+"T"+item.time).getTime()-item.reminder*60000;
     if(now>=reminderAt&&now<reminderAt+60000) {
-      new Notification("H&E reminder",{body:item.title+" is coming up ♡"});
+      if(window.HENative?.showNotification) window.HENative.showNotification("H&E reminder",item.title+" is coming up ♡"); else if("Notification" in window && Notification.permission==="granted") new Notification("H&E reminder",{body:item.title+" is coming up ♡"});
       item.reminded=true;
       changed=true;
     }
@@ -1753,7 +2061,7 @@ renderHomeEvents();
 renderWallet();
 renderCalendar();
 renderChats();
-loadMediaFromDB();
+mediaReady = loadMediaFromDB();
 function showLoginFeedback(message,kind="error") {
   const box = $("loginFeedback");
   if (!box) return;
@@ -1765,14 +2073,29 @@ function showLoginFeedback(message,kind="error") {
 
 <script>
 if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("/H-E/sw.js").catch(error => {
-    console.error("Service worker registration failed:", error);
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("/H-E/sw.js", { updateViaCache: "none" });
+      await registration.update();
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") registration.update().catch(() => {});
+      });
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) worker.postMessage({ type: "SKIP_WAITING" });
+        });
+      });
+    } catch (error) {
+      console.error("Service worker update check failed:", error);
+    }
   });
 }
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=14"></script>
+<script src="/H-E/H%26E/shared.js?v=18"></script>
 
 </body>
 </html>
