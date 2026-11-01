@@ -762,7 +762,16 @@
       window.HEAccountUserId = session.user.id;
       const accountPhotoKey = "he-profile-photo-v1:" + session.user.id;
       let accountPhoto = "";
-      try { accountPhoto = localStorage.getItem(accountPhotoKey) || ""; } catch {}
+      try {
+        accountPhoto = localStorage.getItem(accountPhotoKey) || "";
+        // Preserve the existing device owner's photo once, then prevent it leaking to later accounts.
+        const legacyClaimed = localStorage.getItem("he-profile-photo-legacy-claimed-v1") === "yes";
+        if (!accountPhoto && !legacyClaimed && state.profile.photo) {
+          accountPhoto = state.profile.photo;
+          localStorage.setItem(accountPhotoKey, accountPhoto);
+          localStorage.setItem("he-profile-photo-legacy-claimed-v1", "yes");
+        }
+      } catch {}
       state.profile = { ...state.profile, you: name, phone, email: session.user.email || "", photo: accountPhoto };
       saveState(); renderProfile(); await ensureKeys();
       const login = document.getElementById("loginScreen"); if (login) login.remove(); if (showIntro) startWelcome(); showPermissionOnboarding();
