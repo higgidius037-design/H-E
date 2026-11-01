@@ -759,6 +759,7 @@
       const phone = session.user.phone || "";
       const name = document.getElementById("loginName")?.value.trim() || session.user.user_metadata?.display_name || "H&E";
       // Keep each account's profile photo separate on this device.
+      window.HEAccountUserId = session.user.id;
       const accountPhotoKey = "he-profile-photo-v1:" + session.user.id;
       let accountPhoto = "";
       try { accountPhoto = localStorage.getItem(accountPhotoKey) || ""; } catch {}
