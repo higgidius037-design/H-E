@@ -293,6 +293,11 @@
         <input id="partnerContact" type="text" inputmode="email" autocomplete="email" placeholder="Email or +2547XXXXXXXX">
         <p class="muted">We'll send a private six-digit pairing code to this contact. It expires in 10 minutes.</p>
         <button class="primary" id="makePairInvite" type="button">Send pairing code</button>
+        <div id="pairCodeDisplay" hidden style="margin-top:12px;padding:16px;text-align:center;border:1px solid rgba(167,73,105,.35);border-radius:14px;background:#fff5f8;color:#472433">
+          <p style="margin:0 0 6px;font-weight:600">Your pairing code</p>
+          <strong id="pairCodeDigits" style="display:block;font-size:30px;letter-spacing:8px;color:#7b2948"></strong>
+          <p class="muted" style="margin:8px 0 0">Share this six-digit code with your partner. It expires in 10 minutes.</p>
+        </div>
         <div class="divider" style="margin:18px 0"></div>
         <label for="pairCode">Enter the six-digit code your partner received</label>
         <input id="pairCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
@@ -928,6 +933,10 @@
   async function createInvite() {
     const button = document.getElementById("makePairInvite");
     let createdCode = null;
+    const codeDisplay = document.getElementById("pairCodeDisplay");
+    const codeDigits = document.getElementById("pairCodeDigits");
+    if (codeDisplay) codeDisplay.hidden = true;
+    if (codeDigits) codeDigits.textContent = "";
     try {
       if (!session) throw new Error("Sign in first.");
       const contact = document.getElementById("partnerContact").value.trim();
@@ -939,8 +948,10 @@
       const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code } });
       if (deliveryError) throw deliveryError;
       createdCode = null;
+      if (codeDigits) codeDigits.textContent = String(code);
+      if (codeDisplay) codeDisplay.hidden = false;
       document.getElementById("pairCode").focus();
-      toast("A six-digit pairing code has been sent. It expires in 10 minutes.");
+      toast("Your pairing code is displayed below. It expires in 10 minutes.");
     } catch (error) {
       if (createdCode) {
         await db.rpc("cancel_pair_invite", { p_code: createdCode }).catch(() => {});
