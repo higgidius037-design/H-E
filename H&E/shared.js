@@ -78,6 +78,7 @@
     let pendingSignupEmail = "";
     let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
+    const dobLabel = document.querySelector('label[for="loginDateOfBirth"]');
     const nameField = document.getElementById("signupNameField");
     const dobField = document.getElementById("signupDobField");
     const dobInput = document.getElementById("loginDateOfBirth");
