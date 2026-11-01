@@ -84,60 +84,37 @@
     const nameField = document.getElementById("signupNameField");
     const dobField = document.getElementById("signupDobField");
     const dobInput = document.getElementById("loginDateOfBirth");
-    // Minimal signup switch is deliberately independent of the optional DOB picker.
-    // It remains usable even if later setup code fails.
+    // Signup toggle: reveal the fields on the first tap; the main submit button then creates the account.
     toggleMethod.addEventListener("click", () => {
-      const creating = toggleMethod.dataset.signup !== "true";
-      isSignUp = creating;
-      toggleMethod.dataset.signup = creating ? "true" : "false";
+      isSignUp = !isSignUp;
       const name = document.getElementById("loginName");
-      const nameLabelEl = document.getElementById("loginNameLabel");
       const contactLabelEl = document.getElementById("loginContactLabel");
       const noteEl = form.querySelector(".login-note");
-      nameField.hidden = !creating;
-      nameField.style.display = creating ? "block" : "none";
-      if (creating) {
-        dobField.removeAttribute("hidden");
-        dobField.hidden = false;
-        dobField.style.setProperty("display", "block", "important");
-        dobInput.removeAttribute("hidden");
-        dobInput.hidden = false;
-        dobInput.style.setProperty("display", "block", "important");
-      } else {
-        dobField.hidden = true;
-        dobField.style.setProperty("display", "none", "important");
-      }
-      if (creating) {
-        name.removeAttribute("hidden");
-        nameLabelEl.removeAttribute("hidden");
-        name.hidden = false;
-        nameLabelEl.hidden = false;
-        name.style.setProperty("display", "block", "important");
-        nameLabelEl.style.setProperty("display", "block", "important");
-        name.style.visibility = "visible";
-        nameLabelEl.style.visibility = "visible";
-      } else {
-        name.hidden = true;
-        nameLabelEl.hidden = true;
-        name.style.display = "none";
-        nameLabelEl.style.display = "none";
-      }
-      name.required = creating;
-      email.type = creating ? "tel" : "text";
-      email.inputMode = creating ? "tel" : "email";
-      email.autocomplete = creating ? "tel" : "username";
-      email.placeholder = creating ? "+254 7XX XXX XXX" : "Email or phone number";
-      contactLabelEl.textContent = creating ? "Phone number" : "Email";
-      submitButton.textContent = creating ? "Create account" : "Log in";
-      toggleMethod.textContent = creating ? "Already have an account? Log in" : "Create account";
-      password.autocomplete = creating ? "new-password" : "current-password";
-      if (noteEl) noteEl.textContent = creating
+      nameField.hidden = !isSignUp;
+      nameField.style.display = isSignUp ? "block" : "none";
+      dobField.hidden = !isSignUp;
+      dobField.style.display = isSignUp ? "block" : "none";
+      name.hidden = !isSignUp;
+      name.style.display = isSignUp ? "block" : "none";
+      nameLabel.hidden = !isSignUp;
+      nameLabel.style.display = isSignUp ? "block" : "none";
+      dobInput.hidden = !isSignUp;
+      dobInput.style.display = isSignUp ? "block" : "none";
+      name.required = isSignUp;
+      dobInput.required = isSignUp;
+      email.type = isSignUp ? "tel" : "text";
+      email.inputMode = isSignUp ? "tel" : "email";
+      email.autocomplete = isSignUp ? "tel" : "username";
+      email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or phone number";
+      contactLabelEl.textContent = isSignUp ? "Phone number" : "Email";
+      submitButton.textContent = isSignUp ? "Create account" : "Log in";
+      toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "Create account";
+      password.autocomplete = isSignUp ? "new-password" : "current-password";
+      if (noteEl) noteEl.textContent = isSignUp
         ? "Enter your name, phone number and password to create an account."
         : "Private sign-in for your little world.";
-      dobInput.required = creating;
-      if (!creating) dobInput.value = "";
-      const feedbackEl = document.getElementById("loginFeedback");
-      if (feedbackEl) feedbackEl.hidden = true;
+      if (!isSignUp) dobInput.value = "";
+      if (feedback) feedback.hidden = true;
     });
     const contactLabel = document.getElementById("loginContactLabel");
     let otpPanel = document.getElementById("signupOtpPanel");
