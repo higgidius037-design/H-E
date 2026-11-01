@@ -93,8 +93,17 @@
       const noteEl = form.querySelector(".login-note");
       nameField.hidden = !creating;
       nameField.style.display = creating ? "block" : "none";
-      dobField.hidden = !creating;
-      dobField.style.display = creating ? "block" : "none";
+      if (creating) {
+        dobField.removeAttribute("hidden");
+        dobField.hidden = false;
+        dobField.style.setProperty("display", "block", "important");
+        dobInput.removeAttribute("hidden");
+        dobInput.hidden = false;
+        dobInput.style.setProperty("display", "block", "important");
+      } else {
+        dobField.hidden = true;
+        dobField.style.setProperty("display", "none", "important");
+      }
       if (creating) {
         name.removeAttribute("hidden");
         nameLabelEl.removeAttribute("hidden");
