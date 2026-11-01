@@ -22,6 +22,7 @@ import android.content.pm.PackageManager;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
+import android.webkit.ServiceWorkerController;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -33,7 +34,7 @@ import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/?android=1&appversion=1.2.5";
+    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/?android=1&appversion=1.2.6";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages_v2";
     private static final String CALL_CHANNEL_ID = "he_calls_v1";
@@ -61,6 +62,13 @@ public class MainActivity extends FragmentActivity {
         settings.setDomStorageEnabled(true);
         // Always fetch the latest hosted H&E page instead of showing a stale WebView HTTP cache.
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        // Apply the same fresh-network policy to service-worker requests where supported.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            ServiceWorkerController.getInstance().getServiceWorkerWebSettings()
+                .setCacheMode(WebSettings.LOAD_NO_CACHE);
+            ServiceWorkerController.getInstance().getServiceWorkerWebSettings()
+                .setBlockNetworkLoads(false);
+        }
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
