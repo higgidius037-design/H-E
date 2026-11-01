@@ -1932,7 +1932,7 @@ $("nextMonth").addEventListener("click",()=>{
 function changeCalendarPeriod() {
   const year=Number($("calendarYearSelect").value);
   const month=Number($("calendarMonthSelect").value);
-  if(!Number.isInteger(year)||!Number.isInteger(month)||month<0||month>11)return;
+  if(!Number.isInteger(year)||year<1||year>9999||!Number.isInteger(month)||month<0||month>11)return;
   calendarYear=year;calendarMonth=month;
   const day=Math.min(Number(selectedDate.slice(8,10)),new Date(year,month+1,0).getDate());
   selectedDate=dateString(new Date(year,month,day));
@@ -2114,7 +2114,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=39"></script>
+<script src="/H-E/H%26E/shared.js?v=40"></script>
 
 </body>
 </html>
