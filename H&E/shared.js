@@ -291,15 +291,15 @@
       <div id="pairingControls">
         <label for="partnerContact">Partner's email address or phone number</label>
         <input id="partnerContact" type="text" inputmode="email" autocomplete="email" placeholder="Email or +2547XXXXXXXX">
-        <p class="muted">We'll send a private six-digit pairing code to this contact. It expires in 10 minutes.</p>
-        <button class="primary" id="makePairInvite" type="button">Send pairing code</button>
+        <p class="muted">A six-digit code will appear here instantly. Share it privately with your partner. They must sign in using this verified email or phone number. The code expires in 10 minutes.</p>
+        <button class="primary" id="makePairInvite" type="button">Generate Pairing Code</button>
         <div id="pairCodeDisplay" hidden style="margin-top:12px;padding:16px;text-align:center;border:1px solid rgba(167,73,105,.35);border-radius:14px;background:#fff5f8;color:#472433">
           <p style="margin:0 0 6px;font-weight:600">Your pairing code</p>
           <strong id="pairCodeDigits" style="display:block;font-size:30px;letter-spacing:8px;color:#7b2948"></strong>
           <p class="muted" style="margin:8px 0 0">Share this six-digit code with your partner. It expires in 10 minutes.</p>
         </div>
         <div class="divider" style="margin:18px 0"></div>
-        <label for="pairCode">Enter the six-digit code your partner received</label>
+        <label for="pairCode">Enter the six-digit code your partner shared</label>
         <input id="pairCode" type="text" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
         <button class="secondary" id="acceptPairInvite" type="button">Connect Partner</button>
       </div>
@@ -932,8 +932,6 @@
   }
   async function createInvite() {
     const button = document.getElementById("makePairInvite");
-    let createdCode = null;
-    let keepInviteForManualEntry = false;
     const codeDisplay = document.getElementById("pairCodeDisplay");
     const codeDigits = document.getElementById("pairCodeDigits");
     if (codeDisplay) codeDisplay.hidden = true;
@@ -941,34 +939,17 @@
     try {
       if (!session) throw new Error("Sign in first.");
       const contact = document.getElementById("partnerContact").value.trim();
-      if (!contact) throw new Error("Enter your partner's email address or phone number.");
-      if (button) { button.disabled = true; button.textContent = "Creating code…"; }
+      if (!contact) throw new Error("Enter your partner's registered email address or verified phone number.");
+      if (button) { button.disabled = true; button.textContent = "Generating code…"; }
       const { data: code, error } = await db.rpc("create_pair_invite", { p_recipient: contact });
       if (error) throw error;
-      createdCode = String(code);
-      // Always reveal a valid newly-created code, even if email/SMS delivery is
-      // unavailable. The partner can enter it manually; do not cancel it.
-      if (codeDigits) codeDigits.textContent = createdCode;
+      const validCode = String(code || "");
+      if (!/^[0-9]{6}$/.test(validCode)) throw new Error("The server did not return a valid six-digit code. Please try again.");
+      if (codeDigits) codeDigits.textContent = validCode;
       if (codeDisplay) codeDisplay.hidden = false;
       document.getElementById("pairCode").focus();
-      const { error: deliveryError } = await db.functions.invoke("send-pair-code", { body: { code: createdCode } });
-      if (deliveryError) {
-        keepInviteForManualEntry = true;
-        createdCode = null;
-        let deliveryMessage = deliveryError.message || "Email/SMS delivery is not configured.";
-        try {
-          const details = await deliveryError.context?.json?.();
-          if (details?.error) deliveryMessage = details.error;
-        } catch {}
-        toast("Code created but automatic delivery failed. Share the code shown on screen privately with your partner. " + deliveryMessage, true);
-        return;
-      }
-      createdCode = null;
-      toast("Your pairing code is displayed below and has been sent. It expires in 10 minutes.");
+      toast("Code ready. Share it privately with your partner; they must enter it using the verified contact you specified. Expires in 10 minutes.");
     } catch (error) {
-      if (createdCode && !keepInviteForManualEntry) {
-        await db.rpc("cancel_pair_invite", { p_code: createdCode }).catch(() => {});
-      }
       let message = error?.message || "Could not create a pairing code.";
       try {
         const details = await error?.context?.json?.();
@@ -980,7 +961,7 @@
       }
       toast(message, true);
     } finally {
-      if (button) { button.disabled = false; button.textContent = "Send pairing code"; }
+      if (button) { button.disabled = false; button.textContent = "Generate Pairing Code"; }
     }
   }
   async function acceptInvite() {
