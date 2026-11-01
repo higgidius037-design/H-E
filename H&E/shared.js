@@ -764,13 +764,9 @@
       let accountPhoto = "";
       try {
         accountPhoto = localStorage.getItem(accountPhotoKey) || "";
-        // Preserve the existing device owner's photo once, then prevent it leaking to later accounts.
-        const legacyClaimed = localStorage.getItem("he-profile-photo-legacy-claimed-v1") === "yes";
-        if (!accountPhoto && !legacyClaimed && state.profile.photo) {
-          accountPhoto = state.profile.photo;
-          localStorage.setItem(accountPhotoKey, accountPhoto);
-          localStorage.setItem("he-profile-photo-legacy-claimed-v1", "yes");
-        }
+        // Never copy a device-wide legacy photo into a new account.
+        // Accounts without their own saved photo start with a blank profile.
+        if (!accountPhoto) localStorage.removeItem("he-profile-photo-legacy-claimed-v1");
       } catch {}
       state.profile = { ...state.profile, you: name, phone, email: session.user.email || "", photo: accountPhoto };
       saveState(); renderProfile(); await ensureKeys();
