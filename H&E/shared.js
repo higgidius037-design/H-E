@@ -76,6 +76,7 @@
     let isSignUp = false;
     let otpPending = false;
     let pendingSignupEmail = "";
+    let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
     const dobLabel = document.createElement("label");
     dobLabel.htmlFor = "loginDateOfBirth";
@@ -124,7 +125,7 @@
       otpPanel = document.createElement("div");
       otpPanel.id = "signupOtpPanel";
       otpPanel.hidden = true;
-      otpPanel.innerHTML = '<label for="signupOtp">Email verification code</label><input id="signupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code"><button class="secondary" id="resendSignupOtp" type="button">Resend code</button>';
+      otpPanel.innerHTML = '<label for="signupOtp">SMS verification code</label><input id="signupOtp" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="Enter 6-digit code"><button class="secondary" id="resendSignupOtp" type="button">Resend SMS code</button>';
       const feedbackAnchor = document.getElementById("loginFeedback");
       form.insertBefore(otpPanel, feedbackAnchor || null);
       otpInput = otpPanel.querySelector("#signupOtp");
@@ -138,7 +139,7 @@
       if (code === "invalid_credentials") return "The email/phone number or password did not match. Check the details and try again.";
       if (code === "email_not_confirmed") return "Confirm your email using the link we sent, then sign in again.";
       if (code === "over_email_send_rate_limit") return "Email verification is temporarily rate-limited by the email service. Please wait before requesting another code. The app administrator must configure a dedicated SMTP email provider for reliable delivery.";
-      if (code === "sms_send_failed") return "SMS verification could not be sent because the SMS provider rejected its credentials. Phone-number registration is temporarily unavailable; use email registration until SMS service is repaired.";
+      if (code === "sms_send_failed") return "SMS verification could not be sent. Check the SMS provider credentials, sender settings, and Supabase delivery logs.";
       if (code === "user_banned") return "This account is temporarily unavailable. Contact the app owner for help.";
       if (code === "passkey_disabled") return "Passkey sign-in is not enabled for this account yet. Sign in with your password first.";
       if (code === "webauthn_credential_not_found") return "No passkey is enrolled for this account yet. Sign in with your email and password, then enable fingerprint unlock in Settings.";
@@ -179,8 +180,8 @@
       dobPicker.hidden = true;
       toggleMethod.hidden = true;
       passkeyButton.hidden = true;
-      submitButton.textContent = "Verify email";
-      if (note) note.textContent = "Enter the code sent to your email.";
+      submitButton.textContent = "Verify phone";
+      if (note) note.textContent = "Enter the SMS code sent to your phone.";
       otpInput.focus();
     }
     toggleMethod.addEventListener("click", () => {
@@ -194,24 +195,23 @@
       dobInput.hidden = !isSignUp;
       dobButton.hidden = !isSignUp;
       dobInput.required = false;
-      contactLabel.textContent = "Email";
-      email.type = isSignUp ? "email" : "text";
-      email.inputMode = isSignUp ? "email" : "text";
-      email.autocomplete = isSignUp ? "email" : "username";
-      email.placeholder = isSignUp ? "you@example.com" : "Email or phone number";
+      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
+      email.type = "tel"; email.inputMode = "tel";
+      email.autocomplete = isSignUp ? "tel" : "username";
+      email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or +2547XXXXXXXX";
       submitButton.textContent = isSignUp ? "Create account" : "Log in";
       toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
       password.autocomplete = isSignUp ? "new-password" : "current-password";
       if (note) note.textContent = isSignUp
-        ? "Choose your own password. We'll email you a verification code."
+        ? "Choose a password. We’ll send a verification code by SMS to your phone."
         : "Sign in with your email or existing phone account.";
     });
     resendOtpButton?.addEventListener("click", async () => {
       resendOtpButton.disabled = true;
       try {
-        const { error } = await db.auth.resend({ type: "signup", email: pendingSignupEmail });
+        const { error } = await db.auth.resend({ type: "sms", phone: pendingSignupPhone });
         if (error) throw error;
-        reportLogin("A new verification code has been sent.", "ok");
+        reportLogin("A new SMS verification code has been requested.", "ok");
       } catch (error) { reportLogin(friendlyAuthError(error)); }
       finally { resendOtpButton.disabled = false; }
     });
@@ -230,12 +230,12 @@
       event.preventDefault(); event.stopImmediatePropagation();
       submitButton.disabled = true;
       submitButton.textContent = otpPending ? "Verifying code…" : (isSignUp ? "Sending code…" : "Signing in…");
-      reportLogin(otpPending ? "Verifying your email…" : (isSignUp ? "Creating your account and sending a verification code…" : "Checking your sign-in…"), "wait");
+      reportLogin(otpPending ? "Verifying your phone…" : (isSignUp ? "Creating your account and requesting an SMS code…" : "Checking your sign-in…"), "wait");
       try {
         if (otpPending) {
           const token = otpInput.value.replace(/\D/g, "");
-          if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit email verification code.");
-          const { data, error } = await db.auth.verifyOtp({ email: pendingSignupEmail, token, type: "signup" });
+          if (!/^\d{6}$/.test(token)) throw new Error("Enter the six-digit SMS verification code.");
+          const { data, error } = await db.auth.verifyOtp({ phone: pendingSignupPhone, token, type: "sms" });
           if (error) throw error;
           if (!data.session) throw new Error("Your phone was verified, but sign-in could not be completed. Please log in with your phone and password.");
           await enterApp(data.session);
@@ -245,38 +245,42 @@
         const displayName = document.getElementById("loginName").value.trim();
         const passwordValue = password.value;
         if (isSignUp) {
-          const emailAddress = normalEmail(contact);
+          let phone = contact.replace(/[\s()-]/g, "");
+          if (/^0[17]\d{8}$/.test(phone)) phone = "+254" + phone.slice(1);
+          else if (/^254[17]\d{8}$/.test(phone)) phone = "+" + phone;
+          else if (/^[17]\d{8}$/.test(phone)) phone = "+254" + phone;
+          if (!/^\+254[17]\d{8}$/.test(phone)) throw new Error("Enter a valid Kenyan mobile number, e.g. 0712345678 or +254712345678.");
           if (!displayName) throw new Error("Enter your name.");
           const dateOfBirth = dobInput.value;
           if (!dateOfBirth) throw new Error("Enter your date of birth.");
           if (dateOfBirth > new Date().toISOString().slice(0,10)) throw new Error("Date of birth cannot be in the future.");
           if (passwordValue.length < 6) throw new Error("Choose a password with at least 6 characters.");
           const { data, error } = await db.auth.signUp({
-            email: emailAddress,
+            phone,
             password: passwordValue,
-            options: { emailRedirectTo: window.location.origin + window.location.pathname, data: { display_name: displayName, date_of_birth: dateOfBirth, contact_email: emailAddress } }
+            options: { data: { display_name: displayName, date_of_birth: dateOfBirth, phone_number: phone } }
           });
           if (error) throw error;
           if (data.session) {
             await db.auth.signOut();
             throw new Error("Email verification is not enabled yet. Please contact the H&E administrator.");
           }
-          pendingSignupEmail = emailAddress;
+          pendingSignupPhone = phone;
           if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
             // Supabase deliberately returns a generic signup response for an existing
             // account. If that account is still unverified, explicitly request a fresh OTP.
             const { error: resendError } = await db.auth.resend({
-              type: "signup",
-              email: emailAddress
+              type: "sms",
+              phone
             });
             if (resendError) throw resendError;
             pendingSignupEmail = emailAddress;
             showSignupOtpStep();
-            reportLogin("This email already has an account awaiting verification. A fresh verification code has been requested. Check your inbox and spam folder.", "ok");
+            reportLogin("This phone number already has an account awaiting verification. A fresh SMS code has been requested.", "ok");
             return;
           }
           showSignupOtpStep();
-          reportLogin("Your verification request was accepted. Check your inbox and spam folder for the code.", "ok");
+          reportLogin("Your verification request was accepted. Check your phone for the SMS code. Delivery time depends on your SMS provider and mobile network.", "ok");
         } else {
           const contactValue = contact.trim();
           let credentials;
@@ -454,11 +458,11 @@
         button.disabled = true;
         try {
           if (!session) throw new Error("Sign in first with your account email and password.");
-          const emailAddress = session.user.email;
+          const accountIdentity = session.user.phone ? { phone: session.user.phone } : { email: session.user.email };
           const passwordEntry = await requestHESecurePassword();
           if (passwordEntry === null) return;
           if (!passwordEntry) throw new Error("Enter your password to continue.");
-          const verified = await db.auth.signInWithPassword({ email: emailAddress, password: passwordEntry });
+          const verified = await db.auth.signInWithPassword({ ...accountIdentity, password: passwordEntry });
           if (verified.error) throw new Error("That password is incorrect. Please try again.");
           if (!verified.data.session) throw new Error("Password verification could not be completed.");
           session = verified.data.session;
@@ -515,7 +519,7 @@
       } else {
         requestHESecurePassword().then(async password => {
           if (!password || !session) return;
-          const check = await db.auth.signInWithPassword({email: session.user.email, password});
+          const check = await db.auth.signInWithPassword({ ...(session.user.phone ? { phone: session.user.phone } : { email: session.user.email }), password });
           if (check.error) { toast("Account password was not accepted.", true); return; }
           session = check.data.session || session; action();
         });
@@ -566,7 +570,7 @@
       if (!session) { toast("Sign in first.", true); return; }
       const oldPassword = await requestHESecurePassword();
       if (!oldPassword) return;
-      const checked = await db.auth.signInWithPassword({email: session.user.email, password: oldPassword});
+      const checked = await db.auth.signInWithPassword({ ...(session.user.phone ? { phone: session.user.phone } : { email: session.user.email }), password: oldPassword });
       if (checked.error) { toast("Current password is incorrect.", true); return; }
       const nextPassword = prompt("Enter your new account password (at least 8 characters)");
       if (nextPassword === null) return;
