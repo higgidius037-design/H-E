@@ -850,7 +850,7 @@ button:disabled { opacity:.65; cursor:wait; }
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2>
     <div id="signupNameField" hidden><label for="loginName" id="loginNameLabel">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Type your name here" style="display:block;width:100%;box-sizing:border-box;min-height:48px;margin:6px 0 14px;padding:12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"></div>
-    <div id="signupDobField" hidden><label for="loginDateOfBirth">Date of birth</label><input id="loginDateOfBirth" type="date" autocomplete="bday" max="2026-11-01" style="display:block;width:100%;box-sizing:border-box;min-height:48px;margin:6px 0 8px;padding:12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"><label for="dobYearJump" style="margin:4px 0 6px;font-size:13px">Or jump straight to a year</label><select id="dobYearJump" aria-label="Jump to birth year" style="display:block;width:100%;min-height:46px;margin:0 0 14px;padding:10px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"><option value="">Choose year…</option></select></div>
+    <div id="signupDobField" hidden><label for="loginDateOfBirth">Date of birth</label><div class="dob-combined" style="display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:8px;margin:6px 0 14px;align-items:center"><input id="loginDateOfBirth" type="date" autocomplete="bday" max="2026-11-01" style="display:block;min-width:0;width:100%;box-sizing:border-box;min-height:48px;margin:0;padding:10px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"><select id="dobYearJump" aria-label="Birth year" style="display:block;min-width:0;width:100%;min-height:48px;margin:0;padding:10px 6px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"><option value="">Year</option></select></div></div>
     <label for="loginEmail" id="loginContactLabel">Email</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or phone number">
     <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Your password">
     <div id="signupOtpPanel" hidden>
@@ -2194,6 +2194,9 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
   for(let year=currentYear;year>=1900;year--){
     const option=document.createElement("option"); option.value=String(year); option.textContent=String(year); jump.appendChild(option);
   }
+  date.addEventListener("change",function(){
+    jump.value=date.value ? date.value.slice(0,4) : "";
+  });
   jump.addEventListener("change",function(){
     const year=Number(this.value); if(!year)return;
     const parts=(date.value||"").split("-");
