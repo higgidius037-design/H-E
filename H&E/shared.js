@@ -102,6 +102,10 @@
       if (noteEl) noteEl.textContent = creating
         ? "Enter your name, phone number and password to create an account."
         : "Private sign-in for your little world.";
+      dobLabel.hidden = !creating;
+      dobButton.hidden = !creating;
+      dobPicker.hidden = true;
+      if (!creating) dobInput.value = "";
       const feedbackEl = document.getElementById("loginFeedback");
       if (feedbackEl) feedbackEl.hidden = true;
     });
@@ -166,7 +170,7 @@
       if (code === "invalid_credentials") return "The email/phone number or password did not match. Check the details and try again.";
       if (code === "email_not_confirmed") return "Confirm your email using the link we sent, then sign in again.";
       if (code === "over_email_send_rate_limit") return "Email verification is temporarily rate-limited by the email service. Please wait before requesting another code. The app administrator must configure a dedicated SMTP email provider for reliable delivery.";
-      if (code === "sms_send_failed") return "SMS verification could not be sent. Check the SMS provider credentials, sender settings, and Supabase delivery logs.";
+      if (code === "sms_send_failed") return "Signup is blocked because Supabase still requires SMS confirmation, but SMS delivery is failing. Phone Confirmations must be disabled in Supabase Authentication settings.";
       if (code === "user_banned") return "This account is temporarily unavailable. Contact the app owner for help.";
       if (code === "passkey_disabled") return "Passkey sign-in is not enabled for this account yet. Sign in with your password first.";
       if (code === "webauthn_credential_not_found") return "No passkey is enrolled for this account yet. Sign in with your email and password, then enable fingerprint unlock in Settings.";
