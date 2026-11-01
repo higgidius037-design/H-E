@@ -974,15 +974,21 @@
       if (error) throw error;
       const validCode = String(code || "");
       if (!/^[0-9]{6}$/.test(validCode)) throw new Error("The server did not return a valid six-digit code. Please try again.");
-      if (codeDigits) codeDigits.textContent = validCode;
       const inviteUrl = new URL(window.location.href);
       inviteUrl.searchParams.set("pair", validCode);
       inviteUrl.hash = "settings-connect";
       const inviteLink = document.getElementById("pairInviteLink");
       if (inviteLink) inviteLink.value = inviteUrl.toString();
+      // Deliver the actual one-tap invitation URL to the verified recipient.
+      // The recipient still signs in and explicitly accepts the invitation.
+      const { data: delivery, error: deliveryError } = await db.functions.invoke("send-pair-code", {
+        body: { code: validCode, invite_url: inviteUrl.toString() }
+      });
+      if (deliveryError) throw deliveryError;
+      if (!delivery?.sent) throw new Error(delivery?.error || "The invitation could not be delivered. Check the recipient contact and try again.");
+      if (codeDigits) codeDigits.textContent = "Invitation sent";
       if (codeDisplay) codeDisplay.hidden = false;
-      document.getElementById("pairCode").focus();
-      toast("Secure invite link ready. Share it with your partner; the code will fill automatically when they open it. They must sign in with the verified contact you entered and tap Connect.");
+      toast("Your secure H&E invitation link has been sent directly to " + contact + ". They must open the link, sign in with that verified contact, and tap Connect. Keep H&E open on your phone too.");
     } catch (error) {
       let message = error?.message || "Could not create a pairing code.";
       try {
