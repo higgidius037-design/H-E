@@ -249,10 +249,17 @@
             throw new Error("An account with this phone number already exists. Please sign in instead.");
           }
           if (!data.session) {
-            throw new Error("Your account request was received, but Supabase is still requiring phone confirmation. Disable Phone Confirmations in Supabase Authentication settings, then try again.");
+            // Phone confirmation is enabled: keep the account details and let
+            // the user complete the SMS OTP flow instead of treating signup
+            // as a failure or asking them to change project security settings.
+            pendingSignupPhone = phone;
+            otpInput.value = "";
+            showSignupOtpStep();
+            reportLogin("Your account was created. Enter the SMS verification code sent to " + phone + " to finish setting up H&E.", "ok");
+            return;
           }
-          // Phone confirmation is disabled in Supabase: create the account and
-          // enter H&E immediately without sending or requesting an SMS OTP.
+          // If phone confirmation is disabled, Supabase returns a session and
+          // the account can enter H&E immediately.
           await enterApp(data.session);
           return;
         } else {
