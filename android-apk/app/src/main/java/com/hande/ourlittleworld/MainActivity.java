@@ -33,7 +33,7 @@ import android.media.AudioAttributes;
 import java.util.concurrent.Executor;
 
 public class MainActivity extends FragmentActivity {
-    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/?android=1&appversion=1.2.4";
+    private static final String APP_URL = "https://higgidius037-design.github.io/H-E/?android=1&appversion=1.2.5";
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final String CHANNEL_ID = "he_messages_v2";
     private static final String CALL_CHANNEL_ID = "he_calls_v1";
@@ -59,6 +59,8 @@ public class MainActivity extends FragmentActivity {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        // Always fetch the latest hosted H&E page instead of showing a stale WebView HTTP cache.
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
@@ -104,7 +106,7 @@ public class MainActivity extends FragmentActivity {
                 return true;
             }
         });
-        webView.loadUrl(APP_URL);
+        webView.loadUrl(APP_URL + "&apprefresh=" + System.currentTimeMillis());
         handleCallIntent(getIntent());
     }
 
