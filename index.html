@@ -830,7 +830,8 @@ button:disabled { opacity:.65; cursor:wait; }
   <form id="loginForm" class="login-card">
     <div class="brand-heart">♡</div><h1>H&amp;E</h1><p class="muted">Our Little World</p>
     <h2>Welcome back</h2>
-    <label for="loginName" id="loginNameLabel">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Type your name here" style="display:block;width:100%;box-sizing:border-box;min-height:48px;margin-top:6px;padding:10px 12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit">
+    <div id="signupNameField" hidden><label for="loginName" id="loginNameLabel">Your name</label><input id="loginName" maxlength="60" autocomplete="name" placeholder="Type your name here" style="display:block;width:100%;box-sizing:border-box;min-height:48px;margin:6px 0 14px;padding:12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"></div>
+    <div id="signupDobField" hidden><label for="loginDateOfBirth">Date of birth</label><input id="loginDateOfBirth" type="date" autocomplete="bday" max="2026-11-01" style="display:block;width:100%;box-sizing:border-box;min-height:48px;margin:6px 0 14px;padding:12px;border:1px solid #d9c8c2;border-radius:10px;background:#fff;color:#342029;font:inherit"></div>
     <label for="loginEmail" id="loginContactLabel">Email</label><input id="loginEmail" type="text" maxlength="120" required autocomplete="username" placeholder="Email or phone number">
     <label for="loginPassword">Password</label><input id="loginPassword" type="password" minlength="6" required autocomplete="current-password" placeholder="Your password">
     <div id="signupOtpPanel" hidden>
@@ -2097,7 +2098,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=32"></script>
+<script src="/H-E/H%26E/shared.js?v=33"></script>
 
 </body>
 </html>
