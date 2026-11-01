@@ -78,28 +78,31 @@
     let pendingSignupEmail = "";
     let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
-    // Register before optional date-picker setup so Create account remains responsive.
+    // Minimal signup switch is deliberately independent of the optional DOB picker.
+    // It remains usable even if later setup code fails.
     toggleMethod.addEventListener("click", () => {
-      isSignUp = !isSignUp;
-      if (feedback) feedback.hidden = true;
-      resetSignupOtpStep();
-      document.getElementById("loginName").required = isSignUp;
-      document.getElementById("loginName").hidden = !isSignUp;
-      nameLabel.hidden = !isSignUp;
-      dobLabel.hidden = !isSignUp;
-      dobInput.hidden = !isSignUp;
-      dobButton.hidden = !isSignUp;
-      dobInput.required = false;
-      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
-      email.type = "tel"; email.inputMode = "tel";
-      email.autocomplete = isSignUp ? "tel" : "username";
-      email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or +2547XXXXXXXX";
-      submitButton.textContent = isSignUp ? "Create account" : "Log in";
-      toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
-      password.autocomplete = isSignUp ? "new-password" : "current-password";
-      if (note) note.textContent = isSignUp
-        ? "Choose a password. We’ll send a verification code by SMS to your phone."
-        : "Sign in with your email or existing phone account.";
+      const creating = toggleMethod.dataset.signup !== "true";
+      toggleMethod.dataset.signup = creating ? "true" : "false";
+      const name = document.getElementById("loginName");
+      const nameLabelEl = document.getElementById("loginNameLabel");
+      const contactLabelEl = document.getElementById("loginContactLabel");
+      const noteEl = form.querySelector(".login-note");
+      name.hidden = !creating;
+      name.required = creating;
+      nameLabelEl.hidden = !creating;
+      email.type = creating ? "tel" : "text";
+      email.inputMode = creating ? "tel" : "email";
+      email.autocomplete = creating ? "tel" : "username";
+      email.placeholder = creating ? "+254 7XX XXX XXX" : "Email or phone number";
+      contactLabelEl.textContent = creating ? "Phone number" : "Email";
+      submitButton.textContent = creating ? "Create account" : "Log in";
+      toggleMethod.textContent = creating ? "Already have an account? Log in" : "Create account";
+      password.autocomplete = creating ? "new-password" : "current-password";
+      if (noteEl) noteEl.textContent = creating
+        ? "Enter your name, phone number and password to create an account."
+        : "Private sign-in for your little world.";
+      const feedbackEl = document.getElementById("loginFeedback");
+      if (feedbackEl) feedbackEl.hidden = true;
     });
     const dobLabel = document.createElement("label");
     dobLabel.htmlFor = "loginDateOfBirth";
