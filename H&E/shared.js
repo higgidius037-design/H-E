@@ -82,6 +82,7 @@
     // It remains usable even if later setup code fails.
     toggleMethod.addEventListener("click", () => {
       const creating = toggleMethod.dataset.signup !== "true";
+      isSignUp = creating;
       toggleMethod.dataset.signup = creating ? "true" : "false";
       const name = document.getElementById("loginName");
       const nameLabelEl = document.getElementById("loginNameLabel");
