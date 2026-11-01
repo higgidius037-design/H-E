@@ -88,11 +88,22 @@
       const nameLabelEl = document.getElementById("loginNameLabel");
       const contactLabelEl = document.getElementById("loginContactLabel");
       const noteEl = form.querySelector(".login-note");
-      name.hidden = !creating;
-      name.style.display = creating ? "block" : "none";
+      if (creating) {
+        name.removeAttribute("hidden");
+        nameLabelEl.removeAttribute("hidden");
+        name.hidden = false;
+        nameLabelEl.hidden = false;
+        name.style.setProperty("display", "block", "important");
+        nameLabelEl.style.setProperty("display", "block", "important");
+        name.style.visibility = "visible";
+        nameLabelEl.style.visibility = "visible";
+      } else {
+        name.hidden = true;
+        nameLabelEl.hidden = true;
+        name.style.display = "none";
+        nameLabelEl.style.display = "none";
+      }
       name.required = creating;
-      nameLabelEl.hidden = !creating;
-      nameLabelEl.style.display = creating ? "block" : "none";
       email.type = creating ? "tel" : "text";
       email.inputMode = creating ? "tel" : "email";
       email.autocomplete = creating ? "tel" : "username";
