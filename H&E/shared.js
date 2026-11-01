@@ -78,6 +78,29 @@
     let pendingSignupEmail = "";
     let pendingSignupPhone = "";
     const nameLabel = document.getElementById("loginNameLabel");
+    // Register before optional date-picker setup so Create account remains responsive.
+    toggleMethod.addEventListener("click", () => {
+      isSignUp = !isSignUp;
+      if (feedback) feedback.hidden = true;
+      resetSignupOtpStep();
+      document.getElementById("loginName").required = isSignUp;
+      document.getElementById("loginName").hidden = !isSignUp;
+      nameLabel.hidden = !isSignUp;
+      dobLabel.hidden = !isSignUp;
+      dobInput.hidden = !isSignUp;
+      dobButton.hidden = !isSignUp;
+      dobInput.required = false;
+      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
+      email.type = "tel"; email.inputMode = "tel";
+      email.autocomplete = isSignUp ? "tel" : "username";
+      email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or +2547XXXXXXXX";
+      submitButton.textContent = isSignUp ? "Create account" : "Log in";
+      toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
+      password.autocomplete = isSignUp ? "new-password" : "current-password";
+      if (note) note.textContent = isSignUp
+        ? "Choose a password. We’ll send a verification code by SMS to your phone."
+        : "Sign in with your email or existing phone account.";
+    });
     const dobLabel = document.createElement("label");
     dobLabel.htmlFor = "loginDateOfBirth";
     dobLabel.textContent = "Date of birth";
@@ -184,28 +207,7 @@
       if (note) note.textContent = "Enter the SMS code sent to your phone.";
       otpInput.focus();
     }
-    toggleMethod.addEventListener("click", () => {
-      isSignUp = !isSignUp;
-      if (feedback) feedback.hidden = true;
-      resetSignupOtpStep();
-      document.getElementById("loginName").required = isSignUp;
-      document.getElementById("loginName").hidden = !isSignUp;
-      nameLabel.hidden = !isSignUp;
-      dobLabel.hidden = !isSignUp;
-      dobInput.hidden = !isSignUp;
-      dobButton.hidden = !isSignUp;
-      dobInput.required = false;
-      contactLabel.textContent = isSignUp ? "Phone number" : "Email or phone number";
-      email.type = "tel"; email.inputMode = "tel";
-      email.autocomplete = isSignUp ? "tel" : "username";
-      email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or +2547XXXXXXXX";
-      submitButton.textContent = isSignUp ? "Create account" : "Log in";
-      toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "New here? Create an account";
-      password.autocomplete = isSignUp ? "new-password" : "current-password";
-      if (note) note.textContent = isSignUp
-        ? "Choose a password. We’ll send a verification code by SMS to your phone."
-        : "Sign in with your email or existing phone account.";
-    });
+
     resendOtpButton?.addEventListener("click", async () => {
       resendOtpButton.disabled = true;
       try {
