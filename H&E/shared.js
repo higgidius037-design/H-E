@@ -84,38 +84,41 @@
     const nameField = document.getElementById("signupNameField");
     const dobField = document.getElementById("signupDobField");
     const dobInput = document.getElementById("loginDateOfBirth");
-    // Signup toggle: reveal the fields on the first tap; the main submit button then creates the account.
-    toggleMethod.addEventListener("click", () => {
-      isSignUp = !isSignUp;
+    // One authoritative toggle controls the registration view and the submit mode.
+    const setSignupMode = enabled => {
+      isSignUp = Boolean(enabled);
       const name = document.getElementById("loginName");
       const contactLabelEl = document.getElementById("loginContactLabel");
       const noteEl = form.querySelector(".login-note");
-      nameField.hidden = !isSignUp;
-      nameField.style.display = isSignUp ? "block" : "none";
-      dobField.hidden = !isSignUp;
-      dobField.style.display = isSignUp ? "block" : "none";
-      name.hidden = !isSignUp;
-      name.style.display = isSignUp ? "block" : "none";
-      nameLabel.hidden = !isSignUp;
-      nameLabel.style.display = isSignUp ? "block" : "none";
-      dobInput.hidden = !isSignUp;
-      dobInput.style.display = isSignUp ? "block" : "none";
-      name.required = isSignUp;
-      dobInput.required = isSignUp;
+      const show = (element, visible) => {
+        if (!element) return;
+        element.hidden = !visible;
+        element.style.display = visible ? "block" : "none";
+      };
+      show(nameField, isSignUp);
+      show(dobField, isSignUp);
+      show(name, isSignUp);
+      show(nameLabel, isSignUp);
+      show(dobInput, isSignUp);
+      if (name) name.required = isSignUp;
+      if (dobInput) dobInput.required = isSignUp;
       email.type = isSignUp ? "tel" : "text";
       email.inputMode = isSignUp ? "tel" : "email";
       email.autocomplete = isSignUp ? "tel" : "username";
       email.placeholder = isSignUp ? "+254 7XX XXX XXX" : "Email or phone number";
-      contactLabelEl.textContent = isSignUp ? "Phone number" : "Email";
+      if (contactLabelEl) contactLabelEl.textContent = isSignUp ? "Phone number" : "Email or phone number";
       submitButton.textContent = isSignUp ? "Create account" : "Log in";
       toggleMethod.textContent = isSignUp ? "Already have an account? Log in" : "Create account";
       password.autocomplete = isSignUp ? "new-password" : "current-password";
       if (noteEl) noteEl.textContent = isSignUp
-        ? "Enter your name, phone number and password to create an account."
+        ? "Enter your name, date of birth, phone number and password to create an account."
         : "Private sign-in for your little world.";
-      if (!isSignUp) dobInput.value = "";
-      if (feedback) feedback.hidden = true;
-    });
+      if (!isSignUp && dobInput) dobInput.value = "";
+      const feedbackBox = document.getElementById("loginFeedback");
+      if (feedbackBox) feedbackBox.hidden = true;
+    };
+    // Use the button's direct click property so there is exactly one toggle handler.
+    toggleMethod.onclick = () => setSignupMode(!isSignUp);
     const contactLabel = document.getElementById("loginContactLabel");
     let otpPanel = document.getElementById("signupOtpPanel");
     let otpInput = document.getElementById("signupOtp");
