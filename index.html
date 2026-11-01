@@ -821,7 +821,8 @@ button:disabled { opacity:.65; cursor:wait; }
 #page-calendar .card{overflow:hidden}
 #page-calendar #selectedDayEvents .item{padding:12px 4px}
 @media(max-width:420px){.calendar-head-modern{gap:6px}.calendar-arrow{width:36px;height:38px;flex-basis:36px}.calendar-period{gap:5px}.calendar-period h3{font-size:19px}#calendarYearSelect{min-width:78px;padding:8px 20px 8px 7px;font-size:14px}.calendar-today{padding:8px 9px;font-size:12px}#calendarGrid{gap:3px}.calendar-day{min-height:43px;padding:6px 1px}.calendar-day .day-number{font-size:13px}}
-#loginForm.signup-mode #signupNameField,#loginForm.signup-mode #signupDobField{display:block!important}\n</style>
+#loginForm.signup-mode #signupNameField,#loginForm.signup-mode #signupDobField{display:block!important}
+</style>
 </head>
 <body>
 
@@ -840,7 +841,7 @@ button:disabled { opacity:.65; cursor:wait; }
       <button class="secondary" id="resendSignupOtp" type="button">Resend code</button>
     </div>
     <button class="primary" id="loginSubmit" type="submit">Log in</button>
-    <button class="secondary" id="toggleLoginMethod" type="button" onclick="this.form.classList.toggle(\'signup-mode\');document.getElementById(\'signupNameField\').hidden=false;document.getElementById(\'signupDobField\').hidden=false" style="width:100%;margin-top:10px">Create account</button>
+    <button class="secondary" id="toggleLoginMethod" type="button" onclick="this.form.classList.toggle('signup-mode');document.getElementById('signupNameField').hidden=false;document.getElementById('signupDobField').hidden=false" style="width:100%;margin-top:10px">Create account</button>
     <button class="secondary" id="loginPasskey" type="button" style="width:100%">Use fingerprint / face unlock</button>
     <p id="loginFeedback" class="login-feedback" role="status" aria-live="polite" hidden></p>
     <p class="muted login-note">Private sign-in for your little world.</p>
@@ -2098,7 +2099,7 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.105.0"></script>
-<script src="/H-E/H%26E/shared.js?v=35"></script>
+<script src="/H-E/H%26E/shared.js?v=36"></script>
 
 </body>
 </html>
